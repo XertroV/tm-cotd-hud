@@ -109,13 +109,6 @@ namespace CotdData {
 }
 
 
-Json::Value FetchEndpoint(const string &in route) {
-    auto req = NadeoServices::Get("NadeoClubServices", route);
-    req.Start();
-    while(!req.Finished()) { yield(); }
-    return Json::Parse(req.String());
-}
-
 
 CTrackMania@ GetTmApp() {
     return cast<CTrackMania>(GetApp());

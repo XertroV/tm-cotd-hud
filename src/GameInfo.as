@@ -47,9 +47,9 @@ class GameInfo {
 #if DEV
         int now = Time::get_Now();
         if ((now % 1000) < 100) {
-            trace("[MapId()," + now + "] rm is null: " + (rm is null));
+            // trace("[MapId()," + now + "] rm is null: " + (rm is null));
             if (rm !is null) {
-                trace("[MapId()," + now + "] rm.IdName: " + rm.IdName);
+                // trace("[MapId()," + now + "] rm.IdName: " + rm.IdName);
             }
         }
 #endif

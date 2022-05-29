@@ -63,7 +63,7 @@ class TmIoApi {
         return Json::Parse(req.String());
     }
 
-    Json::Value GetTotdMap() {
+    Json::Value _GetTotdMap() {
         return RunR(GetR("/totd/0"));
     }
 
@@ -72,7 +72,7 @@ class TmIoApi {
             return CachedOr("GetTotdMapId", "");
         }
         try {
-            auto totd = this.GetTotdMap();
+            auto totd = this._GetTotdMap();
             auto ix = totd["days"].Length - 1;
             string ret = totd["days"][ix]["map"]["mapUid"];
             this.cache.Set("GetTotdMapId", ret);

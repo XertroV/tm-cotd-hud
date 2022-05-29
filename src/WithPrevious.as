@@ -28,4 +28,12 @@ class BoolWP {
     bool ChangedToTrue() {
         return this.value && !this.prev;
     }
+
+    bool ChangedToFalse() {
+        return !this.value && this.prev;
+    }
+
+    bool get_v() {
+        return this.value;
+    }
 }

@@ -1,6 +1,11 @@
 
 
 void Main() {
+    // note: not sure if this includes standard or just club -- do we need club?
+    while (!NadeoServices::IsAuthenticated("NadeoClubServices")) {
+        yield();
+    }
+
     startnew(DataManager::Main);
 }
 
@@ -9,7 +14,9 @@ void Update(float dt) {
 }
 
 void Render() {}
-void RenderInterface() {}
+void RenderInterface() {
+    CotdHud::RenderInterface();
+}
 void RenderMenu() {}
 void RenderMainMenu() {}
 // void RenderSettings() {}
