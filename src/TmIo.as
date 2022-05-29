@@ -20,10 +20,9 @@ namespace TmIo {
 class TmIoApi {
     string userAgent;
 #if DEV
-    string BASEURL = "http://localhost:4444";
+    string BASEURL = "http://localhost:44444";
 #else
-    // string BASEURL = "https://trackmania.io/api";
-    string BASEURL = "http://localhost:4445";
+    string BASEURL = "https://trackmania.io/api";
 #endif
     Debouncer@ debounce = Debouncer();
     dictionary@ cache = dictionary();

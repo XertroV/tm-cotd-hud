@@ -11,11 +11,23 @@ const string UI_EXPLORER = UI_BASE_NAME + "-explorer";
 namespace CotdHud {
     GameInfo@ gi = GameInfo();
 
+    void Render() {
+        if (IsVisible() && Setting_ShowHudEvenIfInterfaceHidden) {
+            _RenderHUD();
+        }
+    }
+
     void RenderInterface() {
-        if (!IsVisible()) {
+        if (!IsVisible() || Setting_ShowHudEvenIfInterfaceHidden) {
+            /* we check Setting_ShowHudEvenIfInterfaceHidden here because
+            * we don't want to double-render.
+            */
             return;
         }
+        _RenderHUD();
+    }
 
+    void _RenderHUD() {
         SetNextWindowLocation();
         UI::Begin(UI_HUD, GetWindowFlags());
         RenderHeading();
@@ -43,7 +55,7 @@ namespace CotdHud {
         auto nDivs = nPlayers / 64.0f;
         UI::Text("\\$0e4" + nPlayers + " \\$zPlayers | \\$4df" + Text::Format("%.1f", nDivs) + " \\$zDivs");
         auto msAgo = Time::get_Now() - DataManager::divs_lastUpdated;
-        UI::Text("Updated: " + Text::Format("%.1f", msAgo / 1000.) + " s ago");
+        UI::Text("\\$888Updated: " + Text::Format("%.1f", msAgo / 1000.) + " s ago");
     }
 
     void RenderDivs() {
@@ -60,21 +72,10 @@ namespace CotdHud {
                 drawnOnePlusDivs = true;
 
                 /* should we draw the player row? */
-
                 if (playerDr.div == dr.div)
                     RenderDivRowFromDR(playerDr, true);
 
                 /* draw div row */
-
-                // UI::TableNextRow();
-                // UI::TableNextColumn();
-                // UI::Text(dr.FmtDiv());
-                // UI::TableNextColumn();
-                // UI::Text(dr.FmtTime());
-                // if (Setting_HudShowDeltas) {
-                //     UI::TableNextColumn();
-                //     UI::Text("todo");
-                // }
                 RenderDivRowFromDR(dr);
             }
             if (!drawnOnePlusDivs) {

@@ -13,13 +13,20 @@ void Update(float dt) {
     DataManager::Update(dt);
 }
 
-void Render() {}
+void Render() {
+    CotdHud::Render();
+}
+
 void RenderInterface() {
     CotdHud::RenderInterface();
 }
+
 void RenderMenu() {}
+
 void RenderMainMenu() {}
+
 // void RenderSettings() {}
+
 void OnSettingsChanged() {}
 
 /* Plan:
@@ -40,3 +47,9 @@ Data Mgmt:
 Watchers:
 - change of IsCotd -- joined COTD server
 - COTD map -- update when joining new COTD server; init from TMIO
+
+*/
+
+CTrackMania@ GetTmApp() {
+    return cast<CTrackMania>(GetApp());
+}

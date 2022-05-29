@@ -24,7 +24,7 @@ axios.get('https://trackmania.io/api/totd/0')
         process.exit(1);
     })
 
-const port = 4444;
+const port = 44444;
 app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
 });
