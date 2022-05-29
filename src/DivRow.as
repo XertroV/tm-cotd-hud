@@ -56,6 +56,7 @@ class DivRow {
             + "timeMs=" + this.timeMs + ", "
             + "lastUpdateStart=" + this.lastUpdateStart + ", "
             + "lastUpdateDone=" + this.lastUpdateDone + ", "
+            + "Δ=" + (this.lastUpdateDone - this.lastUpdateStart) + ", "
             + "visible=" + this.visible + ", "
             + "ty=" + tostring(this.ty)
             + ")";

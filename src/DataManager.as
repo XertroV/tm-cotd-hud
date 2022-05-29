@@ -241,10 +241,21 @@ namespace DataManager {
     void RenewActiveDivs() {
         // todo: active div rows based on player rank, settings, etc
         cotd_ActiveDivRows = array<uint>(99);
+        uint _d;
         for (uint i = 0; i < cotd_ActiveDivRows.Length; i++) {
-            cotd_ActiveDivRows[i] = i + 1;
-            divRows[i].visible = true;
+            _d = i + 1;  // the div
+            // IsDivVisible()
+            if (true) {
+                cotd_ActiveDivRows[i] = _d;
+                /* this is a bit of a cheat -- the div won't be drawn if it doesn't have a valid time */
+                divRows[i].visible = true;
+            }
         }
+    }
+
+    bool IsDivVisible(uint div) {
+        // todo
+        return true;
     }
 
     void CoroUpdateDivFromQ() {

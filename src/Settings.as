@@ -12,6 +12,8 @@ bool Setting_HudWindowLocked = true;
 
 
 
+[Setting category="HUD" name="Show deltas?" description="Example: `-0:02.252` or `+0:11.002`"]
+bool Setting_HudShowDeltas = true;
 
 [Setting category="HUD" name="Show div 1 cutoff?"]
 bool Setting_HudShowDiv1Cutoff = true;
@@ -25,8 +27,9 @@ uint Setting_HudShowAboveDiv = 1;
 [Setting category="HUD" name="Show cutoffs for how many lower divs?" min="0" max="5" description="0: No divs with cutoffs below your time. 1: The cutoff for your div. 2: Your div and the one below it. etc"]
 uint Setting_HudShowPlayerDivCutoff = 1;
 
-[Setting category="HUD" name="Show deltas?" description="Example: `-0:02.252` or `+0:11.002`"]
-bool Setting_HudShowDeltas = true;
+[Setting category="HUD" name="Show cutoffs for all divs?" description="Yup. ALL of them."]
+bool Setting_HudShowAllDivs = false;
+
 
 
 
