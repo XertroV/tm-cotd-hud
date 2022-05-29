@@ -1,0 +1,23 @@
+{
+  "name": "tm-cotd-info-dev-server",
+  "version": "1.0.0",
+  "description": "![COTD Stats Image](./opfiles/COTD_Stats_Thumb.png)",
+  "main": "test-tmio-server.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XertroV/tm-cotd-stats.git"
+  },
+  "author": "XertroV",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/XertroV/tm-cotd-stats/issues"
+  },
+  "homepage": "https://github.com/XertroV/tm-cotd-stats#readme",
+  "dependencies": {
+    "axios": "^0.27.2",
+    "express": "^4.18.1"
+  }
+}

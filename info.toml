@@ -1,0 +1,10 @@
+[meta]
+name     = "COTD HUD"
+author   = "XertroV"
+category = "Race"
+version  = "0.0.1"
+
+[script]
+dependencies = [ "NadeoServices" ]
+imports = [ "Permissions.as", "Time.as" ]
+defines = [ "DEV" ]
