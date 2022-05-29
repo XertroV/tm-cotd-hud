@@ -11,6 +11,10 @@ namespace DataManager {
 
     BoolWP@ isCotd = BoolWP(false);
 
+    /* queues for coros */
+
+    uint[] q_divsToUpdate;
+
     /* better chat integration */
 
     string bcFavorites = "";
@@ -49,9 +53,17 @@ namespace DataManager {
         }
     }
 
+    /* wipe current COTD state */
+
+    void ResetCurrentCotdData() {
+        // cotdLatest_Status = null;
+        // cotdLatest_PlayerRank = null;
+    }
+
     /** update cotdLatest data */
+
     void SetCurrentCotdData() {
-        cotdLatest_Status = null;
+        ResetCurrentCotdData();
         startnew(ApiUpdateCotdStatus);
         startnew(ApiUpdateCotdPlayerRank);
     }
@@ -69,6 +81,11 @@ namespace DataManager {
     string GetChallengeName() {
         auto c = GetChallenge();
         return c is null ? null : c["name"];
+    }
+
+    string GetChallengeDateAndNumber() {
+        auto cn = GetChallengeName();
+        return cn is null ? "0000-00-00 #0" : cn.SubStr(15, 13);
     }
 
     int GetChallengeId() {
@@ -90,5 +107,8 @@ namespace DataManager {
         return pr is null ? 0 : pr['cardinal'];
     }
 
+    /* Update divisions */
+    void ApiUpdateCotdDivRows() {
 
+    }
 }
