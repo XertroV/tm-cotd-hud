@@ -32,6 +32,17 @@ bool Setting_HudShowAllDivs = false;
 
 
 
+[Setting category="HUD Histogram" name="Show HUD Histogram?"]
+bool Setting_HudShowHistogram = true;
+
+[Setting category="HUD Histogram" name="Position of HUD Histogram?"]
+vec2 Setting_HudHistogramPos = vec2(.85, .85);
+
+[Setting category="HUD Histogram" name="Size of HUD Histogram?"]
+vec2 Setting_HudHistogramSize = vec2(.1, .1);
+
+
+
 
 [Setting category="Dev Features" name="Show HUD even if interface is hidden?" description="This only will ignore whether the interface is hidden or not. You should also enable 'Show HUD Always' if you want the HUD to be for-sure visible."]
 bool Setting_ShowHudEvenIfInterfaceHidden = false;

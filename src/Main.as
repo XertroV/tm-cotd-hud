@@ -7,6 +7,14 @@ void Main() {
     }
 
     startnew(DataManager::Main);
+
+#if DEPENDENCY_BETTERCHAT
+    startnew(BcCommands::Main);
+#endif
+
+#if UNIT_TEST || DEV
+    TestColors();
+#endif
 }
 
 void Update(float dt) {

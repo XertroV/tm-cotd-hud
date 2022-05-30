@@ -1,8 +1,10 @@
 const int MAX_DIV_TIME = 9999999;
-// MAX_DIV_TIME of 9999999 is 10k seconds.
-// We can safely `>> 3` is roughly division by 8 (which is still 1k+ seconds).
-// Since COTD is at most ~120s, we can safely assume values for .time that are greater than (MAX_DIV_TIME >> 3) are dummy times.
-// So we use `MAX_DIV_TIME >> 3` as a comparison value.
+/*
+    // MAX_DIV_TIME of 9999999 is 10k seconds.
+    // We can safely `>> 3` is roughly division by 8 (which is still 1k+ seconds).
+    // Since COTD is at most ~120s, we can safely assume values for .time that are greater than (MAX_DIV_TIME >> 3) are dummy times.
+    // So we use `MAX_DIV_TIME >> 3` as a comparison value.
+*/
 
 
 enum RowTy {
@@ -60,6 +62,5 @@ class DivRow {
             + "visible=" + this.visible + ", "
             + "ty=" + tostring(this.ty)
             + ")";
-
     }
 }

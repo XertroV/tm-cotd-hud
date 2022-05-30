@@ -1,9 +1,16 @@
 
 class GameInfo {
-    CTrackMania@ app; // = GetTmApp();
+    // CTrackMania@ app; // = GetTmApp();
 
     GameInfo() {
-        @app = GetTmApp();
+        // while (@app is null) {
+        //     yield();
+        //     @app = GetTmApp();
+        // }
+    }
+
+    CTrackMania@ get_app() {
+        return GetTmApp();
     }
 
     CTrackManiaNetwork@ GetNetwork() {

@@ -3,7 +3,7 @@ namespace DataManager {
     const Json::Value JSON_NULL = Json::Parse("null");
     const uint Q_SIZE = 100;
 
-    GameInfo@ gi = GameInfo();
+    GameInfo@ gi;
     TmIoApi@ tmIoApi = TmIoApi("cotd-hud (by @XertroV)");
     CotdApi@ api;
 
@@ -22,6 +22,9 @@ namespace DataManager {
 
     DivRow@ playerDivRow = DivRow(0, 0, RowTy::Player);
 
+    /* if we are showing a histogram, we'll need to track the 100 times above and below us */
+    uint[] cotd_TimesForHistogram = array<uint>(200, 0);
+
     /* queues for coros */
 
     uint[] q_divsToUpdate = array<uint>(Q_SIZE);
@@ -38,8 +41,10 @@ namespace DataManager {
 #endif
 
     void Main() {
+        @gi = GameInfo();
         // This can't be run on script load -- 'Unbound function called' exception
         @api = CotdApi();
+
         InitDivRows();
 
         startnew(Initialize);
@@ -71,17 +76,21 @@ namespace DataManager {
     }
 
     void Update(float dt) {
-        isCotd.Set(gi.IsCotd());
+        try {
+            isCotd.Set(gi.IsCotd());
 
-        if (isCotd.v) {
-            cotdLatest_MapId = gi.MapId();
-        }
+            if (isCotd.v) {
+                cotdLatest_MapId = gi.MapId();
+            }
 
-        // When we enter a COTD server
-        if (isCotd.ChangedToTrue()) {
-            cotdLatest_MapId = gi.MapId();
-            startnew(SetCurrentCotdData);
-            startnew(UpdateDivs);
+            // When we enter a COTD server
+            if (isCotd.ChangedToTrue()) {
+                cotdLatest_MapId = gi.MapId();
+                startnew(SetCurrentCotdData);
+                startnew(UpdateDivs);
+            }
+        } catch {
+            warn("Exception in Update: " + getExceptionInfo());
         }
     }
 
@@ -221,6 +230,7 @@ namespace DataManager {
             yield();
         }
         cotdLatest_PlayerRank = api.GetPlayerRank(GetChallengeId(), cotdLatest_MapId, gi.PlayersId());
+        trace("[ApiUpdateCotdPlayerRank] from api got: " + Json::Write(cotdLatest_PlayerRank));
     }
 
     uint GetCotdTotalPlayers() {
@@ -244,6 +254,7 @@ namespace DataManager {
         uint _d;
         for (uint i = 0; i < cotd_ActiveDivRows.Length; i++) {
             _d = i + 1;  // the div
+            // if (_d > 2) { break; }
             // IsDivVisible()
             if (true) {
                 cotd_ActiveDivRows[i] = _d;
@@ -260,8 +271,14 @@ namespace DataManager {
 
     void CoroUpdateDivFromQ() {
         auto _div = GetDivToUpdateFromQ();
+        if (_div == 0 || _div >= divRows.Length) {
+            return;
+        }
 
         auto logpre = "CoroUpdateDivFromQ(" + _div + ") | ";
+#if DEV
+        // trace(logpre + "Got div.");
+#endif
 
         auto _row = divRows[_div - 1];
         _row.lastUpdateStart = Time::get_Now();
@@ -297,7 +314,10 @@ namespace DataManager {
 
         ApiUpdateCotdPlayerRank();
 
-        if (cotdLatest_PlayerRank["records"].Length > 0) {
+        // fire off coro for updating histogram if we want that
+        startnew(CoroUpdateAllTimesAroundPlayer);
+
+        if (!IsJsonNull(cotdLatest_PlayerRank) && cotdLatest_PlayerRank["records"].Length > 0) {
             uint pRank = cotdLatest_PlayerRank["records"][0]["rank"];
             playerDivRow.div = Math::Ceil(pRank / 64.0);
 
@@ -310,6 +330,49 @@ namespace DataManager {
         }
 
         playerDivRow.lastUpdateDone = Time::get_Now();
+    }
+
+    class UpdateTimesForHist {
+        uint ix;
+        int rank;
+        UpdateTimesForHist(uint ix, int rank) {
+            this.ix = ix;
+            this.rank = rank < 1 ? 1 : rank;
+        }
+    }
+
+    void CoroUpdateAllTimesAroundPlayer() {
+        if (Setting_HudShowHistogram && !IsJsonNull(cotdLatest_PlayerRank)) {
+            int pRank = 101;
+            if (cotdLatest_PlayerRank["records"].Length > 0) {
+                pRank = cotdLatest_PlayerRank["records"][0]["rank"];
+            }
+            if (pRank <= 100) {
+                pRank = 101;
+            }
+            if (pRank > 100 && pRank > GetCotdTotalPlayers() - 100) {
+                pRank = GetCotdTotalPlayers() - 100;
+            }
+
+            startnew(_CoroUpdateManyTimesFromRank, UpdateTimesForHist(0, pRank - 100));
+            startnew(_CoroUpdateManyTimesFromRank, UpdateTimesForHist(100, pRank));
+        }
+    }
+
+    void _CoroUpdateManyTimesFromRank(ref@ _args) {
+        auto args = cast<UpdateTimesForHist@>(_args);
+        auto timesData = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, 100, args.rank - 1);
+        if (IsJsonNull(timesData)) {
+            trace("[_CoroUpdateManyTimesFromRank]: timesData was null!");
+            return;
+        }
+
+        uint ixUpper = timesData.Length;
+        // if (ixUpper > 100 + args.ix) { ixUpper = 100 + args.ix; }
+        for (uint i = 0; i < Math::Min(100, ixUpper); i++) {
+            cotd_TimesForHistogram[args.ix + i] = timesData[i]["score"];
+            // trace("_CoroUpdateManyTimesFromRank: " + tostring(cotd_TimesForHistogram[args.ix + i]));
+        }
     }
 
     uint GetDivToUpdateFromQ() {
@@ -334,20 +397,20 @@ namespace DataManager {
     /* DEV helpers */
 
     void LoopDevPrintState() {
-        float multiplier = 1.1f;
-        while (true) {
-            sleep(sleepMs * multiplier);
-            multiplier *= multiplier;
-            // throw(")");
-            print("GetChallenge(): " + Json::Write(GetChallenge()));
-            print("GetChallengeName(): " + GetChallengeName());
-            print("GetChallengeDateAndNumber(): " + tostring(GetChallengeDateAndNumber()));
-            print("GetChallengeId(): " + tostring(GetChallengeId()));
-            print("GetCotdTotalPlayers(): " + tostring(GetCotdTotalPlayers()));
-            // print("divRows.Length: " + divRows.Length);
-            print("cotdLatest_PlayerRank: " + Json::Write(cotdLatest_PlayerRank));
-            print("cotdLatest_MapId: " + Json::Write(cotdLatest_MapId));
-        }
+        // float multiplier = 1.1f;
+        // while (true) {
+        //     sleep(sleepMs * multiplier);
+        //     multiplier *= multiplier;
+        //     // throw(")");
+        //     print("GetChallenge(): " + Json::Write(GetChallenge()));
+        //     print("GetChallengeName(): " + GetChallengeName());
+        //     print("GetChallengeDateAndNumber(): " + tostring(GetChallengeDateAndNumber()));
+        //     print("GetChallengeId(): " + tostring(GetChallengeId()));
+        //     print("GetCotdTotalPlayers(): " + tostring(GetCotdTotalPlayers()));
+        //     // print("divRows.Length: " + divRows.Length);
+        //     print("cotdLatest_PlayerRank: " + Json::Write(cotdLatest_PlayerRank));
+        //     print("cotdLatest_MapId: " + Json::Write(cotdLatest_MapId));
+        // }
     }
 #endif
 }
