@@ -238,6 +238,14 @@ namespace DataManager {
         return IsJsonNull(pr) ? 0 : pr['cardinal'];
     }
 
+    uint GetCotdTotalDivs() {
+        return Math::Ceil(GetCotdTotalPlayers() / 64.0);
+    }
+
+    uint GetCotdLastDivPop() {
+        return GetCotdTotalPlayers() % 64;
+    }
+
     /* Update divisions from API */
     void ApiUpdateCotdDivRows() {
         RenewActiveDivs();

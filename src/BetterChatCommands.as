@@ -38,9 +38,15 @@ namespace BcCommands {
 
             auto playerDiv = DataManager::playerDivRow.div;
 
+            // Generates {I/We} {was/are/am}
+            string pronounTense =
+                DataManager::gi.IsCotdKO()
+                    ? "We are"
+                    : (DataManager::gi.IsCotdQuali() ? "I am" : "I was");
+
             if (playerDiv > 0) {
                 msg += "$fff | ";
-                msg += CGreen.ManiaColor + "We are in Div " + playerDiv + "$fff |";
+                msg += CGreen.ManiaColor + pronounTense + " in Div " + playerDiv + " of " + DataManager::GetCotdTotalDivs() + "$fff |";
             }
 
             if (playerDiv > 2) {
@@ -63,11 +69,14 @@ namespace BcCommands {
                 msg += "$fad" + "Div " + (playerDiv + 1) + " Cutoff: " + "$aaf" + DataManager::divRows[playerDiv].FmtTime();
             }
 
+            msg += "\n$fff | ";
+            msg += "$fad" + "Last div (" + DataManager::GetCotdTotalDivs() + "): $aaf" + DataManager::GetCotdLastDivPop() + "$fad players.";
+
             if (this.send)
                 _SendMsg(msg);
             else
                 _LocalMsg(msg);
-            print(c_green + "[TellCotdCommand.Run] (" + text + ") | Msg: " + msg);
+            // print(c_green + "[TellCotdCommand.Run] (" + text + ") | Msg: " + msg);
         }
     }
 
@@ -82,8 +91,6 @@ namespace BcCommands {
         BetterChat::RegisterCommand("tell-cotd", @TellCotdCommand(true));
         print(c_green + "[RegisterBcCommands] Done.");
     }
-
-
 }
 
 #endif
