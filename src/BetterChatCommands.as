@@ -26,7 +26,8 @@ namespace BcCommands {
         }
 
         string Description() {
-            return "Tells chat which division this is and some COTD stats.";
+            auto _action = send ? "Tells chat" : "Prints";
+            return _action + " which division this is and COTD cutoff stats.";
         }
 
         void Run(const string &in text) {

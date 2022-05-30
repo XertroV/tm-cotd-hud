@@ -40,7 +40,7 @@ namespace Histogram {
         // draw bg
         nvg::BeginPath();
         nvg::Rect(pos.x, pos.y, size.x, size.y);
-        nvg::FillColor(BG_COL * (sTabHudHistogramActive.Either() ? 3. : 1.));
+        nvg::FillColor(BG_COL);
         nvg::Fill();
         nvg::ClosePath();
 
