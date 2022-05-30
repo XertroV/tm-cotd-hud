@@ -15,34 +15,51 @@ bool Setting_HudWindowLocked = true;
 [Setting category="HUD" name="Show deltas?" description="Example: `-0:02.252` or `+0:11.002`"]
 bool Setting_HudShowDeltas = true;
 
-[Setting category="HUD" name="Show div 1 cutoff?"]
-bool Setting_HudShowDiv1Cutoff = true;
+[Setting category="HUD" name="Show cutoffs for how many top divs?" min="0" max="5" description="0: No top div cutoffs. 1: Div 1 cutoff. 2: Cutoffs for Divs 1 and 2. etc"]
+int Setting_HudShowTopDivCutoffs = 1;
 
 [Setting category="HUD" name="Show your current div and time?"]
 bool Setting_HudShowPlayerDiv = true;
 
 [Setting category="HUD" name="Show cutoffs for how many higher divs?" min="0" max="5" description="0: No divs with cutoffs above your time. 1: The cutoff for the div above yours. 2: That one and the next div up. etc"]
-uint Setting_HudShowAboveDiv = 1;
+int Setting_HudShowAboveDiv = 1;
 
 [Setting category="HUD" name="Show cutoffs for how many lower divs?" min="0" max="5" description="0: No divs with cutoffs below your time. 1: The cutoff for your div. 2: Your div and the one below it. etc"]
-uint Setting_HudShowPlayerDivCutoff = 1;
+int Setting_HudShowBelowDiv = 1;
 
 [Setting category="HUD" name="Show cutoffs for all divs?" description="Yup. ALL of them."]
 bool Setting_HudShowAllDivs = false;
 
+[Setting category="HUD" name="Show last div population?" description="..."]
+bool Setting_HudShowLastDivPop = false;
 
 
-[Setting category="HUD Histogram" name="Show HUD Histogram?"]
+
+// [Setting category="HUD Histogram" name="Show HUD Histogram?" description="Shows a histogram graphing the distribution of 200 players' times. Typically those will be the 100 players above you and the 99 players below you. This is useful to see if there are any *breakpoints* that are important to pass (where you would substantially improve in ranking). If you are in the top or bottom 100 players, then the top or bottom 200 times are used instead."]
+[Setting hidden]
 bool Setting_HudShowHistogram = true;
 
-[Setting category="HUD Histogram" name="Position of HUD Histogram?"]
+// [Setting category="HUD Histogram" name="How many bars in the histogram?" min="10" max="100" description="aka. 'bins' or 'buckets'. If set to 25 then the times that appear on the histogram will be grouped into 25 bins, thus there will be 25 vertical bars in the histogram."]
+[Setting hidden]
+uint Setting_HudHistogramBuckets = 42;
+
+// [Setting category="HUD Histogram" name="Position of HUD Histogram?"]
+[Setting hidden]
 vec2 Setting_HudHistogramPos = vec2(.85, .85);
 
-[Setting category="HUD Histogram" name="Size of HUD Histogram?"]
+// [Setting category="HUD Histogram" name="Size of HUD Histogram?"]
+[Setting hidden]
 vec2 Setting_HudHistogramSize = vec2(.1, .1);
 
 
 
-
-[Setting category="Dev Features" name="Show HUD even if interface is hidden?" description="This only will ignore whether the interface is hidden or not. You should also enable 'Show HUD Always' if you want the HUD to be for-sure visible."]
-bool Setting_ShowHudEvenIfInterfaceHidden = false;
+void SetDevSettings() {
+    Setting_ShowHudAlways = true;
+    Setting_HudShowAboveDiv = 3;
+    Setting_HudShowBelowDiv = 3;
+    Setting_HudShowTopDivCutoffs = 3;
+    Setting_HudShowAllDivs = true;
+    Setting_HudShowHistogram = true;
+    Setting_HudHistogramPos = vec2(.77, .75);
+    Setting_HudHistogramSize = vec2(.2, .2);
+}

@@ -7,9 +7,15 @@ void Main() {
     }
 
     startnew(DataManager::Main);
+    startnew(SettingsCustom::LoopSetTabsInactive);
 
 #if DEPENDENCY_BETTERCHAT
     startnew(BcCommands::Main);
+#endif
+
+#if DEV
+    // TestTmIoGetMapCaching();
+    // SetDevSettings();
 #endif
 
 #if UNIT_TEST || DEV
@@ -29,13 +35,21 @@ void RenderInterface() {
     CotdHud::RenderInterface();
 }
 
-void RenderMenu() {}
+void RenderMenu() {
+    CotdHud::RenderMenu();
+}
 
-void RenderMainMenu() {}
+void RenderMainMenu() {
+    CotdHud::RenderMainMenu();
+}
 
 // void RenderSettings() {}
 
-void OnSettingsChanged() {}
+void OnSettingsChanged() {
+    trace("Main.OnSettingsChanged");
+    DataManager::OnSettingsChanged();
+    CotdHud::OnSettingsChanged();
+}
 
 /* Plan:
 
@@ -60,4 +74,19 @@ Watchers:
 
 CTrackMania@ GetTmApp() {
     return cast<CTrackMania>(GetApp());
+}
+
+/* debug / test stuff */
+
+void TestTmIoGetMapCaching() {
+    // TmIoApi@ tmIoApi = TmIoApi("cotd-hud cache testing (by @XertroV)");
+    // uint counter = 0;
+    // while (true) {
+    //     counter++;
+    //     trace("Should get _GetTotdMap cached");
+    //     auto totd = tmIoApi._GetTotdMap();
+    //     auto ix = totd["days"].Length - 1;
+    //     print(">> todays cotd data: " + Json::Write(totd["days"][ix]));
+    //     sleep(counter * counter * 1000);
+    // }
 }

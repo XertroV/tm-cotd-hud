@@ -19,23 +19,25 @@ namespace TmIo {
 
 class TmIoApi {
     string userAgent;
-#if DEV
+#if DEV || UNIT_TEST
     string BASEURL = "http://localhost:44444";
 #else
     string BASEURL = "https://trackmania.io/api";
 #endif
-    Debouncer@ debounce = Debouncer();
-    dictionary@ cache = dictionary();
+    // Debouncer@ debounce = Debouncer();
+    // dictionary@ cache = dictionary();
+
+    Json::Value res_getTotdMap = Json::Parse("null");
 
     TmIoApi(const string &in userAgent) {
         this.userAgent = userAgent;
     }
 
-    string CachedOr(const string &in key, const string _default) {
-        trace("[TmIoApi] cache get: " + key);
-        string _r = "";
-        return this.cache.Get(key, _r) ? _r : _default;
-    }
+    // string CachedOr(const string &in key, const string _default) {
+    //     trace("[TmIoApi] cache get: " + key);
+    //     string _r = "";
+    //     return this.cache.Get(key, _r) ? _r : _default;
+    // }
 
     Net::HttpRequest@ Req() {
         auto req = Net::HttpRequest();
@@ -63,18 +65,21 @@ class TmIoApi {
     }
 
     Json::Value _GetTotdMap() {
-        return RunR(GetR("/totd/0"));
+        if (IsJsonNull(res_getTotdMap)) {
+            res_getTotdMap = RunR(GetR("/totd/0"));
+        }
+        return res_getTotdMap;
     }
 
     string GetTotdMapId() {
-        if (!debounce.CanProceed("GetTotdMapId", 3600 * 1000 /*1hr*/)) {
-            return CachedOr("GetTotdMapId", "");
-        }
+        // if (!debounce.CanProceed("GetTotdMapId", 3600 * 1000 /*1hr*/)) {
+        //     return CachedOr("GetTotdMapId", "");
+        // }
         try {
             auto totd = this._GetTotdMap();
             auto ix = totd["days"].Length - 1;
             string ret = totd["days"][ix]["map"]["mapUid"];
-            this.cache.Set("GetTotdMapId", ret);
+            // this.cache.Set("GetTotdMapId", ret);
             return ret;
         } catch {
             warn("[GetTotdMapId] Exception: " + getExceptionInfo() + "\n");

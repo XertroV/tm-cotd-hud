@@ -8,4 +8,6 @@ version  = "0.0.1"
 dependencies = [ "NadeoServices" ]
 imports = [ "Permissions.as", "Time.as" ]
 defines = [ "DEV" ]
+# defines = [ "DEV", "UNIT_TEST" ]
+# defines = [ "UNIT_TEST" ]
 optional_dependencies = [ "BetterChat" ]

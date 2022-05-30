@@ -1,6 +1,7 @@
 const string c_green = "\\$3f0";
 
 Color@ CGreen = Color(vec3(0.082, 0.961, 0.208));  // #15F535
+Color@ CBlack = Color(vec3(0, 0, 0));  // #15F535
 
 enum ColorTy {
     RGB,
@@ -8,6 +9,13 @@ enum ColorTy {
     XYZ,
     HSL,
 }
+
+ColorTy[] allColorTys = {
+    ColorTy::RGB,
+    ColorTy::LAB,
+    ColorTy::XYZ,
+    ColorTy::HSL
+};
 
 string ColorTyStr(ColorTy ty) {
     switch (ty) {
@@ -19,8 +27,16 @@ string ColorTyStr(ColorTy ty) {
     return "UNK";
 }
 
+string F3(float v) {
+    return Text::Format("%.3f", v);
+}
+
 string Vec3ToStr(vec3 v) {
-    return "vec3(" + v.x + ", " + v.y + ", " + v.z + ")";
+    return "vec3(" + F3(v.x) + ", " + F3(v.y) + ", " + F3(v.z) + ")";
+}
+
+vec4 vec3To4(vec3 v, float w) {
+    return vec4(v.x, v.y, v.z, w);
 }
 
 vec3 rgbToXYZ(vec3 v) {
@@ -122,21 +138,31 @@ vec3 hslToRGB(vec3 hsl) {
 
 
 
-string ToSingleHex(float v) {
+uint8 ToSingleHexCol(float v) {
     if (v < 0) { v = 0; }
     if (v > 15.9999) { v = 15.9999; }
-    int u = Math::Floor(v);
-    if (u < 10) { return "" + u; }
-    switch (u) {
-        case 10: return "a";
-        case 11: return "b";
-        case 12: return "c";
-        case 13: return "d";
-        case 14: return "e";
-        case 15: return "f";
-    }
-    // should never happen
-    return "F";
+    int u = uint8(Math::Floor(v));
+    if (u < 10) { return 48 + u; }  /* 48 = '0' */
+    return 87 + u;  /* u>=10 and 97 = 'a' */
+    // switch (u) {
+    //     case 10: return "a";
+    //     case 11: return "b";
+    //     case 12: return "c";
+    //     case 13: return "d";
+    //     case 14: return "e";
+    //     case 15: return "f";
+    // }
+    // // should never happen
+    // return "F";
+}
+
+string rgbToHexTri(vec3 rgb) {
+    auto v = rgb * 16;
+    string ret = "000";
+    ret[0] = ToSingleHexCol(v.x);
+    ret[1] = ToSingleHexCol(v.y);
+    ret[2] = ToSingleHexCol(v.z);
+    return ret;
 }
 
 
@@ -152,16 +178,21 @@ class Color {
         return "Color(" + Vec3ToStr(v) + ", " + ColorTyStr(ty) + ")";
     }
 
+    vec4 rgba(float a) {
+        auto _v = this.rgb;
+        return vec4(_v.x, _v.y, _v.z, a);
+    }
+
     string get_ManiaColor() {
         return "$" + this.HexTri;
     }
 
     string get_HexTri() {
-        auto v = this.rgb * 15.9999;
-        return ""
-            + ToSingleHex(v.x)
-            + ToSingleHex(v.y)
-            + ToSingleHex(v.z);
+        return rgbToHexTri(this.rgb);
+        // return ""
+        //     + ToSingleHexCol(v.x)
+        //     + ToSingleHexCol(v.y)
+        //     + ToSingleHexCol(v.z);
     }
 
     void AsLAB() {
@@ -186,6 +217,49 @@ class Color {
         if (ty == ColorTy::XYZ) { v = rgbToHSL(xyzToRGB(v)); }
         if (ty == ColorTy::LAB) { v = rgbToHSL(xyzToRGB(labToXYZ(v))); }
         ty = ColorTy::HSL;
+    }
+
+    void AsXYZ() {
+        if (ty == ColorTy::XYZ) { return; }
+        if (ty == ColorTy::RGB) { v = rgbToXYZ(v); }
+        if (ty == ColorTy::LAB) { v = labToXYZ(v); }
+        if (ty == ColorTy::HSL) { v = rgbToXYZ(hslToRGB(v)); }
+        ty = ColorTy::XYZ;
+    }
+
+    Color@ ToLAB() {
+        auto ret = Color(v, this.ty);
+        ret.AsLAB();
+        return ret;
+    }
+
+    Color@ ToXYZ() {
+        auto ret = Color(v, this.ty);
+        ret.AsXYZ();
+        return ret;
+    }
+
+    Color@ ToRGB() {
+        auto ret = Color(v, this.ty);
+        ret.AsRGB();
+        return ret;
+    }
+
+    Color@ ToHSL() {
+        auto ret = Color(v, this.ty);
+        ret.AsHSL();
+        return ret;
+    }
+
+    Color@ ToMode(ColorTy mode) {
+        switch (mode) {
+            case ColorTy::RGB: return ToRGB();
+            case ColorTy::XYZ: return ToXYZ();
+            case ColorTy::LAB: return ToLAB();
+            case ColorTy::HSL: return ToHSL();
+        }
+        throw("Unknown ColorTy mode: " + mode);
+        return ToRGB();
     }
 
     vec3 get_rgb() {
@@ -218,7 +292,7 @@ Color@[] gradientColors(Color@ _from, uint length, Color@ _to) {
         throw("Cannot generate gradient between colors of different types! " + _from.ToString() + ", " + _to.ToString());
     }
     for (uint i = 0; i < length; i++) {
-        float t = float(i) / float(length - 1);
+        float t = length <= 1 ? 1 : float(i) / float(length - 1);
         @ret[i] = Color(Math::Lerp(_from.v, _to.v, t), ty);
     }
     return ret;
@@ -226,17 +300,47 @@ Color@[] gradientColors(Color@ _from, uint length, Color@ _to) {
 
 string TextGradient(const string &in text, Color@ _from, Color@ _to) {
     auto colors = gradientColors(_from, text.Length, _to);
-    if (colors.Length != text.Length) {
+    if (colors.Length != uint(text.Length)) {
         throw("wrong length of gradient list");
     }
     string ret = "";
-    for (uint i = 0; i < text.Length; i++) {
+    for (uint i = 0; i < uint(text.Length); i++) {
         ret += colors[i].ManiaColor + text.SubStr(i, 1);
     }
     // ret += "$z";
     return ret;
 }
 
+
+
+string TextGradient2Point0(Color@[] colors, uint nColors, ColorTy mode, string &in text) {
+    float d = float(nColors - 1);  /* divisor */
+    float colorPeriod = float(text.Length) / d;  /* how often a new gradient segment comes into effect */
+    /* loop through gradient pairs */
+    Color@ a, b;
+    string ret = "";
+    uint ix = 0, start, end;
+    for (uint i = 0; i < nColors - 1; i++) {
+        @a = colors[i].ToMode(mode);
+        @b = colors[i+1].ToMode(mode);
+        start = uint(Math::Round(float(i) * colorPeriod));
+        end = uint(Math::Max(Math::Round(float(i+1.) * colorPeriod), 0));
+        ret += TextGradient(text.SubStr(start, end - start), a, b);
+    }
+    return ret;
+}
+
+
+string EscapeRawToOpenPlanet(const string &in raw) {
+    return raw.Replace("$$", "_^&^_").Replace("$", "\\$").Replace("_^&^_", "\\$$");
+}
+
+
+void tPrint(const string &in msg) {
+#if UNIT_TEST
+    print("\\$b1f" + msg);
+#endif
+}
 
 
 #if UNIT_TEST || DEV
@@ -254,27 +358,31 @@ void TestOneColor(vec3 rgb) {
     vec3 xyz2 = labToXYZ(lab);
     vec3 rgb2 = xyzToRGB(xyz2);
     vec3 diff = rgb2 - rgb;
-    print("rgb: " + Vec3ToStr(rgb));
-    print("xyz: " + Vec3ToStr(xyz));
-    print("lab: " + Vec3ToStr(lab));
-    print("xyz2: " + Vec3ToStr(xyz2));
-    print("rgb2: " + Vec3ToStr(rgb2));
-    print("diff: " + Vec3ToStr(diff));
-    print("C(rgb).ManiaColor: \\" + Color(rgb).ManiaColor + " <<<< test ");
+    assert(diff.Length() < 0.001, "rgb2-rgb diff");
+    tPrint("rgb: " + Vec3ToStr(rgb));
+    tPrint("xyz: " + Vec3ToStr(xyz));
+    tPrint("lab: " + Vec3ToStr(lab));
+    tPrint("xyz2: " + Vec3ToStr(xyz2));
+    tPrint("rgb2: " + Vec3ToStr(rgb2));
+    tPrint("diff: " + Vec3ToStr(diff));
+    tPrint("C(rgb).ManiaColor: \\" + Color(rgb).ManiaColor + " <<<< test ");
 
     vec3 hsl = rgbToHSL(rgb);
     vec3 rgb3 = hslToRGB(hsl);
     diff = rgb3 - rgb;
-    print("rgb: " + Vec3ToStr(rgb));
-    print("hsl: " + Vec3ToStr(hsl));
-    print("rgb3: " + Vec3ToStr(rgb3));
-    print("diff: " + Vec3ToStr(diff));
+    tPrint("rgb: " + Vec3ToStr(rgb));
+    tPrint("hsl: " + Vec3ToStr(hsl));
+    tPrint("rgb3: " + Vec3ToStr(rgb3));
+    tPrint("diff: " + Vec3ToStr(diff));
+    assert(diff.Length() < 0.001, "rgb3-rgb diff");
 }
 
 void TestHexTri() {
     auto c = Color(vec3(1, .51, 0));
     auto ht = c.HexTri;
     assert(ht == "f80", 'ht /= "f80"; ht=' + ht + ' from ' + c.ToString());
+    assert(rgbToHexTri(vec3(1, 1, 1)) == "fff", "hextri: fff");
+    assert(rgbToHexTri(vec3(1./16., 2/16., 3/16.)) == "123", "hextri: 123");
 }
 
 void assert(bool condition, string msg) {

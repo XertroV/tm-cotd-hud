@@ -1,9 +1,10 @@
 
 namespace DataManager {
-    const Json::Value JSON_NULL = Json::Parse("null");
-    const uint Q_SIZE = 100;
+    const uint Q_SIZE = 200;
 
-    GameInfo@ gi;
+    const uint[] TOP_5 = {1, 2, 3, 4, 5};
+
+    GameInfo@ gi = GameInfo();
     TmIoApi@ tmIoApi = TmIoApi("cotd-hud (by @XertroV)");
     CotdApi@ api;
 
@@ -24,6 +25,8 @@ namespace DataManager {
 
     /* if we are showing a histogram, we'll need to track the 100 times above and below us */
     uint[] cotd_TimesForHistogram = array<uint>(200, 0);
+    Histogram::HistData@ cotd_HistogramData;
+    int2 cotd_HistogramMinMaxRank = int2(0, 0);
 
     /* queues for coros */
 
@@ -35,13 +38,7 @@ namespace DataManager {
 
     string bcFavorites = "";
 
-    /* DEV variables */
-#if DEV
-    uint sleepMs = 1000;
-#endif
-
     void Main() {
-        @gi = GameInfo();
         // This can't be run on script load -- 'Unbound function called' exception
         @api = CotdApi();
 
@@ -76,7 +73,7 @@ namespace DataManager {
     }
 
     void Update(float dt) {
-        try {
+        // try {
             isCotd.Set(gi.IsCotd());
 
             if (isCotd.v) {
@@ -89,14 +86,20 @@ namespace DataManager {
                 startnew(SetCurrentCotdData);
                 startnew(UpdateDivs);
             }
-        } catch {
-            warn("Exception in Update: " + getExceptionInfo());
-        }
+        // } catch {
+        //     warn("Exception in Update: " + getExceptionInfo());
+        // }
+    }
+
+
+    void OnSettingsChanged() {
+        RegenHistogramData();
+        RenewActiveDivs();
     }
 
 
     void InitDivRows() {
-        for (uint i = 0; i < 100; i++) {
+        for (uint i = 0; i < divRows.Length; i++) {
             @divRows[i] = DivRow(i + 1);
         }
     }
@@ -105,15 +108,16 @@ namespace DataManager {
     void LoopUpdateCotdStatus() {
         while (true) {
             // do these in series b/c we don't care how long it takes.
-            ApiUpdateCotdStatus();
-            // dependent on status
-            CoroUpdatePlayerDiv();
-#if DEV
-            // todo: just for debug
-            UpdateDivs();
-#endif
+            startnew(_FullUpdateCotdStatsSeries);
             sleep(3600 * 1000 /* 1hr */);
         }
+    }
+
+    void _FullUpdateCotdStatsSeries() {
+        ApiUpdateCotdStatus();
+        // dependent on status
+        CoroUpdatePlayerDiv();
+        UpdateDivs();
     }
 
     void LoopUpdateBetterChatFavs() {
@@ -209,6 +213,7 @@ namespace DataManager {
     }
 
     bool _ViewPriorChallenge() {
+        if (Setting_AdvCheckPriorCotd) { return true; }
         auto c = GetChallenge();
         if (IsJsonNull(c)) { return false; }
         int64 nowTs = Time::get_Stamp();
@@ -220,7 +225,7 @@ namespace DataManager {
         auto c = GetChallenge();
         if (IsJsonNull(c)) { return 0; }
         int offset = isCotd.v || !_ViewPriorChallenge() ? 0 : (-1);
-        return IsJsonNull(c) ? 0 : c["id"] + offset;
+        return IsJsonNull(c) ? 0 : int(c["id"]) + offset;
     }
 
     /* Set COTD Players Rank */
@@ -233,13 +238,18 @@ namespace DataManager {
         trace("[ApiUpdateCotdPlayerRank] from api got: " + Json::Write(cotdLatest_PlayerRank));
     }
 
+    uint GetCotdPlayerRank() {
+        auto pr = cotdLatest_PlayerRank;
+        return IsJsonNull(pr) ? 0 : pr['records'].Length > 0 ? pr['records'][0]['rank'] : 0;
+    }
+
     uint GetCotdTotalPlayers() {
         auto pr = cotdLatest_PlayerRank;
         return IsJsonNull(pr) ? 0 : pr['cardinal'];
     }
 
     uint GetCotdTotalDivs() {
-        return Math::Ceil(GetCotdTotalPlayers() / 64.0);
+        return uint(Math::Ceil(GetCotdTotalPlayers() / 64.0));
     }
 
     uint GetCotdLastDivPop() {
@@ -253,22 +263,75 @@ namespace DataManager {
             PutDivToUpdateInQ(cotd_ActiveDivRows[i]);
             startnew(CoroUpdateDivFromQ);
         }
+        for (uint i = 0; i < TOP_5.Length; i++) {
+            _AddDivToQueueIfNotActive(i);
+        }
+        uint pDiv = playerDivRow.div;
+        // add divs around player. make sure to avoid re-requesting top 5
+        for (uint i = Math::Max(5, pDiv - 3); i < pDiv + 3; i++) {
+            _AddDivToQueueIfNotActive(i);
+        }
+    }
+
+    void _AddDivToQueueIfNotActive(uint i) {
+        if (cotd_ActiveDivRows.Find(i) < 0) {
+            PutDivToUpdateInQ(i);
+            startnew(CoroUpdateDivFromQ);
+        }
     }
 
     /* set active div rows based on player rank, settings, etc */
     void RenewActiveDivs() {
-        // todo: active div rows based on player rank, settings, etc
-        cotd_ActiveDivRows = array<uint>(99);
-        uint _d;
-        for (uint i = 0; i < cotd_ActiveDivRows.Length; i++) {
-            _d = i + 1;  // the div
-            // if (_d > 2) { break; }
-            // IsDivVisible()
-            if (true) {
-                cotd_ActiveDivRows[i] = _d;
-                /* this is a bit of a cheat -- the div won't be drawn if it doesn't have a valid time */
-                divRows[i].visible = true;
+        trace("RenewActiveDivs");
+        // while (divRows[0] is null) { yield(); }
+        if (Setting_HudShowAllDivs) {
+            cotd_ActiveDivRows = array<uint>(99);
+            for (uint i = 0; i < cotd_ActiveDivRows.Length; i++) {
+                cotd_ActiveDivRows[i] = i + 1;
             }
+        } else {
+            uint pDiv = playerDivRow.div;
+            int min, max;
+            min = Math::Max(1, pDiv - Setting_HudShowAboveDiv);
+            max = Math::Min(GetCotdTotalDivs(), pDiv - 1 + Setting_HudShowBelowDiv);
+            int size = Math::Max(0, max - min + 1);
+            uint[][] groups = {{min, max}};
+            if (Setting_HudShowTopDivCutoffs > 0) {
+                if (Setting_HudShowTopDivCutoffs > min) {
+                    // one contiguous group
+                    auto upper = Math::Max(max, Setting_HudShowTopDivCutoffs);
+                    groups = {{1, upper}};
+                    size = upper;
+                } else {
+                    groups = {{1, Setting_HudShowTopDivCutoffs}, {min, max}};
+                    size += Setting_HudShowTopDivCutoffs;
+                }
+            }
+            cotd_ActiveDivRows = array<uint>(size);
+            uint ix = 0;
+            uint totalSize = 0;
+            for (uint i = 0; i < groups.Length; i++) {
+                auto g = groups[i];
+                min = g[0];
+                max = g[1];
+                if (min > max) { continue; }
+                totalSize += (max - min + 1);
+                for (int j = min; j <= max; j++) {
+                    cotd_ActiveDivRows[ix++] = j;
+                }
+            }
+            if (ix != totalSize || int(totalSize) != size) {
+                throw("RenewActiveDivs size error: " + ix + ", " + totalSize + ", " + size);
+            }
+        }
+        uint _d; // the div
+        for (uint i = 0; i < divRows.Length; i++) {
+            if (divRows[i] !is null) { divRows[i].visible = false; }
+        }
+        for (uint i = 0; i < cotd_ActiveDivRows.Length; i++) {
+            _d = cotd_ActiveDivRows[i];
+            /* this is a bit of a cheat -- the div won't be drawn if it doesn't have a valid time */
+            divRows[_d - 1].visible = true;
         }
     }
 
@@ -327,7 +390,7 @@ namespace DataManager {
 
         if (!IsJsonNull(cotdLatest_PlayerRank) && cotdLatest_PlayerRank["records"].Length > 0) {
             uint pRank = cotdLatest_PlayerRank["records"][0]["rank"];
-            playerDivRow.div = Math::Ceil(pRank / 64.0);
+            playerDivRow.div = uint(Math::Ceil(pRank / 64.0));
 
             uint pScore = cotdLatest_PlayerRank["records"][0]["score"];
             playerDivRow.timeMs = pScore;
@@ -358,10 +421,11 @@ namespace DataManager {
             if (pRank <= 100) {
                 pRank = 101;
             }
-            if (pRank > 100 && pRank > GetCotdTotalPlayers() - 100) {
-                pRank = GetCotdTotalPlayers() - 100;
+            if (pRank > 100 && pRank > int(GetCotdTotalPlayers()) - 99) {
+                pRank = GetCotdTotalPlayers() - 99;
             }
 
+            cotd_HistogramMinMaxRank = int2(pRank - 100, pRank + 99);
             startnew(_CoroUpdateManyTimesFromRank, UpdateTimesForHist(0, pRank - 100));
             startnew(_CoroUpdateManyTimesFromRank, UpdateTimesForHist(100, pRank));
         }
@@ -375,12 +439,21 @@ namespace DataManager {
             return;
         }
 
-        uint ixUpper = timesData.Length;
+        uint ixUpper = Math::Min(100, timesData.Length);
         // if (ixUpper > 100 + args.ix) { ixUpper = 100 + args.ix; }
-        for (uint i = 0; i < Math::Min(100, ixUpper); i++) {
-            cotd_TimesForHistogram[args.ix + i] = timesData[i]["score"];
+        uint rTime;
+        for (uint i = 0; i < ixUpper; i++) {
+            rTime = timesData[i]["score"];
+            /* filter out times that are more than 90s (since they're mostly noise WRT COTD) */
+            if (rTime > 90000) { continue; }
+            cotd_TimesForHistogram[args.ix + i] = rTime;
             // trace("_CoroUpdateManyTimesFromRank: " + tostring(cotd_TimesForHistogram[args.ix + i]));
         }
+        RegenHistogramData();
+    }
+
+    void RegenHistogramData() {
+        @cotd_HistogramData = Histogram::RawDataToHistData(cotd_TimesForHistogram, Setting_HudHistogramBuckets);
     }
 
     uint GetDivToUpdateFromQ() {
@@ -404,10 +477,12 @@ namespace DataManager {
 #if DEV
     /* DEV helpers */
 
+    uint defPrintSleepMs = 1000;
+
     void LoopDevPrintState() {
         // float multiplier = 1.1f;
         // while (true) {
-        //     sleep(sleepMs * multiplier);
+        //     sleep(defPrintSleepMs * multiplier);
         //     multiplier *= multiplier;
         //     // throw(")");
         //     print("GetChallenge(): " + Json::Write(GetChallenge()));

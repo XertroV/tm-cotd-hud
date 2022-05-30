@@ -33,6 +33,10 @@ class BoolWP {
         return !this.value && this.prev;
     }
 
+    bool Either() {
+        return this.value || this.prev;
+    }
+
     bool get_v() {
         return this.value;
     }

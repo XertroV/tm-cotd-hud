@@ -25,24 +25,34 @@ namespace CotdHud {
     GameInfo@ gi = GameInfo();
 
     void Render() {
-        if (IsVisible() && Setting_ShowHudEvenIfInterfaceHidden) {
+        if (Setting_ShowHudEvenIfInterfaceHidden) {
             _RenderAll();
         }
     }
 
     void RenderInterface() {
-        if (!IsVisible() || Setting_ShowHudEvenIfInterfaceHidden) {
-            /* we check Setting_ShowHudEvenIfInterfaceHidden here because
-            * we don't want to double-render.
-            */
-            return;
+        /* we check Setting_ShowHudEvenIfInterfaceHidden here because
+        * we don't want to double-render.
+        */
+        if (!Setting_ShowHudEvenIfInterfaceHidden) {
+            _RenderAll();
         }
-        _RenderAll();
     }
 
     void _RenderAll() {
-        _RenderHUD();
-        _RenderHistogram();
+        if (IsVisible()) {
+            _RenderHUD();
+            _RenderHistogram();
+        } else {
+            _CheckOtherRenderReasons();
+        }
+    }
+
+    /* Will result in double-drawing if called outside _RenderAll() */
+    void _CheckOtherRenderReasons() {
+        if (sTabHudHistogramActive.Either()) {
+            _RenderHistogram();
+        }
     }
 
     void _RenderHUD() {
@@ -51,16 +61,19 @@ namespace CotdHud {
         RenderHeading();
         RenderGlobalStats();
         RenderDivs();
+        RenderLastDivPop();
         UI::End();
     }
 
     void _RenderHistogram() {
-        if (Setting_HudShowHistogram) {
+        if (Setting_HudShowHistogram || sTabHudHistogramActive.Either()) {
             uint[] data = {};
             Histogram::Draw(
                 Setting_HudHistogramPos, Setting_HudHistogramSize,
-                DataManager::cotd_TimesForHistogram, 30,
-                _HistogramColors
+                DataManager::cotd_HistogramMinMaxRank,
+                // DataManager::cotd_TimesForHistogram, 30,
+                _HistogramColors,
+                Histogram::TimeXLabelFmt
                 );
         }
     }
@@ -69,7 +82,7 @@ namespace CotdHud {
         auto pdr = DataManager::playerDivRow;
         // first check if this is the player's bar
         if (Math::Abs(int(pdr.timeMs) - int(score)) < halfBucketWidth) {
-            return vec4(.9, .2, .5, 1);
+            return vec3To4(Setting_HudHistPlayerColor, .8);
         }
         // make sure we actually have times
         if (DataManager::cotd_TimesForHistogram.Length == 0
@@ -80,27 +93,25 @@ namespace CotdHud {
 
         // how many divs?
         uint upperDivIx = 0;
-        auto drs = DataManager::divRows;
-        auto dmTimes = DataManager::cotd_TimesForHistogram;
-        for (uint i = 0; i < drs.Length; i++) {
-            auto dr = drs[i];
+        for (uint i = 0; i < DataManager::divRows.Length; i++) {
+            auto dr = DataManager::divRows[i];
             upperDivIx = i;
-            if (dr.timeMs > dmTimes[0]) {
+            if (dr.timeMs > DataManager::cotd_TimesForHistogram[0]) {
                 break;
             }
         }
 
         /* get actual colors now */
         for (uint d = 0; d < 5; d++) {
-            if (upperDivIx + d >= drs.Length) { break; }
-            if (drs[upperDivIx + d].timeMs > score) {
+            if (upperDivIx + d >= DataManager::divRows.Length) { break; }
+            if (DataManager::divRows[upperDivIx + d].timeMs > score) {
                 switch (d) {
                     // see python function at top of file to generate colors from hex
-                    case 0: return vec4(0.196, 0.733, 0.701, .8);  // #32BBB5
-                    case 1: return vec4(0.141, 0.635, 0.780, .8);  // #24a2c7
-                    case 2: return vec4(0.925, 0.745, 0.878, .8);  // #ECBEE0
-                    case 3: return vec4(0.933, 0.686, 0.102, .8);  // #EEAF1A
-                    case 4: return vec4(0.851, 0.447, 0.125, .8);  // #D97220
+                    case 0: return vec3To4(Setting_HudHistColor1, .8);
+                    case 1: return vec3To4(Setting_HudHistColor2, .8);
+                    case 2: return vec3To4(Setting_HudHistColor3, .8);
+                    case 3: return vec3To4(Setting_HudHistColor4, .8);
+                    case 4: return vec3To4(Setting_HudHistColor5, .8);
                 }
             }
         }
@@ -131,6 +142,13 @@ namespace CotdHud {
         UI::Text("\\$888Updated: " + Text::Format("%.1f", msAgo / 1000.) + " s ago");
     }
 
+    void RenderLastDivPop() {
+        if (Setting_HudShowLastDivPop) {
+            auto p = DataManager::GetCotdTotalPlayers() % 64;
+            UI::Text("Last Div: " + "\\$0e4" + p + "\\$z Players");
+        }
+    }
+
     bool ShouldShowDeltas() {
         return Setting_HudShowDeltas && DataManager::playerDivRow.timeMs < MAX_DIV_TIME;
     }
@@ -141,6 +159,7 @@ namespace CotdHud {
         if (divRows is null) { return; }
         int cols = ShouldShowDeltas() ? 3 : 2;
         bool drawnOnePlusDivs = false;
+        bool drawnPlayerDiv = false;
         if (UI::BeginTable(UI_HUD + "-divs", cols, UI::TableFlags::None)) {
             DivRow@ dr;
             for (uint i = 0; i < divRows.Length; i++) {
@@ -149,11 +168,19 @@ namespace CotdHud {
                 drawnOnePlusDivs = true;
 
                 /* should we draw the player row? */
-                if (playerDr.div == dr.div)
-                    RenderDivRowFromDR(playerDr, true);
+                if (Setting_HudShowPlayerDiv && !drawnPlayerDiv) {
+                    if (playerDr.div <= dr.div) {
+                        RenderDivRowFromDR(playerDr, true);
+                        drawnPlayerDiv = true;
+                    }
+                }
 
                 /* draw div row */
                 RenderDivRowFromDR(dr);
+            }
+            if (Setting_HudShowPlayerDiv && !drawnPlayerDiv && playerDr.div > 0) {
+                RenderDivRowFromDR(playerDr, true);
+                drawnPlayerDiv = drawnOnePlusDivs = true;
             }
             if (!drawnOnePlusDivs) {
                 UI::TableNextRow();
@@ -173,12 +200,25 @@ namespace CotdHud {
         UI::TableNextColumn();
         UI::Text(hl + dr.FmtTime());
         if (ShouldShowDeltas()) {
-            int diff = int(DataManager::playerDivRow.timeMs) - int(dr.timeMs);
-            bool playerAhead = diff < 0;
-            hl = playerAhead ? "\\$d81+" : "\\$3ce-";
-            UI::TableNextColumn();
-            if (diff != 0) {
-                UI::Text(hl + Time::Format(Math::Abs(diff)));
+            if (!isPlayer) {
+                int diff = int(DataManager::playerDivRow.timeMs) - int(dr.timeMs);
+                bool playerAhead = diff < 0;
+                hl = playerAhead ? "\\$d81+" : "\\$3ce-";
+                UI::TableNextColumn();
+                if (diff != 0) {
+                    UI::Text(hl + Time::Format(Math::Abs(diff)));
+                }
+            } else {
+                UI::TableNextColumn();
+                auto r = DataManager::GetCotdPlayerRank();
+                string sfx;
+                switch (r % 10) {
+                    case 1: sfx = "st"; break;
+                    case 2: sfx = "nd"; break;
+                    case 3: sfx = "rd"; break;
+                    default: sfx = "th";
+                }
+                UI::Text("\\$3ec(" + DataManager::GetCotdPlayerRank() + sfx + ")");
             }
         }
     }
@@ -210,4 +250,12 @@ namespace CotdHud {
     void SetNextWindowLocation() {
         // UI::SetNextWindowPos(100, 100, UI::Always);
     }
+
+    void OnSettingsChanged() {
+
+    }
+
+    void RenderMenu() {}
+
+    void RenderMainMenu() {}
 }
