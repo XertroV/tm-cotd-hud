@@ -55,9 +55,17 @@ class CotdApi {
         return CallApiPath("/api/challenges/" + challengeid + "/records/maps/" + mapid + "/players?players[]=" + userId);
     }
 
+    /* see above */
     Json::Value GetPlayersRank(int challengeid, string mapid, const string[]&in userIds) {
         string players = string::Join(userIds, ",");
         return CallApiPath("/api/challenges/" + challengeid + "/records/maps/" + mapid + "/players?players[]=" + players);
+    }
+
+    /* example ret val (list of objs)
+      [{"id":1385,"uid":"179871ef-b462-4f29-a2d8-b2b935646371","name":"Cup of the Day 2022-05-30 #3 - Challenge","scoreDirection":"ASC","startDate":1653987660,"endDate":1653988560,"status":"INIT","resultsVisibility":"PUBLIC","creator":"afe7e1c1-7086-48f7-bde9-a7e320647510","admins":["0060a0c1-2e62-41e7-9db7-c86236af3ac4","54e4dda4-522d-496f-8a8b-fe0d0b5a2a8f","2116b392-d808-4264-923f-2bfcfa60a570","6ce163d5-f240-4741-870b-f2adad843865","5e7b0c82-263b-41d5-8fa4-98d36ad4d57c","a76653e1-998a-4c53-8a91-0a396e15bfb5"],"nbServers":0,"autoScale":true,"nbMaps":1,"leaderboardId":6920,"deletedOn":null,"leaderboardType":"SUM","completeTimeout":5}, ...]
+    */
+    Json::Value GetChallenges(uint offset, uint length) {
+        return CallApiPath("/api/challenges?offset=" + offset + "&length=" + length);
     }
 }
 

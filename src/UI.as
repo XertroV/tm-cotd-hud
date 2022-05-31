@@ -259,3 +259,83 @@ namespace CotdHud {
 
     void RenderMainMenu() {}
 }
+
+
+
+namespace CotdExplorer {
+    bool windowActive = false;
+    string icon = Icons::AreaChart;
+    HistoryDb@ histDb;  /* instantiated in PersistentData */
+
+    void Main() {
+        while (histDb is null) {
+            @histDb = PersistentData::histDb;
+            yield();
+        }
+        startnew(ExplorerManager::ManageHistoricalTotdData);
+    }
+
+    /* window controls */
+
+    bool IsVisible() {
+        return windowActive;
+    }
+
+    void ShowWindow() {
+        windowActive = true;
+        startnew(OnWindowShow);
+    }
+
+    void HideWindow() {
+        windowActive = false;
+        DataManager::cotd_OverrideChallengeId.AsNothing();
+    }
+
+    void ToggleWindow() {
+        if (IsVisible()) { HideWindow(); }
+        else { ShowWindow(); }
+    }
+
+    /* Rendering Top-Level */
+
+    void Render() {
+        if (Setting_ShowHudEvenIfInterfaceHidden) {
+            _RenderAll();
+        }
+    }
+
+    void RenderInterface() {
+        /* we check Setting_ShowHudEvenIfInterfaceHidden here because
+        * we don't want to double-render.
+        */
+        if (!Setting_ShowHudEvenIfInterfaceHidden) {
+            _RenderAll();
+        }
+    }
+
+    void _RenderAll() {
+        if (IsVisible()) {
+        } else {
+            _CheckOtherRenderReasons();
+        }
+    }
+
+    void _CheckOtherRenderReasons() {}
+
+    void RenderMenu() {
+        if (UI::MenuItem(c_brightBlue + icon + "\\$z COTD Explorer", "", IsVisible())) {
+            ToggleWindow();
+        }
+    }
+
+    void RenderMainMenu() {}
+
+    /* Events */
+
+    void OnSettingsChanged() {}
+
+    void OnWindowShow() {
+        /* We will use  */
+        DataManager::cotd_OverrideChallengeId.AsJust(DataManager::_GetChallengeId());
+    }
+}

@@ -9,11 +9,6 @@ namespace BcCommands {
         BetterChat::AddSystemLine(text);
     }
 
-    // enum CotdCommandTy {
-    //     Local,
-    //     Send
-    // }
-
     class TellCotdCommand : BetterChat::ICommand {
         bool send;
 

@@ -53,4 +53,21 @@ class GameInfo {
 #endif
         return (rm is null) ? "" : rm.IdName;
     }
+
+    MwSArray<CGameNetPlayerInfo@> getPlayerInfos() {
+        return GetNetwork().PlayerInfos;
+    }
+}
+
+
+void ListPlayerInfos() {
+    debug(">> ListPlayerInfos");
+    auto gi = GameInfo();
+    auto pis = gi.getPlayerInfos();
+    for (uint i = 0; i < pis.Length; i++) {
+        CTrackManiaPlayerInfo@ pi = cast<CTrackManiaPlayerInfo@>(pis[i]);
+        debug("Player Info for: " + pi.Name);
+        debug("  pi.WebServicesUserId: " + pi.WebServicesUserId);
+    }
+    debug(">> Done ListPlayerInfos");
 }

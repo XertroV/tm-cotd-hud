@@ -6,7 +6,11 @@ void Main() {
         yield();
     }
 
+    startnew(PersistentData::Main);
+
     startnew(DataManager::Main);
+    startnew(CotdExplorer::Main);
+
     startnew(SettingsCustom::LoopSetTabsInactive);
 
 #if DEPENDENCY_BETTERCHAT
@@ -29,18 +33,22 @@ void Update(float dt) {
 
 void Render() {
     CotdHud::Render();
+    CotdExplorer::Render();
 }
 
 void RenderInterface() {
     CotdHud::RenderInterface();
+    CotdExplorer::RenderInterface();
 }
 
 void RenderMenu() {
     CotdHud::RenderMenu();
+    CotdExplorer::RenderMenu();
 }
 
 void RenderMainMenu() {
     CotdHud::RenderMainMenu();
+    CotdExplorer::RenderMainMenu();
 }
 
 // void RenderSettings() {}
@@ -49,6 +57,7 @@ void OnSettingsChanged() {
     trace("Main.OnSettingsChanged");
     DataManager::OnSettingsChanged();
     CotdHud::OnSettingsChanged();
+    CotdExplorer::OnSettingsChanged();
 }
 
 /* Plan:

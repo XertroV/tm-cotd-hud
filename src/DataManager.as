@@ -8,12 +8,16 @@ namespace DataManager {
     TmIoApi@ tmIoApi = TmIoApi("cotd-hud (by @XertroV)");
     CotdApi@ api;
 
+    Debouncer@ debounce = Debouncer();
+
 
     /* global COTD state variables we want to keep track of and update */
 
     string cotdLatest_MapId = "";
     Json::Value cotdLatest_Status = JSON_NULL;
     Json::Value cotdLatest_PlayerRank = JSON_NULL;
+
+    MaybeInt cotd_OverrideChallengeId = MaybeInt();
 
     BoolWP@ isCotd = BoolWP(false);
 
@@ -41,6 +45,9 @@ namespace DataManager {
     void Main() {
         // This can't be run on script load -- 'Unbound function called' exception
         @api = CotdApi();
+
+        print("challenge api for april 2");
+        print(Json::Write(api.GetPlayerRank(1176, "sTvb8KzSHxJYRJmSHqckAFwW8Hi", "0a2d1bc0-4aaa-4374-b2db-3d561bdab1c9")));
 
         InitDivRows();
 
@@ -221,11 +228,19 @@ namespace DataManager {
         return nowTs < challengeStart;
     }
 
-    int GetChallengeId() {
+    /* wrapped by GetChallengeId() */
+    int _GetChallengeId() {
         auto c = GetChallenge();
         if (IsJsonNull(c)) { return 0; }
         int offset = isCotd.v || !_ViewPriorChallenge() ? 0 : (-1);
         return IsJsonNull(c) ? 0 : int(c["id"]) + offset;
+    }
+
+    int GetChallengeId() {
+        if (cotd_OverrideChallengeId.isSome) {
+            return cotd_OverrideChallengeId.val;
+        }
+        return _GetChallengeId();
     }
 
     /* Set COTD Players Rank */
@@ -234,6 +249,12 @@ namespace DataManager {
         while (GetChallengeId() == 0 || cotdLatest_MapId == "") {
             yield();
         }
+        /* if we updated in last 1500ms wait for obj to be not null and return */
+        if (!debounce.CanProceed('getCotdPlayerRank', 1500)) {
+            while (IsJsonNull(cotdLatest_PlayerRank)) { yield(); }
+            return;
+        }
+
         cotdLatest_PlayerRank = api.GetPlayerRank(GetChallengeId(), cotdLatest_MapId, gi.PlayersId());
         trace("[ApiUpdateCotdPlayerRank] from api got: " + Json::Write(cotdLatest_PlayerRank));
     }
@@ -264,7 +285,7 @@ namespace DataManager {
             startnew(CoroUpdateDivFromQ);
         }
         for (uint i = 0; i < TOP_5.Length; i++) {
-            _AddDivToQueueIfNotActive(i);
+            _AddDivToQueueIfNotActive(TOP_5[i]);
         }
         uint pDiv = playerDivRow.div;
         // add divs around player. make sure to avoid re-requesting top 5
@@ -413,6 +434,7 @@ namespace DataManager {
     }
 
     void CoroUpdateAllTimesAroundPlayer() {
+        if (!debounce.CanProceed("histogramTimes", 5000)) { return; }
         if (Setting_HudShowHistogram && !IsJsonNull(cotdLatest_PlayerRank)) {
             int pRank = 101;
             if (cotdLatest_PlayerRank["records"].Length > 0) {
@@ -497,3 +519,23 @@ namespace DataManager {
     }
 #endif
 }
+
+
+
+// this works:
+// print("challenge api for may 23");
+// print(Json::Write(api.GetPlayerRank(1356, "H2vizj2y7Jqc5dznImB4NaSbnx3", "0a2d1bc0-4aaa-4374-b2db-3d561bdab1c9")));
+
+/* for explorer:
+- would need to get past maps
+- challenge ids -- logical?
+- 1356, 55, 54
+
+- 1353 -- #3 on 2022-05-22
+- 1350 -- #3 on 2022-05-21
+- 1347 -- #3 on 2022-05-20
+*/
+
+// 1201 should be first COTD on 49 days prior; 29 from 1st may, 28 from 30th apr => 2nd Apr
+// print("challenge api for april 2");
+// print(Json::Write(api.GetPlayerRank(1201, "sTvb8KzSHxJYRJmSHqckAFwW8Hi", "0a2d1bc0-4aaa-4374-b2db-3d561bdab1c9")));

@@ -194,6 +194,26 @@ void RenderSettingsAdvanced() {
         Setting_HudHistogramSize = vec2(.2, .2);
     }
     AddSimpleTooltip("Set's histogram to lower right corner with width and height set to 20%.\nSuitable for ultrawide monitors.");
+
+    VPad();
+
+    if (UI::Button("Set HUD to show lots of rankings")) {
+        Setting_HudShowAboveDiv = 3;
+        Setting_HudShowBelowDiv = 3;
+        Setting_HudShowTopDivCutoffs = 5;
+        Setting_HudShowLastDivPop = true;
+        Setting_HudShowPlayerDiv = true;
+        Setting_HudShowDeltas = true;
+        ::OnSettingsChanged();
+    }
+    AddSimpleTooltip("This sets the HUD to show:\n"
+        + "  - Top 5 div cutoffs \n"
+        + "  - 3 divs above yours \n"
+        + "  - 3 divs below yours \n"
+        + "  - Your div and time \n"
+        + "  - # of players in last div \n"
+        + "  - Deltas for times compared to yours"
+        );
 }
 
 
@@ -290,4 +310,45 @@ void RenderSettingsColorGradients() {
         UI::Text("\\$aaa(Done)");
     }
     UI::Columns(1);
+}
+
+
+/*
+    ########  ######## ########  ##     ##  ######
+    ##     ## ##       ##     ## ##     ## ##    ##
+    ##     ## ##       ##     ## ##     ## ##
+    ##     ## ######   ########  ##     ## ##   ####
+    ##     ## ##       ##     ## ##     ## ##    ##
+    ##     ## ##       ##     ## ##     ## ##    ##
+    ########  ######## ########   #######   ######
+DEBUG
+*/
+
+
+// #if DEV || UNIT_TEST
+
+[SettingsTab name="Debug"]
+void RenderSettingsDebug() {
+    TextHeading("Debug Functions");
+
+    if (UI::Button("Run ListPlayerInfos")) {
+        ListPlayerInfos();
+    }
+    AddSimpleTooltip("Prints all players' names and userIds to the Openplanet log.");
+
+    VPad();
+}
+
+// #endif
+
+[SettingsTab name="About"]
+void RenderSettingsAbout() {
+    TextHeading("COTD HUD + Explorer");
+
+    if (UI::Button("Run ListPlayerInfos")) {
+        ListPlayerInfos();
+    }
+    AddSimpleTooltip("Prints all players' names and userIds to the Openplanet log.");
+
+    VPad();
 }
