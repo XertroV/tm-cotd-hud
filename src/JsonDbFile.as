@@ -1,8 +1,17 @@
 dictionary@ JSON_DB_MUTEXES = dictionary();
 
+class JsonBox {
+    int _asdf;
+    Json::Value j;
+
+    JsonBox(Json::Value _j) {
+        this.j = _j;
+    }
+}
+
 class JsonDb {
     string path;
-    private Json::Value _data;
+    JsonBox@ _data;
     int loadedTime = 0;
     bool locked = false;
 
@@ -21,7 +30,8 @@ class JsonDb {
         if (!IO::FileExists(path)) {
             try {
                 // create an empty file
-                Json::ToFile(path, Json::Object());
+                @_data = JsonBox(Json::Object());
+                Json::ToFile(path, _data.j);
             } catch {
                 throw("Unable to write JsonDb to file! Exception: " + getExceptionInfo());
             }
@@ -31,7 +41,8 @@ class JsonDb {
         this.LoadFromDisk();
     }
 
-    Json::Value get_data() {
+    /* broken b/c of how json stuff is handled? */
+    JsonBox@ get_data() {
         while (locked) { yield(); }
         return _data;
     }
@@ -41,7 +52,7 @@ class JsonDb {
         auto v = Json::FromFile(path);
         if (IsJsonNull(v)) {
             /* a default of sorts */
-            _data = Json::Object();
+            @_data = JsonBox(Json::Object());
             return;
         }
 
@@ -53,14 +64,16 @@ class JsonDb {
         }
 
         if (IsJsonNull(v['data'])) {
-            _data = Json::Object();
+            @_data = JsonBox(Json::Object());
         } else {
-            _data = v['data'];
+            @_data = JsonBox(v['data']);
         }
 
         /* set loadedTime */
         if (!IsJsonNull(v['time'])) {
-            loadedTime = v['time'];
+            try {
+                loadedTime = Text::ParseInt(v['time']);
+            } catch {}
         }
         locked = false;
     }
@@ -69,8 +82,8 @@ class JsonDb {
         locked = true;
         Json::Value db = Json::Object();
         db['version'] = 1;
-        db['time'] = Time::Stamp;
-        db['data'] = _data;
+        db['time'] = "" + Time::Stamp;  /* as string to avoid losing precision */
+        db['data'] = _data.j;
         Json::ToFile(path, db);
         locked = false;
     }

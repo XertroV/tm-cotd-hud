@@ -9,6 +9,10 @@
                 days: TotdDay[]
             }
         }
+    },
+    "challenges": {
+        maxId: int,
+        items: {[id]: {...}}
     }
 }
 

@@ -10,8 +10,10 @@ bool IsJsonNull(Json::Value j) {
     return (j.GetType() % Json::Type::Null) == 0;
 }
 
-void SetDefaultObj(Json::Value obj, string key) {
-    if (IsJsonNull(obj[key])) {
-        obj[key] = Json::Object();
-    }
-}
+/* DOES NOT WORK */
+// Json::Value SetDefaultObj(Json::Value &in obj, const string &in key) {
+//     if (IsJsonNull(obj[key])) {
+//         obj[key] = Json::Object();
+//     }
+//     return obj[key];
+// }

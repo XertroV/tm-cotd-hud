@@ -1,18 +1,33 @@
 namespace DbSync {
-    bool Exists(Json::Value v) {
+    const string IN_PROG = "InProg";
+    const string STARTED = "Started";
+    const string WAITING = "Waiting";
+    const string UPKEEP = "Upkeep";
+
+    bool Exists(Json::Value &in v) {
         return v.GetType() == Json::Type::Object;
     }
-    bool IsStarted(Json::Value v) {
-        return Exists(v) && v['id'] == "Started";
+
+    bool IsStarted(Json::Value &in v) {
+        return Exists(v) && v['id'] == STARTED;
     }
-    bool IsInProg(Json::Value v) {
-        return Exists(v) && v['id'] == "InProg";
+    bool IsInProg(Json::Value &in v) {
+        return Exists(v) && v['id'] == IN_PROG;
     }
-    bool IsWaiting(Json::Value v) {
-        return Exists(v) && v['id'] == "Waiting";
+    bool IsWaiting(Json::Value &in v) {
+        return Exists(v) && v['id'] == WAITING;
     }
-    bool IsUpkeep(Json::Value v) {
-        return Exists(v) && v['id'] == "Upkeep";
+    bool IsUpkeep(Json::Value &in v) {
+        return Exists(v) && v['id'] == UPKEEP;
+    }
+
+    Json::Value Gen(const string &in id) {
+        auto j = Json::Object();
+        j['id'] = id;
+        auto state = Json::Object();
+        state['updatedAt'] = "" + Time::Stamp;
+        j['state'] = state;
+        return j;
     }
 }
 
@@ -51,57 +66,187 @@ class HistoryDb : JsonDb {
 
     HistoryDb(const string &in path) {
         super(path);
+        @api = CotdApi();
+        startnew(CoroutineFunc(SyncLoops));
     }
 
     void SyncLoops() {
-        @api = CotdApi();
         startnew(CoroutineFunc(_SyncLoopChallenges));
-        // startnew(CoroutineFunc(_SyncLoopTotdMaps));
+        sleep(1000);
+        startnew(CoroutineFunc(_SyncLoopTotdMaps));
         // startnew(CoroutineFunc(_SyncLoopCotdData));
-    }
-
-    Json::Value get_syncData() {
-        auto d = data;
-        SetDefaultObj(d, 'sync');
-        return d['sync'];
     }
 
     /* SYNC: CHALLENGES */
 
     void _SyncLoopChallenges() {
+        _SyncChallengesInit();
         while (true) {
-            _SyncChallengesInit();
             _SyncChallengesProgress();
             _SyncChallengesWaiting();
             _SyncChallengesUpkeep();
-            yield();
+            sleep(5000);
         }
     }
 
     /* start the sync if it's null/not pres */
 
-    Json::Value get_challengesSyncData() {
-        auto d = syncData;
-        SetDefaultObj(d, 'challenges');
-        return d['challenges'];
-    }
-
     void _SyncChallengesInit() {
-        auto d = challengesSyncData;
-        if (IsJsonNull(d['id'])) {
-            d['id'] = "Started";
+        if (IsJsonNull(data.j['sync'])) {
+            data.j['sync'] = Json::Object();
         }
-        if (DbSync::IsStarted(d)) {
+        if (IsJsonNull(data.j['sync']['challenges'])) {
+            data.j['sync']['challenges'] = Json::Object();
+            Persist();
+        }
+        if (IsJsonNull(data.j['sync']['challenges']['id'])) {
+            data.j['sync']['challenges']['id'] = DbSync::STARTED;
+            Persist();
+        }
+        // sync data
+        auto sd = data.j['sync']['challenges'];
+        if (DbSync::IsStarted(sd)) {
             /* this is only true while we are doing the initial requests */
-
+            auto latestChallenge = api.GetChallenges(1, 0)[0];
+            auto newSD = Json::Object();
+            newSD['id'] = DbSync::IN_PROG;
+            auto state = Json::Object();
+            /* we'll go from the (predicted) end of the API's list
+               back towards most recent. this way it's easy to keep in sync
+               in future. Note: we'll also overlap the offset by a bit so that
+               we don't miss any if they're published while we're syncing.
+               (Batch size = 100)
+            */
+            state['maxId'] = latestChallenge['id'];
+            state['offset'] = latestChallenge['id'] - 95;
+            state['updatedAt'] = "" + Time::Stamp;
+            newSD['state'] = state;
+            data.j['sync']['challenges'] = newSD;
+            Persist();
         }
     }
 
-    void _SyncChallengesProgress() {}
+    Json::Value ChallengesSyncData() {
+        return data.j['sync']['challenges'];
+    }
 
-    void _SyncChallengesWaiting() {}
+    int ChallengesSdUpdatedAt() {
+        return Text::ParseInt(ChallengesSyncData()['state']['updatedAt']);
+    }
 
-    void _SyncChallengesUpkeep() {}
+    void SetChallengesSyncData(Json::Value &in sd) {
+        data.j['sync']['challenges'] = sd;
+        Persist();
+    }
+
+    void _SyncChallengesProgress() {
+        auto sd = ChallengesSyncData();
+        if (DbSync::IsInProg(sd)) {
+            if (Time::Stamp - Text::ParseInt(sd['state']['updatedAt']) > 3600) {
+                /* if we updated a long time ago, update our offset based
+                   on new most recent challenge.
+                */
+                auto latestChallenge = api.GetChallenges(1, 0)[0];
+                int maxId = latestChallenge['id'];
+                int oldMaxId = sd['state']['maxId'];
+                int maxIdDiff = maxId - oldMaxId;
+                print("Updating ChallengesSync state (stale).");
+                print("> Old sync data: " + Json::Write(sd));
+                sd['state']['maxId'] = maxId;
+                sd['state']['offset'] = sd['state']['offset'] + maxIdDiff;
+                print("> New sync data: " + Json::Write(sd));
+            }
+            /* based on the offset, get 100 rows and populate the sync'd DB.
+            */
+            int offset = sd['state']['offset'];
+            Json::Value newCs;
+            if (offset < 0) {
+                newCs = Json::Array();
+            } else {
+                newCs = api.GetChallenges(100, offset);
+            }
+            if (newCs.Length > 0) {  // we'll get `[]` response when offset is too high.
+                auto chs = Json::Value(data.j.Get('challenges', Json::Object()));
+                chs['maxId'] = newCs[0]['id'];  // first entry always has highest id
+                auto items = Json::Value(chs.Get('items', Json::Object()));
+                for (uint i = 0; i < newCs.Length; i++) {
+                    auto c = newCs[i];
+                    int _id = c['id'];
+                    string id = "" + _id;
+                    if (IsJsonNull(items[id])) {
+                        items[id] = c;
+                    } else {
+                        trace("[SyncChallenges] Skipping challenge " + id + " since it's already in the DB.");
+                    }
+                }
+                chs['items'] = items;
+                data.j['challenges'] = chs;
+            }
+            if (offset == 0) {
+                // this was the last run we had to do
+                offset = -1;
+            }
+            if (offset > 0) {
+                // reduce the offset to a minimum of 0
+                offset = Math::Max(0, offset - 95);
+            }
+            if (offset >= 0) {
+                sd['state']['offset'] = offset;
+                sd['state']['updatedAt'] = "" + Time::Stamp;
+            } else {
+                sd = GenChallengesUpkeepSyncData();
+            }
+            // check exit condition? offset < 0?
+            SetChallengesSyncData(sd);
+            Persist();
+        }
+    }
+
+    void _SyncChallengesWaiting() {
+        if (DbSync::IsWaiting(ChallengesSyncData())) {
+            throw("Ahh! This should never happen.");
+        }
+    }
+
+    Json::Value GenChallengesInProgSyncData(int maxId) {
+        auto j = DbSync::Gen(DbSync::IN_PROG);
+        int oldMaxId = data.j['challenges']['maxId'];
+        int offset = Math::Max(0, maxId - oldMaxId - 95);
+        j['state']['maxId'] = maxId;
+        j['state']['offset'] = offset;
+        return j;
+    }
+
+    Json::Value GenChallengesUpkeepSyncData() {
+        auto j = DbSync::Gen(DbSync::UPKEEP);
+        j['state']['maxId'] = data.j['challenges']['maxId'];
+        return j;
+    }
+
+    void _SyncChallengesUpkeep() {
+        /* todo */
+        auto sd = ChallengesSyncData();
+        if (DbSync::IsUpkeep(sd)) {
+            if (Time::Stamp - ChallengesSdUpdatedAt() > 10) {
+                trace("[ChallengeSyncUpkeep] Checking for updated challenges.");
+                auto latestC = api.GetChallenges(1)[0];
+                int newMaxId = latestC['id'];
+                int oldMaxId = sd['state']['maxId'];
+                trace("[ChallengeSyncUpkeep] challenge latest IDs >> old: " + oldMaxId + ", new: " + newMaxId);
+                if (newMaxId > oldMaxId) {
+                    /* in prog */
+                    trace("[ChallengeSyncUpkeep] triggering in-progress sync");
+                    sd = GenChallengesInProgSyncData(newMaxId);
+                    SetChallengesSyncData(sd);
+                    Persist();
+                }
+            }
+        }
+    }
+
+    /* sync totd */
+
+    void _SyncLoopTotdMaps() {}
 }
 
 
