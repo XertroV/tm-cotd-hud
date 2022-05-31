@@ -227,8 +227,9 @@ class HistoryDb : JsonDb {
         /* todo */
         auto sd = ChallengesSyncData();
         if (DbSync::IsUpkeep(sd)) {
-            if (Time::Stamp - ChallengesSdUpdatedAt() > 10) {
-                trace("[ChallengeSyncUpkeep] Checking for updated challenges.");
+            int td = Time::Stamp - ChallengesSdUpdatedAt();
+            if (td > 3600) {
+                trace("[ChallengeSyncUpkeep] Checking for updated challenges. (td=" + td + ")");
                 auto latestC = api.GetChallenges(1)[0];
                 int newMaxId = latestC['id'];
                 int oldMaxId = sd['state']['maxId'];
@@ -237,9 +238,11 @@ class HistoryDb : JsonDb {
                     /* in prog */
                     trace("[ChallengeSyncUpkeep] triggering in-progress sync");
                     sd = GenChallengesInProgSyncData(newMaxId);
-                    SetChallengesSyncData(sd);
-                    Persist();
+                } else {
+                    sd['state']['updatedAt'] = "" + Time::Stamp;
                 }
+                SetChallengesSyncData(sd);
+                Persist();
             }
         }
     }
