@@ -72,9 +72,6 @@ class TmIoApi {
     }
 
     string GetTotdMapId() {
-        // if (!debounce.CanProceed("GetTotdMapId", 3600 * 1000 /*1hr*/)) {
-        //     return CachedOr("GetTotdMapId", "");
-        // }
         try {
             auto totd = this._GetTotdMap();
             auto ix = totd["days"].Length - 1;

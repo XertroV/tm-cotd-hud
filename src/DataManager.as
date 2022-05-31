@@ -46,8 +46,11 @@ namespace DataManager {
         // This can't be run on script load -- 'Unbound function called' exception
         @api = CotdApi();
 
-        print("challenge api for april 2");
-        print(Json::Write(api.GetPlayerRank(1176, "sTvb8KzSHxJYRJmSHqckAFwW8Hi", "0a2d1bc0-4aaa-4374-b2db-3d561bdab1c9")));
+        // print("challenge api for april 2");
+        // print(Json::Write(api.GetPlayerRank(1176, "sTvb8KzSHxJYRJmSHqckAFwW8Hi", "0a2d1bc0-4aaa-4374-b2db-3d561bdab1c9")));
+
+        // print("GetTotdByMonth with length 100 and offset 0");
+        // print("Sz len: " + Json::Write(api.GetTotdByMonth(100)).Length);
 
         InitDivRows();
 
@@ -539,3 +542,12 @@ namespace DataManager {
 // 1201 should be first COTD on 49 days prior; 29 from 1st may, 28 from 30th apr => 2nd Apr
 // print("challenge api for april 2");
 // print(Json::Write(api.GetPlayerRank(1201, "sTvb8KzSHxJYRJmSHqckAFwW8Hi", "0a2d1bc0-4aaa-4374-b2db-3d561bdab1c9")));
+// ABOVE DOES NOT WORK
+
+// works:
+// print("challenge api for april 2");
+// print(Json::Write(api.GetPlayerRank(1176, "sTvb8KzSHxJYRJmSHqckAFwW8Hi", "0a2d1bc0-4aaa-4374-b2db-3d561bdab1c9")));
+
+// works:
+// print("GetTotdByMonth with length 100 and offset 0");
+// print("Sz len: " + Json::Write(api.GetTotdByMonth(100)).Length);

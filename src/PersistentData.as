@@ -70,6 +70,72 @@ class HistoryDb : JsonDb {
         startnew(CoroutineFunc(SyncLoops));
     }
 
+    /* Getters for the DB */
+
+    dictionary@ DictWith__Keys() {
+        auto d = dictionary();
+        d['__keys'] = array<int>();
+        return d;
+    }
+
+    dictionary@ GetCotdYearMonthDayMapTree() {
+        auto d = DictWith__Keys();
+        auto totdML = data.j['totd']['monthList'];
+        int year, month, monthDay;
+        string sYear, sMonth, sDay;
+        array<int>@ keys;
+        for (uint i = 0; i < totdML.Length; i++) {
+            auto monthObj = totdML[i];
+            // prep
+            year = monthObj['year'];
+            sYear = "" + year;
+            month = monthObj['month'];
+            sMonth = "" + month;
+
+            // defaults
+            if (!d.Exists(sYear)) {
+                @d[sYear] = DictWith__Keys();
+                @keys = cast<int[]@>(d['__keys']);
+                keys.InsertAt(keys.Length, Text::ParseInt(sYear));
+            }
+            dictionary@ yd = cast<dictionary@>(d[sYear]);
+            if (!yd.Exists(sMonth)) {
+                @yd[sMonth] = DictWith__Keys();
+                @keys = cast<int[]@>(yd['__keys']);
+                keys.InsertAt(keys.Length, Text::ParseInt(sMonth));
+            }
+            dictionary@ md = cast<dictionary@>(yd[sMonth]);
+
+            // process maps
+            auto days = monthObj['days'];
+            for (uint j = 0; j < days.Length; j++) {
+                Json::Value map = days[j];
+                monthDay = map['monthDay'];
+                sDay = "" + monthDay;
+                // md[sDay] should never exist.    // !md.Exists(sDay))
+                @md[sDay] = JsonBox(map);
+                @keys = cast<int[]@>(md['__keys']);
+                keys.InsertAt(keys.Length, Text::ParseInt(sDay));
+            }
+        }
+
+        return d;
+    }
+
+    // string[]@ ListTotdYears() {
+    //     auto yrs = {};
+    //     auto totdML = data.j['totd']['monthList'];
+    //     int year, month;
+    //     for (uint i = 0; i < totdML.Length; i++) {
+    //         year = totdML[i]['year'];
+    //         if (yrs.Find(year) < 0) {
+    //             yrs.InsertAt(yrs.Length, year);
+    //         }
+    //     }
+    // }
+
+    /* SYNC LOGIC */
+
     void SyncLoops() {
         startnew(CoroutineFunc(_SyncLoopChallenges));
         sleep(1000);
@@ -77,7 +143,7 @@ class HistoryDb : JsonDb {
         // startnew(CoroutineFunc(_SyncLoopCotdData));
     }
 
-    /* SYNC: CHALLENGES */
+    /* Sync: Challenges */
 
     void _SyncLoopChallenges() {
         _SyncChallengesInit();
@@ -85,7 +151,7 @@ class HistoryDb : JsonDb {
             _SyncChallengesProgress();
             _SyncChallengesWaiting();
             _SyncChallengesUpkeep();
-            sleep(5000);
+            sleep(5 * 1000);
         }
     }
 
@@ -121,8 +187,7 @@ class HistoryDb : JsonDb {
             state['offset'] = latestChallenge['id'] - 95;
             state['updatedAt'] = "" + Time::Stamp;
             newSD['state'] = state;
-            data.j['sync']['challenges'] = newSD;
-            Persist();
+            SetChallengesSyncData(newSD);
         }
     }
 
@@ -163,7 +228,8 @@ class HistoryDb : JsonDb {
             if (offset < 0) {
                 newCs = Json::Array();
             } else {
-                newCs = api.GetChallenges(100, offset);
+                int length = sd['state'].Get('length', 100);
+                newCs = api.GetChallenges(length, offset);
             }
             if (newCs.Length > 0) {  // we'll get `[]` response when offset is too high.
                 auto chs = Json::Value(data.j.Get('challenges', Json::Object()));
@@ -198,13 +264,12 @@ class HistoryDb : JsonDb {
             }
             // check exit condition? offset < 0?
             SetChallengesSyncData(sd);
-            Persist();
         }
     }
 
     void _SyncChallengesWaiting() {
         if (DbSync::IsWaiting(ChallengesSyncData())) {
-            throw("Ahh! This should never happen.");
+            throw("Ahh! ChallengesSync should never be WAITING.");
         }
     }
 
@@ -238,18 +303,72 @@ class HistoryDb : JsonDb {
                     /* in prog */
                     trace("[ChallengeSyncUpkeep] triggering in-progress sync");
                     sd = GenChallengesInProgSyncData(newMaxId);
+                    sd['state']['length'] = (newMaxId - oldMaxId + 1) * 2;
                 } else {
                     sd['state']['updatedAt'] = "" + Time::Stamp;
                 }
                 SetChallengesSyncData(sd);
-                Persist();
             }
         }
     }
 
-    /* sync totd */
+    /* Sync TOTD */
 
-    void _SyncLoopTotdMaps() {}
+    void _SyncLoopTotdMaps() {
+        while (IsJsonNull(data.j['sync'])) { yield(); }
+        auto sd = TotdMapsSyncData();
+        if (!DbSync::Exists(sd) || DbSync::IsStarted(sd)) {
+            sd = DbSync::Gen(DbSync::IN_PROG);
+            SetTotdMapsSyncData(sd);
+        }
+        int toSleepSecs;
+        while (true) {
+            toSleepSecs = 60;
+            sd = TotdMapsSyncData();
+            trace("[TotdMapsSync] Loop Start. SD: " + Json::Write(sd));
+            if (DbSync::IsInProg(sd)) {
+                _SyncTotdMapsUpdateFromApi(false);
+                sd = DbSync::Gen(DbSync::UPKEEP);
+                int nextReqTs = data.j['totd']['nextRequestTimestamp'];
+                sd['state']['updateAfter'] = "" + nextReqTs;
+                trace("[TotdMapsSync] Done InProg. SD: " + Json::Write(sd));
+                SetTotdMapsSyncData(sd);
+            }
+            if (DbSync::IsWaiting(sd)) {
+                throw("Ahh! TotdMapsSync should never be WAITING.");
+            }
+            if (DbSync::IsUpkeep(sd)) {
+                int onlyAfter = Text::ParseInt(sd['state']['updateAfter']);
+                if (Time::Stamp > onlyAfter) {
+                    sd = DbSync::Gen(DbSync::IN_PROG);
+                    SetTotdMapsSyncData(sd);
+                } else {
+                    toSleepSecs = Math::Max(1, onlyAfter - Time::Stamp);
+                }
+            }
+            trace("[SyncLoopTotdMaps] Sleeping for " + toSleepSecs + " seconds. SD: " + Json::Write(sd));
+            sleep(toSleepSecs * 1000);
+        }
+    }
+
+    void _SyncTotdMapsUpdateFromApi(bool persist = true) {
+        /* we can do all this in one api call for the
+            next ~6 yrs 5 months (as of May 2022).
+            todo before 2029: check if we need to make a second call and merge results.
+            */
+        auto totdData = api.GetTotdByMonth(100);
+        data.j['totd'] = totdData;
+        if (persist) Persist();
+    }
+
+    Json::Value TotdMapsSyncData() {
+        return data.j['sync']['totd'];
+    }
+
+    void SetTotdMapsSyncData(Json::Value sd, bool persist = true) {
+        data.j['sync']['totd'] = sd;
+        if (persist) Persist();
+    }
 }
 
 
