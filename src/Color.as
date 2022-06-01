@@ -1,6 +1,9 @@
+const string c_reset = "\\$z";
 const string c_green = "\\$3f0";
 const string c_brightBlue = "\\$1bf";
 const string c_debug = c_brightBlue;
+const string c_mid_grey = "\\$777";
+const string c_dark_grey = "\\$333";
 
 Color@ CGreen = Color(vec3(0.082, 0.961, 0.208));  // #15F535
 Color@ CBlack = Color(vec3(0, 0, 0));  // #15F535

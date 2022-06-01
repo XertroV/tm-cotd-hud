@@ -82,8 +82,15 @@ namespace DataManager {
         // todo: save all of GetTotdMap data so that we can look at past COTDs, too
 
         // todo:
-        print("api.GetMap");
-        print(Json::Write(api.GetMap(cotdLatest_MapId)));
+        sleep(500);
+        print("api.GetMapsInfo");
+        //
+        auto r = api.GetMapsInfo({cotdLatest_MapId, "EBfG4g4zDXp3OzsBjV7r91_4QO0"});
+        print(r.Length);
+        for (uint i = 0; i < r.Length; i++) {
+            auto v = r[i];
+            print(tostring(v));
+        }
     }
 
     void Update(float dt) {

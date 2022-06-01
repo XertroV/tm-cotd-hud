@@ -137,6 +137,10 @@ namespace CotdExplorer {
     void LoadCotdTreeFromDb() {
         while (histDb is null) { yield(); }
         @cotdYMDMapTree = histDb.GetCotdYearMonthDayMapTree();
+        while (cotdYMDMapTree is null || cotdYMDMapTree.GetSize() == 0) {
+            sleep(200);
+            @cotdYMDMapTree = histDb.GetCotdYearMonthDayMapTree();
+        }
     }
 
     /* General UI components */
@@ -160,20 +164,22 @@ namespace CotdExplorer {
         DrawAsRow(_ExplorerBreadcrumbs, UI_EXPLORER + "-breadcrumbs", 7);
     }
 
+    /* the function that's passed in is meant to be run before each chunk of UI elements */
     void _ExplorerBreadcrumbs(DrawUiElems@ f) {
+        f();  // always run at least once
+
         if (explYear.isNone) { // return early before explYear is set (we are on init screen; nothing to reset)
-            f();
             DisabledButton("3.. 2.. 1..");
             return;
         }
-        // UI::Columns(5);  /* just buttons -- 5 btns max */
-        // UI::Columns(9);  /* if we include separators like `/` */
-        f();
+
+        // base of the breadcrumbs otherwise
         if (UI::Button(ResetIcon)) {
             /* as a coroutine b/c we don't want to clear the values before we finish drawing the UI. */
             resetLevel = 0;
             startnew(_ResetExplorerCotdSelection);
         }
+
         f();
         if (explYear.isSome && UI::Button(Text::Format("%04d", explYear.val))) {
             resetLevel = 1;
@@ -330,7 +336,7 @@ namespace CotdExplorer {
         int _nMonths = months.Length;
         bool _disable;
         if (UI::BeginTable(UI_EXPLORER + "-ym-table", 6, TableFlagsFixed())) {
-            for (uint x = 1; x <= 12; x++) {
+            for (int x = 1; x <= 12; x++) {
                 UI::TableNextColumn();
                 _disable = x < _offs || x - _offs >= _nMonths;
                 if (MDisabledButton(_disable, MONTH_NAMES[x], calendarMonthBtnDims)) {

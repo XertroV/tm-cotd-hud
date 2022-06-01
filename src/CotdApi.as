@@ -9,7 +9,7 @@ class CotdApi {
     CotdApi() {
         NadeoServices::AddAudience("NadeoClubServices");
         NadeoServices::AddAudience("NadeoLiveServices");
-        NadeoServices::AddAudience("NadeoServices");
+        // NadeoServices::AddAudience("NadeoServices");
 
         compUrl = NadeoServices::BaseURLCompetition();
         liveSvcUrl = NadeoServices::BaseURL();
@@ -104,24 +104,58 @@ class CotdApi {
         return CallLiveApiPath("/api/token/map/" + mapUid);
     }
 
+    Json::Value GetMaps(const string[] &in mapUids) {
+        return CallLiveApiPath("/api/token/map/" + string::Join(mapUids, ","));
+    }
+
+
     /* CORE SERVICES API CALLS */
 
-    Json::Value CallCoreApiPath(string path) {
-        AssertGoodPath(path);
-        return FetchCoreEndpoint(coreUrl + path);
+    /* these have HTTP endpoints but we can't use NadeoServices b/c it doesn't support them because we can use the core API. */
+
+    CGameDataFileManagerScript@ GetCoreApiThingForMaps() {
+        return GetTmApp().MenuManager.MenuCustom_CurrentManiaApp.DataFileMgr;
     }
 
-    // todo
-    /* example ret val */
-    Json::Value GetMapInfo(const string &in mapUid) {
-        // https://prod.trackmania.core.nadeo.online/maps/?mapUidList=
-        return CallCoreApiPath("/maps?mapUidList=" + mapUid);
+    MwId GetUserMwId() {
+        // return cast<CTrackManiaNetwork@>(GetTmApp().Network).PlayerInfo.Id;
+        return GetTmApp().ManiaPlanetScriptAPI.MasterServer_MSUsers[0].Id;
     }
 
-    Json::Value GetMapsInfo(const string[] &in mapUids) {
-        // https://prod.trackmania.core.nadeo.online/maps?mapUidList=
-        return CallCoreApiPath("/maps?mapUidList=" + string::Join(mapUids, ","));
+    MwFastBuffer<CNadeoServicesMap@> GetMapsInfo(const string[] &in uids) {
+        auto coreApi = GetCoreApiThingForMaps();
+        MwFastBuffer<wstring> mapIds = MwFastBuffer<wstring>();
+        for (uint i = 0; i < uids.Length; i++) mapIds.Add(uids[i]);
+        auto req2 = coreApi.Map_NadeoServices_GetListFromUid(GetUserMwId(), mapIds);
+        while (req2.IsProcessing) yield();
+        if (req2.HasFailed || req2.IsCanceled || !req2.HasSucceeded) {
+            throw("[GetMapsInfo] req failed or canceled. errorType=" + req2.ErrorType + "; errorCode=" + req2.ErrorCode + "; errorDescription=" + req2.ErrorDescription);
+        }
+        print("[GetMapsInfo] Request succeeded!!!");
+        return req2.MapList;
     }
+
+    // string GetCoreAuthToken() {
+    //     return GetTmApp().ManiaPlanetScriptAPI.Authentication_Token;
+    // }
+
+
+    // Json::Value CallCoreApiPath(const string &in authToken, const string &in path) {
+    //     AssertGoodPath(path);
+    //     return FetchCoreEndpoint(authToken, coreUrl + path);
+    // }
+
+    // // // todo
+    // // /* example ret val */
+    // Json::Value GetMapInfo(const string &in mapUid) {
+    //     // https://prod.trackmania.core.nadeo.online/maps/?mapUidList=
+    //     return CallCoreApiPath(GetCoreAuthToken(), "/maps?mapUidList=" + mapUid);
+    // }
+
+    // Json::Value GetMapsInfo(const string[] &in mapUids) {
+    //     // https://prod.trackmania.core.nadeo.online/maps?mapUidList=
+    //     return CallCoreApiPath(GetCoreAuthToken(), "/maps?mapUidList=" + string::Join(mapUids, ","));
+    // }
 }
 
 Json::Value FetchClubEndpoint(const string &in route) {
@@ -143,12 +177,13 @@ Json::Value FetchLiveEndpoint(const string &in route) {
     return Json::Parse(req.String());
 }
 
-Json::Value FetchCoreEndpoint(const string &in route) {
+Json::Value FetchCoreEndpoint(const string &in authToken, const string &in route) {
     trace("[FetchCoreEndpoint] Requesting: " + route);
-    while (!NadeoServices::IsAuthenticated("NadeoServices")) { yield(); }
-    auto req = NadeoServices::Get("NadeoServices", route);
-    // auto req = Net::HttpRequest();
-    // req.Url = route;
+    // while (!NadeoServices::IsAuthenticated("NadeoServices")) { yield(); }
+    // auto req = NadeoServices::Get("NadeoServices", route);
+    auto req = Net::HttpRequest();
+    req.Url = route;
+    req.Headers['Authorization'] = "nadeo_v1 t=" + authToken;
     req.Start();
     while(!req.Finished()) { yield(); }
     return Json::Parse(req.String());

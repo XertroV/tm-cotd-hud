@@ -1,3 +1,60 @@
+
+namespace PersistentData {
+    const string mainFolderName = "cotd-hud";
+    /* a path modifier for when we are doing dev etc to avoid clobbering DBs */
+#if RELEASE
+    const string PM = "main";
+#elif DEV
+    const string PM = "dev";
+#elif UNIT_TEST
+    const string PM = "unit_test";
+#else
+    const int blah = throw("No runtime environment specified (RELEASE / DEV / UNIT_TEST)");
+#endif
+
+    /* set our data folder to include the path mod (PM) set above */
+    const string dataFolder = IO::FromDataFolder(mainFolderName + "/" + PM);
+    string MkPath(string fname) { return dataFolder + "/" + fname; };
+
+    const string filepath_Follows = MkPath("follows.json");
+    const string filepath_HistoricalCotd = MkPath("historical-cotd.json");
+    const string filepath_MapDb = MkPath("map-db.json");
+    const string filepath_MapQueueDb = MkPath("map-queue-db.json");
+
+    HistoryDb@ histDb;
+    MapDb@ mapDb;
+
+    void Main() {
+        CreateFilesFoldersIfNeeded();
+        InitDbs();
+        startnew(LoopMain);
+    }
+
+    void InitDbs() {
+        @histDb = HistoryDb(filepath_HistoricalCotd);
+        @mapDb = MapDb(filepath_MapDb);
+    }
+
+    void CreateFilesFoldersIfNeeded() {
+        if (!IO::FolderExists(dataFolder)) {
+            IO::CreateFolder(dataFolder, true);
+        }
+        // if (!IO::FileExists(filepath_Follows)) {
+        //     // auto f = IO::File(filepath_Follows, IO::FileMode::Write);
+        //     // // f.Open(IO::FileMode::Write);  /* Append, Read, None */
+        //     // f.Write('{"players": []}');
+        //     // f.Close();
+        // }
+    }
+
+    void LoopMain() {
+        while (true) {
+            yield();
+        }
+    }
+}
+
+
 namespace DbSync {
     const string IN_PROG = "InProg";
     const string STARTED = "Started";
@@ -31,6 +88,7 @@ namespace DbSync {
     }
 }
 
+/* Pattern improvement: MapDb > HistoryDb wrt architecture via JsonQueueDb */
 
 class HistoryDb : JsonDb {
     CotdApi@ api;
@@ -77,6 +135,8 @@ class HistoryDb : JsonDb {
 
     dictionary@ GetCotdYearMonthDayMapTree() {
         auto d = dictionary();
+        if (IsJsonNull(data.j['totd']) || IsJsonNull(data.j['totd']['monthList'])) return d;
+
         auto totdML = data.j['totd']['monthList'];
         int year, month, monthDay;
         string sYear, sMonth, sDay;
@@ -144,7 +204,9 @@ class HistoryDb : JsonDb {
     /* Sync: Challenges */
 
     void _SyncLoopChallenges() {
+        logcall("_SyncLoopChallenges", "Starting");
         _SyncChallengesInit();
+        logcall("_SyncLoopChallenges", "Init done. Looping...");
         while (true) {
             _SyncChallengesProgress();
             _SyncChallengesWaiting();
@@ -370,13 +432,27 @@ class HistoryDb : JsonDb {
 }
 
 
+class MapQueueDb : JsonQueueDb {
+    MapQueueDb(const string &in path) {
+        super(path, 'mapQueueDb-v1');
+        startnew(CoroutineFunc(SyncLoops));
+    }
+
+    void SyncLoops() {
+        // CheckInitQueueData();
+        // startnew(CoroutineFunc(_SyncLoopMapData));
+    }
+}
+
 
 class MapDb : JsonDb {
     CotdApi@ api;
+    private MapQueueDb@ queueDb;
 
     MapDb(const string &in path) {
         super(path, 'mapDb-with-sync-queue');
         @api = CotdApi();
+        @queueDb = MapQueueDb(PersistentData::filepath_MapQueueDb);
         startnew(CoroutineFunc(SyncLoops));
     }
 
@@ -385,46 +461,26 @@ class MapDb : JsonDb {
     }
 
     void _SyncLoopMapData() {
-
-    }
-}
-
-
-
-namespace PersistentData {
-    const string dataFolder = IO::FromDataFolder("cotd-hud");
-    const string filepath_Follows = IO::FromDataFolder("cotd-hud/follows.json");
-    const string filepath_HistoricalCotd = IO::FromDataFolder("cotd-hud/historical-cotd.json");
-    const string filepath_MapDb = IO::FromDataFolder("cotd-hud/map-db.json");
-    HistoryDb@ histDb;
-    MapDb@ mapDb;
-
-    void Main() {
-        CreateFilesFoldersIfNeeded();
-        InitDbs();
-        startnew(LoopMain);
+        // todo
     }
 
-    void InitDbs() {
-        @histDb = HistoryDb(filepath_HistoricalCotd);
-        @mapDb = MapDb(filepath_MapDb);
-    }
+    /* sync util functions */
 
-    void CreateFilesFoldersIfNeeded() {
-        if (!IO::FolderExists(dataFolder)) {
-            IO::CreateFolder(dataFolder);
+    // todo
+
+    /* queue a map for download. safe to call multiple times.
+       will do nothing if we have already got the map.
+    */
+    void QueueMapGet(const string &in mapUid) {
+        if (!MapIsCached(mapUid)) {
+            queueDb.PutQueueEntry(Json::Value(mapUid));
         }
-        // if (!IO::FileExists(filepath_Follows)) {
-        //     // auto f = IO::File(filepath_Follows, IO::FileMode::Write);
-        //     // // f.Open(IO::FileMode::Write);  /* Append, Read, None */
-        //     // f.Write('{"players": []}');
-        //     // f.Close();
-        // }
     }
 
-    void LoopMain() {
-        while (true) {
-            yield();
-        }
+    /* access functions */
+
+    bool MapIsCached(const string &in mapUid) {
+        auto map = data.j['maps'][mapUid];
+        return !IsJsonNull(map) && !IsJsonNull(map['mapId']);
     }
 }

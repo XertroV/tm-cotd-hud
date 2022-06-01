@@ -7,3 +7,5 @@ const string[] MONTH_NAMES = {
     "July", "August", "September",
     "October", "November", "December"
 };
+
+const uint A_MONTH_IN_MS = uint(31 * 24 * 60 * 60 * 1000);

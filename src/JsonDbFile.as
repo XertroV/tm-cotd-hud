@@ -1,11 +1,28 @@
 dictionary@ JSON_DB_MUTEXES = dictionary();
 
 class JsonBox {
-    int _asdf;
     Json::Value j;
+    private bool expired = false;
 
-    JsonBox(Json::Value _j) {
-        this.j = _j;
+    JsonBox(Json::Value jsonVal) {
+        this.j = jsonVal;
+    }
+
+    // Json::Value get_j() {
+    //     if (expired) { throw("Expired reference!"); }
+    //     return this.j;
+    // }
+
+    // void set_j(Json::Value newVal) {
+    //     this.j = newVal;
+    // }
+
+    JsonBox@ Expire() {
+        throw("not implemented");
+        this.expired = true;
+        auto ret = JsonBox(this.j);
+        this.j = Json::Value();
+        return ret;
     }
 }
 
@@ -43,21 +60,40 @@ class JsonDb {
         this.LoadFromDisk();
     }
 
+    void AwaitUnlock() {
+        while (locked) { yield(); }
+    }
+
+    /* MUST CALL Unlock() later on!!! */
+    void GetLock() {
+        AwaitUnlock();
+        locked = true;
+    }
+
+    void Unlock() {
+        if (!locked) {
+            throw("Attempt to unlock an already unlocked lock.");
+        }
+        locked = false;
+    }
+
     /* broken b/c of how json stuff is handled? */
     JsonBox@ get_data() {
-        while (locked) { yield(); }
+        AwaitUnlock();
         return _data;
     }
 
     void LoadFromDisk() {
-        locked = true;
+        GetLock();
         auto v = Json::FromFile(path);
         if (IsJsonNull(v)) {
             /* a default of sorts */
             @_data = JsonBox(Json::Object());
+            logcall('JsonDb Initialization', path);
+            Unlock();
+            Persist();
             return;
         }
-
         if (!IsJsonNull(v['version'])) {
             int version = v['version'];
             if (version != 1) {
@@ -84,17 +120,152 @@ class JsonDb {
                 loadedTime = Text::ParseInt(v['time']);
             } catch {}
         }
-        locked = false;
+        Unlock();
     }
 
     void Persist() {
-        locked = true;
+        GetLock();
         Json::Value db = Json::Object();
         db['version'] = 1;
         db['time'] = "" + Time::Stamp;  /* as string to avoid losing precision */
         db['data'] = _data.j;
         db['dbId'] = dbId;
         Json::ToFile(path, db);
-        locked = false;
+        if (!IO::FileExists(path)) {
+            Unlock();
+            throw("Attempted to persist JsonDb and the file does not exist!!!!");
+        }
+        Unlock();
+    }
+}
+
+
+class JsonQueueDb : JsonDb {
+    JsonQueueDb(const string &in path, const string &in dbId) {
+        super(path, dbId);
+        startnew(CoroutineFunc(SyncLoops));
+    }
+
+    void SyncLoops() {
+        CheckInitQueueData();
+        ValidateUpgradeQueue();
+        startnew(CoroutineFunc(_SyncLoopQueueData));
+    }
+
+    void CheckInitQueueData() {
+        if (IsJsonNull(data.j) || IsJsonNull(data.j['meta']) || IsJsonNull(data.j['queue'])) {
+            if (IsJsonNull(data.j)) data.j = Json::Object();
+            if (IsJsonNull(data.j['meta'])) {
+                auto meta = Json::Object();
+                meta['version'] = 1;
+                meta['queueStart'] = "0"; /* these are strings because Json::Write turns integers into x.xxxE+5 sci notation format above ~1m. */
+                meta['queueEnd'] = "0"; /* exclusive -- so this is the key of the first 'null' entry. */
+                meta['isEmpty'] = true;
+                meta['length'] = 0;
+                meta['lastUpdated'] = "" + Time::Stamp;
+                data.j['meta'] = meta;
+            }
+            if (IsJsonNull(data.j['queue'])) data.j['queue'] = Json::Object();
+            Persist();
+        }
+    }
+
+    void ValidateUpgradeQueue() {
+        int version = data.j['meta']['version'];
+        if (version != 1) {
+            throw("Cannot deal with versions other than 1.");
+        }
+        /* todo: upgrade logic in future if needed */
+    }
+
+    void _SyncLoopQueueData() {}
+
+    /* note: up to user to manage these values appropriately.
+       The value must be either:
+         1. a unique string; or
+         2. an object with j['id'] property that's a unique string.
+    */
+    void PutQueueEntry(Json::Value j) {
+        auto ty = j.GetType();
+        if (ty != Json::Type::String && ty != Json::Type::Object) {
+            throw("Json value is not a string nor an object.");
+        } else if (ty == Json::Type::Object && j['id'].GetType() != Json::Type::String) {
+            throw("Json value is an object but the 'id' property is non-existent or not a string.");
+        }
+
+        int end = GetQueueEnd();
+        data.j['queue']['' + end] = j; /* add queue item */
+        auto meta = data.j['meta']; /* update metadata */
+        int len = meta['length'];
+        meta['queueEnd'] = '' + (end + 1);
+        meta['length'] = len + 1;
+        meta['isEmpty'] = false;
+        meta['lastUpdated'] = "" + Time::Stamp;
+        data.j['meta'] = meta;
+        Persist();
+    }
+
+    int GetQueueEnd() {
+        return Text::ParseInt(data.j['meta']['queueEnd']);
+    }
+
+    int GetQueueStart() {
+        return Text::ParseInt(data.j['meta']['queueStart']);
+    }
+
+    /* can return null */
+    Json::Value GetQueueItemNow() {
+        // return null if no queue items available
+        if (IsEmpty()) { return Json::Value(); }
+        // init
+        int start = GetQueueStart();
+        int end = GetQueueEnd();
+        auto meta = data.j['meta'];
+        int length = meta['length'];
+        // consistency checks
+        if (start >= end || length <= 0) {
+            throw("JsonQueueDb *Emergency* // start >= end (and queue is non-empty) OR length <= 0");
+        }
+        if (end - start != length) {
+            throw("JsonQueueDb *Emergency* // start - end != length");
+        }
+        /* take an item from the queue */
+        auto item = data.j['queue']['' + start];
+        /* check item */
+        if (IsJsonNull(item)) {
+            throw("JsonQueueDb.GetQueueItemNow *Emergency* // should have a valid json item but got Json::Null instead.");
+        }
+        /* update meta */
+        meta['queueStart'] = '' + (1 + start);
+        meta['length'] = length - 1;
+        meta['isEmpty'] = length - 1 == 0;
+        meta['lastUpdated'] = "" + Time::Stamp;
+        /* update db */
+        data.j['meta'] = meta;
+        data.j['queue'].Remove('' + start);
+        // save and return
+        Persist();
+        return item;
+    }
+
+    /* will yield until a value is available and throw if timeout is reached */
+    Json::Value GetQueueItemAsync(int timeoutMs = -1) {
+        uint start = Time::Now;
+        uint limit = timeoutMs < 0 ? A_MONTH_IN_MS : start + uint(timeoutMs);
+        while (IsEmpty()) {
+            if (start + limit < Time::Now) {
+                throw("Timeout reached!");
+            }
+            sleep(66);
+        } /* sleep a little instead of yielding to be a bit nicer. a yield is 10-30 ms if it's per-frame. */
+        auto ret = GetQueueItemNow();
+        if (IsJsonNull(ret)) {
+            throw("Ahh! Should never happen: GetQueueItemAsync returning null!!!");
+        }
+        return ret;
+    }
+
+    bool IsEmpty() {
+        return data.j['meta']['isEmpty'];
     }
 }

@@ -19,3 +19,4 @@
   - [ ] Highlight the player in historical/explorer UI
   - [ ] Browse or view players in COTD + one-click add-as-friend
 - [ ] Optimization: check current COTD data and don't re-request times unnecessarily -- should be cached once the COTD qualis are over.
+- [ ] About Page
