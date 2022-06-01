@@ -72,14 +72,14 @@ class HistoryDb : JsonDb {
 
     /* Getters for the DB */
 
-    dictionary@ DictWith__Keys() {
-        auto d = dictionary();
-        d['__keys'] = array<int>();
-        return d;
-    }
+    // dictionary@ DictWith__Keys() {
+    //     auto d = dictionary();
+    //     d['__keys'] = array<int>();
+    //     return d;
+    // }
 
     dictionary@ GetCotdYearMonthDayMapTree() {
-        auto d = DictWith__Keys();
+        auto d = dictionary();
         auto totdML = data.j['totd']['monthList'];
         int year, month, monthDay;
         string sYear, sMonth, sDay;
@@ -90,19 +90,19 @@ class HistoryDb : JsonDb {
             year = monthObj['year'];
             sYear = "" + year;
             month = monthObj['month'];
-            sMonth = "" + month;
+            sMonth = Text::Format("%02d", month);
 
             // defaults
             if (!d.Exists(sYear)) {
-                @d[sYear] = DictWith__Keys();
-                @keys = cast<int[]@>(d['__keys']);
-                keys.InsertAt(keys.Length, Text::ParseInt(sYear));
+                @d[sYear] = dictionary();
+                // @keys = cast<int[]@>(d['__keys']);
+                // keys.InsertAt(keys.Length, year);
             }
             dictionary@ yd = cast<dictionary@>(d[sYear]);
             if (!yd.Exists(sMonth)) {
-                @yd[sMonth] = DictWith__Keys();
-                @keys = cast<int[]@>(yd['__keys']);
-                keys.InsertAt(keys.Length, Text::ParseInt(sMonth));
+                @yd[sMonth] = dictionary();
+                // @keys = cast<int[]@>(yd['__keys']);
+                // keys.InsertAt(keys.Length, month);
             }
             dictionary@ md = cast<dictionary@>(yd[sMonth]);
 
@@ -111,11 +111,12 @@ class HistoryDb : JsonDb {
             for (uint j = 0; j < days.Length; j++) {
                 Json::Value map = days[j];
                 monthDay = map['monthDay'];
-                sDay = "" + monthDay;
+                sDay = Text::Format("%02d", monthDay);
+                // sDay = "" + monthDay;
                 // md[sDay] should never exist.    // !md.Exists(sDay))
                 @md[sDay] = JsonBox(map);
-                @keys = cast<int[]@>(md['__keys']);
-                keys.InsertAt(keys.Length, Text::ParseInt(sDay));
+                // @keys = cast<int[]@>(md['__keys']);
+                // keys.InsertAt(keys.Length, monthDay);
             }
         }
 

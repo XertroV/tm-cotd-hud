@@ -363,29 +363,34 @@ namespace CotdExplorer {
 
     void _RenderExplorerMainTree() {
         array<int>@ keys;
-        auto yrs = cast<int[]@>(cotdYMDMapTree['__keys']);
+        // auto yrs = cast<int[]@>(cotdYMDMapTree['__keys']);
+        auto yrs = cotdYMDMapTree.GetKeys();
+        string mapId;
         yrs.SortDesc();
         for (uint i = 0; i < yrs.Length; i++) {
             string yr = "" + yrs[i];
-            if (yr == "__keys") { continue; }
+            // if (yr == "__keys") { continue; }
             if (UI::TreeNode(yr)) {
                 auto dMonths = cast<dictionary@>(cotdYMDMapTree[yr]);
-                auto months = cast<int[]@>(dMonths['__keys']);
+                // auto months = cast<int[]@>(dMonths['__keys']);
+                auto months = dMonths.GetKeys();
                 months.SortDesc();
                 for (uint j = 0; j < months.Length; j++) {
                     string month = "" + months[j];
-                    if (month == "__keys") { continue; }
+                    // if (month == "__keys") { continue; }
                     if (UI::TreeNode(month)) {
                         auto dDays = cast<dictionary@>(dMonths[month]);
-                        auto days = cast<int[]@>(dDays['__keys']);
+                        // auto days = cast<int[]@>(dDays['__keys']);
+                        auto days = dDays.GetKeys();
                         days.SortDesc();
                         for (uint k = 0; k < days.Length; k++) {
                             string day = "" + days[k];
-                            if (day == "__keys") { continue; }
+                            // if (day == "__keys") { continue; }
                             if (UI::TreeNode(day)) {
                                 auto map = cast<JsonBox@>(dDays[day]);
-                                UI::Text("Map ID: " + map.j['mapUid']);
-                                UI::Text("Date: ")
+                                mapId = map.j['mapUid'];
+                                UI::Text("COTD " + yr + "-" + month + "-" + day);
+                                UI::Text("Map ID: " + mapId);
                                 UI::TreePop();
                             }
                         }
