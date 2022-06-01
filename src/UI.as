@@ -263,7 +263,7 @@ namespace CotdHud {
 
 
 namespace CotdExplorer {
-    bool windowActive = false;
+    bool windowActive = true;
     string icon = Icons::AreaChart;
     HistoryDb@ histDb;  /* instantiated in PersistentData */
 
@@ -347,7 +347,7 @@ namespace CotdExplorer {
         UI::Begin(UI_EXPLORER, GetWindowFlags());
 
         if (UI::IsWindowAppearing()) {
-            @cotdYMDMapTree = histDb.GetCotdYearMonthDayMapTree();
+            startnew(LoadCotdTreeFromDb);
         }
 
         _RenderExplorerMainTree();
@@ -359,12 +359,21 @@ namespace CotdExplorer {
         return UI::WindowFlags::None;
     }
 
+    void LoadCotdTreeFromDb() {
+        while (histDb is null) { yield(); }
+        @cotdYMDMapTree = histDb.GetCotdYearMonthDayMapTree();
+    }
+
 
 
     void _RenderExplorerMainTree() {
-        array<int>@ keys;
         // auto yrs = cast<int[]@>(cotdYMDMapTree['__keys']);
+        if (cotdYMDMapTree is null || cotdYMDMapTree.GetKeys().Length == 0) {
+            _RenderExplorerLoading();
+            return;
+        }
         auto yrs = cotdYMDMapTree.GetKeys();
+
         string mapId;
         yrs.SortDesc();
         for (uint i = 0; i < yrs.Length; i++) {
@@ -400,6 +409,10 @@ namespace CotdExplorer {
                 UI::TreePop();
             }
         }
+    }
+
+    void _RenderExplorerLoading() {
+        UI::Text("Loading...");
     }
 
 
