@@ -4,6 +4,9 @@ namespace CotdExplorer {
     string icon = Icons::AreaChart;
     HistoryDb@ histDb;  /* instantiated in PersistentData */
     MapDb@ mapDb;  /* instantiated in PersistentData */
+    vec2 gameRes;
+    vec2 calendarDayBtnDims;
+    vec2 calendarMonthBtnDims;
 
     dictionary@ cotdYMDMapTree;
 
@@ -13,12 +16,26 @@ namespace CotdExplorer {
     }
 
     void Main() {
+        InitAndCalcUIElementSizes();
         while (WaitNullRefs()) {
             @histDb = PersistentData::histDb;
             @mapDb = PersistentData::mapDb;
             yield();
         }
         startnew(ExplorerManager::ManageHistoricalTotdData);
+    }
+
+    void InitAndCalcUIElementSizes() {
+        /* set on load, so changing the game res mid-game will not update this value. */
+        gameRes = vec2(Draw::GetWidth(), Draw::GetHeight());
+        /* the calendar should take up 20%,30% of the screen size,
+           has a 7*5 grid typically,
+           so each button is a bit less than .2/7,.3/5 of the screen size.
+           tweak wider and flatter: .04,.05
+           looks good on 1080 so use that as reference (not gameRes).
+        */
+        calendarDayBtnDims = vec2(1920, 1080) * vec2(0.04, 0.05);
+        calendarMonthBtnDims = vec2(1920, 1080) * vec2(0.0472, 0.05);
     }
 
     /* window controls */
@@ -140,13 +157,15 @@ namespace CotdExplorer {
         ;
 
     void ExplorerBreadcrumbs() {
-        if (explYear.isSome) {
-            DrawAsRow(_ExplorerBreadcrumbs, UI_EXPLORER + "-breadcrumbs", 7);
-        }
+        DrawAsRow(_ExplorerBreadcrumbs, UI_EXPLORER + "-breadcrumbs", 7);
     }
 
     void _ExplorerBreadcrumbs(DrawUiElems@ f) {
-        if (explYear.isNone) { return; }  // nothing to do before explYear is set (we are on init screen; nothing to reset)
+        if (explYear.isNone) { // return early before explYear is set (we are on init screen; nothing to reset)
+            f();
+            DisabledButton("3.. 2.. 1..");
+            return;
+        }
         // UI::Columns(5);  /* just buttons -- 5 btns max */
         // UI::Columns(9);  /* if we include separators like `/` */
         f();
@@ -161,7 +180,7 @@ namespace CotdExplorer {
             startnew(_ResetExplorerCotdSelection);
         }
         f();
-        if (explMonth.isSome && UI::Button(Text::Format("%02d", explMonth.val))) {
+        if (explMonth.isSome && UI::Button(MONTH_NAMES[explMonth.val])) {
             resetLevel = 2;
             startnew(_ResetExplorerCotdSelection);
         }
@@ -251,11 +270,11 @@ namespace CotdExplorer {
     }
 
     void _RenderExplorerCotdSelection() {
-        /* we are in the selection phase while explCup.isNone */
-        if (explYear.isNone) {
-            TextHeading("Select COTD");
-        }
         ExplorerBreadcrumbs();
+        // /* we are in the selection phase while explCup.isNone */
+        // if (explYear.isNone) {
+        //     TextHeading("Select COTD");
+        // }
 
         if (explYear.isNone) {
             _RenderExplorerCotdYearSelection();
@@ -279,16 +298,24 @@ namespace CotdExplorer {
         return ret;
     }
 
+    int TableFlagsFixed() {
+        return UI::TableFlags::SizingFixedFit;
+    }
+
     void _RenderExplorerCotdYearSelection() {
         TextHeading(_ExplorerCotdTitleStr() + " | Select Year");
         // UI::BeginTable(UI_EXPLORER + "-yrs");
         auto yrs = cotdYMDMapTree.GetKeys();
-        yrs.SortDesc();
-        for (uint i = 0; i < yrs.Length; i++) {
-            string yr = yrs[i];
-            if (UI::Button(yr)) {
-                explYear.AsJust(Text::ParseInt(yr));
+        yrs.SortAsc();
+        if (UI::BeginTable(UI_EXPLORER + "-y-table", 6, TableFlagsFixed())) {
+            for (uint i = 0; i < yrs.Length; i++) {
+                UI::TableNextColumn();
+                string yr = yrs[i];
+                if (UI::Button(yr, calendarMonthBtnDims)) {
+                    explYear.AsJust(Text::ParseInt(yr));
+                }
             }
+            UI::EndTable();
         }
     }
 
@@ -296,13 +323,21 @@ namespace CotdExplorer {
         TextHeading(_ExplorerCotdTitleStr() + " | Select Month");
         auto md = cast<dictionary@>(cotdYMDMapTree["" + explYear.val]);
         auto months = md.GetKeys();
-        months.SortDesc();
-        string month;
-        for (uint i = 0; i < months.Length; i++) {
-            month = months[i];
-            if (UI::Button(month)) {
-                explMonth.AsJust(Text::ParseInt(month));
+        months.SortAsc();
+        uint month;
+        int _offs = (Text::ParseInt(months[0]));  // 2 rows of 6 months
+        int _last = Text::ParseInt(months[months.Length - 1]);
+        int _nMonths = months.Length;
+        bool _disable;
+        if (UI::BeginTable(UI_EXPLORER + "-ym-table", 6, TableFlagsFixed())) {
+            for (uint x = 1; x <= 12; x++) {
+                UI::TableNextColumn();
+                _disable = x < _offs || x - _offs >= _nMonths;
+                if (MDisabledButton(_disable, MONTH_NAMES[x], calendarMonthBtnDims)) {
+                    explMonth.AsJust(x);
+                }
             }
+            UI::EndTable();
         }
     }
 
@@ -317,19 +352,19 @@ namespace CotdExplorer {
         JsonBox@ map1 = cast<JsonBox@>(dd[days[0]]);
         JsonBox@ map;
         uint dayOffset = map1.j["day"];  /* .monthDay is the calendar day number (1-31); .day is 0-6 */
-        if (UI::BeginTable(UI_EXPLORER + "-ymd-table", 7)) {
-            UI::TableNextRow();
+        if (UI::BeginTable(UI_EXPLORER + "-ymd-table", 7, TableFlagsFixed())) {
+            // UI::TableNextRow();
             for (uint i = 0; i < dayOffset; i++) {
                 UI::TableNextColumn();  /* skip some columns based on offset */
             }
             for (uint i = 0; i < days.Length; i++) {
                 day = days[i];
                 @map = cast<JsonBox@>(dd[day]);
-                if (i > 0 && i + dayOffset % 7 == 0) {
-                    UI::TableNextRow();
-                }
+                // if (i > 0 && i + dayOffset % 7 == 0) {
+                //     UI::TableNextRow();
+                // }
                 UI::TableNextColumn();
-                if (UI::Button(day)) {
+                if (UI::Button(day, calendarDayBtnDims)) {
                     OnSelectedCotdDay(Text::ParseInt(day));
                 }
             }

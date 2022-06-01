@@ -6,6 +6,23 @@ void AddSimpleTooltip(string msg) {
     }
 }
 
+void DisabledButton(const string &in text, const vec2 &in size = vec2 ( )) {
+    UI::BeginDisabled();
+    UI::Button(text, size);
+    UI::EndDisabled();
+}
+
+bool MDisabledButton(bool disabled, const string &in text, const vec2 &in size = vec2 ( )) {
+    if (disabled) {
+        DisabledButton(text, size);
+        return false;
+    } else {
+        return UI::Button(text, size);
+    }
+}
+
+/* sorta functional way to draw elements dynamically as a list or row or other things. */
+
 funcdef void DrawUiElems();
 funcdef void DrawUiElemsF(DrawUiElems@ f);
 
