@@ -80,6 +80,10 @@ namespace DataManager {
         // only request this at app startup -- will be updated when we join a COTD server
         cotdLatest_MapId = tmIoApi.GetTotdMapId();
         // todo: save all of GetTotdMap data so that we can look at past COTDs, too
+
+        // todo:
+        print("api.GetMap");
+        print(Json::Write(api.GetMap(cotdLatest_MapId)));
     }
 
     void Update(float dt) {
@@ -441,7 +445,8 @@ namespace DataManager {
         if (Setting_HudShowHistogram && !IsJsonNull(cotdLatest_PlayerRank)) {
             int pRank = 101;
             if (cotdLatest_PlayerRank["records"].Length > 0) {
-                pRank = cotdLatest_PlayerRank["records"][0]["rank"];
+                // adjust player's rank down 50 so that we get (-150, +50) times
+                pRank = Math::Max(51, cotdLatest_PlayerRank["records"][0]["rank"]) - 50;
             }
             if (pRank <= 100) {
                 pRank = 101;

@@ -32,9 +32,6 @@ namespace DbSync {
 }
 
 
-HistoryDb@ HIST_DB_GLOBAL_SINGLETON;
-
-
 class HistoryDb : JsonDb {
     CotdApi@ api;
 
@@ -65,7 +62,7 @@ class HistoryDb : JsonDb {
     */
 
     HistoryDb(const string &in path) {
-        super(path);
+        super(path, 'historyDb-totdsAndChallenges');
         @api = CotdApi();
         startnew(CoroutineFunc(SyncLoops));
     }
@@ -373,11 +370,34 @@ class HistoryDb : JsonDb {
 }
 
 
+
+class MapDb : JsonDb {
+    CotdApi@ api;
+
+    MapDb(const string &in path) {
+        super(path, 'mapDb-with-sync-queue');
+        @api = CotdApi();
+        startnew(CoroutineFunc(SyncLoops));
+    }
+
+    void SyncLoops() {
+        startnew(CoroutineFunc(_SyncLoopMapData));
+    }
+
+    void _SyncLoopMapData() {
+
+    }
+}
+
+
+
 namespace PersistentData {
     const string dataFolder = IO::FromDataFolder("cotd-hud");
     const string filepath_Follows = IO::FromDataFolder("cotd-hud/follows.json");
     const string filepath_HistoricalCotd = IO::FromDataFolder("cotd-hud/historical-cotd.json");
+    const string filepath_MapDb = IO::FromDataFolder("cotd-hud/map-db.json");
     HistoryDb@ histDb;
+    MapDb@ mapDb;
 
     void Main() {
         CreateFilesFoldersIfNeeded();
@@ -387,6 +407,7 @@ namespace PersistentData {
 
     void InitDbs() {
         @histDb = HistoryDb(filepath_HistoricalCotd);
+        @mapDb = MapDb(filepath_MapDb);
     }
 
     void CreateFilesFoldersIfNeeded() {

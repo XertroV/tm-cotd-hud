@@ -1,6 +1,7 @@
 class CotdApi {
     string compUrl;
     string liveSvcUrl;
+    string coreUrl;
     CTrackMania@ app; // = GetTmApp();
     CTrackManiaNetwork@ network; // = cast<CTrackManiaNetwork>(app.Network);
     CTrackManiaNetworkServerInfo@ server_info; // = cast<CTrackManiaNetworkServerInfo>(network.ServerInfo);
@@ -8,8 +9,11 @@ class CotdApi {
     CotdApi() {
         NadeoServices::AddAudience("NadeoClubServices");
         NadeoServices::AddAudience("NadeoLiveServices");
+        NadeoServices::AddAudience("NadeoServices");
+
         compUrl = NadeoServices::BaseURLCompetition();
         liveSvcUrl = NadeoServices::BaseURL();
+        coreUrl = "https://prod.trackmania.core.nadeo.online";  // Not provided by NadeoServices plugin?
 
         @app = GetTmApp();
         @network = cast<CTrackManiaNetwork>(app.Network);
@@ -91,10 +95,37 @@ class CotdApi {
     Json::Value GetTotdByMonth(uint length = 100, uint offset = 0) {
         return CallLiveApiPath("/api/token/campaign/month?length=" + length + "&offset=" + offset);
     }
+
+    // https://live-services.trackmania.nadeo.live/api/token/map/
+    /* example ret val:
+
+    */
+    Json::Value GetMap(const string &in mapUid) {
+        return CallLiveApiPath("/api/token/map/" + mapUid);
+    }
+
+    /* CORE SERVICES API CALLS */
+
+    Json::Value CallCoreApiPath(string path) {
+        AssertGoodPath(path);
+        return FetchCoreEndpoint(coreUrl + path);
+    }
+
+    // todo
+    /* example ret val */
+    Json::Value GetMapInfo(const string &in mapUid) {
+        // https://prod.trackmania.core.nadeo.online/maps/?mapUidList=
+        return CallCoreApiPath("/maps?mapUidList=" + mapUid);
+    }
+
+    Json::Value GetMapsInfo(const string[] &in mapUids) {
+        // https://prod.trackmania.core.nadeo.online/maps?mapUidList=
+        return CallCoreApiPath("/maps?mapUidList=" + string::Join(mapUids, ","));
+    }
 }
 
 Json::Value FetchClubEndpoint(const string &in route) {
-    trace("Requesting: " + route);
+    trace("[FetchClubEndpoint] Requesting: " + route);
     while (!NadeoServices::IsAuthenticated("NadeoClubServices")) { yield(); }
     auto req = NadeoServices::Get("NadeoClubServices", route);
     req.Start();
@@ -104,9 +135,20 @@ Json::Value FetchClubEndpoint(const string &in route) {
 
 
 Json::Value FetchLiveEndpoint(const string &in route) {
-    trace("Requesting: " + route);
+    trace("[FetchLiveEndpoint] Requesting: " + route);
     while (!NadeoServices::IsAuthenticated("NadeoLiveServices")) { yield(); }
     auto req = NadeoServices::Get("NadeoLiveServices", route);
+    req.Start();
+    while(!req.Finished()) { yield(); }
+    return Json::Parse(req.String());
+}
+
+Json::Value FetchCoreEndpoint(const string &in route) {
+    trace("[FetchCoreEndpoint] Requesting: " + route);
+    while (!NadeoServices::IsAuthenticated("NadeoServices")) { yield(); }
+    auto req = NadeoServices::Get("NadeoServices", route);
+    // auto req = Net::HttpRequest();
+    // req.Url = route;
     req.Start();
     while(!req.Finished()) { yield(); }
     return Json::Parse(req.String());
