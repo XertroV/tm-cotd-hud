@@ -340,12 +340,22 @@ namespace CotdExplorer {
                 UI::TableNextColumn();
                 _disable = x < _offs || x - _offs >= _nMonths;
                 if (MDisabledButton(_disable, MONTH_NAMES[x], calendarMonthBtnDims)) {
-                    explMonth.AsJust(x);
+                    OnSelectedCotdMonth(x);
                 }
             }
             UI::EndTable();
         }
     }
+
+    void OnSelectedCotdMonth(int month) {
+        /* when the month is selected we should fire off a
+           coroutine to ensure we have all the map data.
+        */
+        explMonth.AsJust(month);
+        startnew(EnsureMapDataForCurrMonth);
+    }
+
+    // todo -- can select june 12th but it's only june 1st
 
     /* select a monthDay for COTD -- draw calendar for the month */
     void _RenderExplorerCotdDaySelection() {
@@ -365,11 +375,12 @@ namespace CotdExplorer {
             }
             for (uint i = 0; i < days.Length; i++) {
                 day = days[i];
-                @map = cast<JsonBox@>(dd[day]);
                 // if (i > 0 && i + dayOffset % 7 == 0) {
                 //     UI::TableNextRow();
                 // }
                 UI::TableNextColumn();
+                @map = cast<JsonBox@>(dd[day]);
+                if (map is null) continue;
                 if (UI::Button(day, calendarDayBtnDims)) {
                     OnSelectedCotdDay(Text::ParseInt(day));
                 }
@@ -386,6 +397,15 @@ namespace CotdExplorer {
         startnew(EnsureMapDataForCurrDay);
     }
 
+    void EnsureMapDataForCurrMonth() {
+        dictionary@ month = CotdTreeYM();
+        auto keys = month.GetKeys();
+        for (uint i = 0; i < keys.Length; i++) {
+            auto day = cast<JsonBox@>(month[keys[i]]);
+            mapDb.QueueMapGet(day.j['mapUid']);
+        }
+    }
+
     void EnsureMapDataForCurrDay() {
         /* check cache for map data
             if present: return
@@ -397,7 +417,7 @@ namespace CotdExplorer {
         */
         JsonBox@ day = CotdTreeYMD();
         string uid = day.j['mapUid'];
-        // histDb
+        mapDb.QueueMapGet(uid);
     }
 
     const string[] COTD_BTNS = { "1st (COTD) @ 7pm CEST/CET", "2nd (COTN) @ 3am CEST/CET", "3rd (COTM) @ 11am CEST/CET" };

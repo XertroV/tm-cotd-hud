@@ -104,9 +104,9 @@ class CotdApi {
         return CallLiveApiPath("/api/token/map/" + mapUid);
     }
 
-    Json::Value GetMaps(const string[] &in mapUids) {
-        return CallLiveApiPath("/api/token/map/" + string::Join(mapUids, ","));
-    }
+    // Json::Value GetMaps(const string[] &in mapUids) {
+    //     return CallLiveApiPath("/api/token/map/" + string::Join(mapUids, ","));
+    // }
 
 
     /* CORE SERVICES API CALLS */

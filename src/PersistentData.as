@@ -20,6 +20,8 @@ namespace PersistentData {
     const string filepath_HistoricalCotd = MkPath("historical-cotd.json");
     const string filepath_MapDb = MkPath("map-db.json");
     const string filepath_MapQueueDb = MkPath("map-queue-db.json");
+    const string filepath_ThumbQueueDb = MkPath("thumbnail-queue-db.json");
+    const string folder_Thumbnails = MkPath("thumbnails");
 
     HistoryDb@ histDb;
     MapDb@ mapDb;
@@ -36,15 +38,44 @@ namespace PersistentData {
     }
 
     void CreateFilesFoldersIfNeeded() {
-        if (!IO::FolderExists(dataFolder)) {
-            IO::CreateFolder(dataFolder, true);
-        }
+        CheckAndCreateFolder(dataFolder);
+        CheckAndCreateFolder(folder_Thumbnails);
         // if (!IO::FileExists(filepath_Follows)) {
         //     // auto f = IO::File(filepath_Follows, IO::FileMode::Write);
         //     // // f.Open(IO::FileMode::Write);  /* Append, Read, None */
         //     // f.Write('{"players": []}');
         //     // f.Close();
         // }
+    }
+
+    void CheckAndCreateFolder(const string &in folder) {
+        if (!IO::FolderExists(folder)) {
+            IO::CreateFolder(folder, true);
+        }
+    }
+
+    bool ThumbnailCached(const string &in thumbnailFileName) {
+        return IO::FileExists(ThumbnailPath(UrlToFileName(thumbnailFileName)));
+    }
+
+    void DownloadThumbnail(const string &in url) {
+        string fname = UrlToFileName(url);
+        if (ThumbnailCached(fname)) return;
+        logcall("DownloadThumbnail", "Starting Download: " + fname);
+        auto r = Net::HttpGet(url);
+        // r.SaveToFile(ThumbnailPath(fname));
+        r.Start();
+        while (!r.Finished()) yield();
+        if (r.ResponseCode() >= 300) {
+            warn("DownloadThumbnail failed with error code " + r.ResponseCode());
+        } else {
+            r.SaveToFile(ThumbnailPath(fname)); /* do this twice, one should error right? */
+            logcall("DownloadThumbnail", "Downloaded: " + fname);
+        }
+    }
+
+    string ThumbnailPath(const string &in fname) {
+        return folder_Thumbnails + "/" + fname;
     }
 
     void LoopMain() {
@@ -152,14 +183,10 @@ class HistoryDb : JsonDb {
             // defaults
             if (!d.Exists(sYear)) {
                 @d[sYear] = dictionary();
-                // @keys = cast<int[]@>(d['__keys']);
-                // keys.InsertAt(keys.Length, year);
             }
             dictionary@ yd = cast<dictionary@>(d[sYear]);
             if (!yd.Exists(sMonth)) {
                 @yd[sMonth] = dictionary();
-                // @keys = cast<int[]@>(yd['__keys']);
-                // keys.InsertAt(keys.Length, month);
             }
             dictionary@ md = cast<dictionary@>(yd[sMonth]);
 
@@ -169,11 +196,8 @@ class HistoryDb : JsonDb {
                 Json::Value map = days[j];
                 monthDay = map['monthDay'];
                 sDay = Text::Format("%02d", monthDay);
-                // sDay = "" + monthDay;
                 // md[sDay] should never exist.    // !md.Exists(sDay))
                 @md[sDay] = JsonBox(map);
-                // @keys = cast<int[]@>(md['__keys']);
-                // keys.InsertAt(keys.Length, monthDay);
             }
         }
 
@@ -448,20 +472,101 @@ class MapQueueDb : JsonQueueDb {
 class MapDb : JsonDb {
     CotdApi@ api;
     private MapQueueDb@ queueDb;
+    private JsonQueueDb@ thumbQDb;
 
     MapDb(const string &in path) {
         super(path, 'mapDb-with-sync-queue');
         @api = CotdApi();
         @queueDb = MapQueueDb(PersistentData::filepath_MapQueueDb);
+        @thumbQDb = JsonQueueDb(PersistentData::filepath_ThumbQueueDb, 'thumbQueueDb-v1');
         startnew(CoroutineFunc(SyncLoops));
     }
 
+    void EnsureInit() {
+        if (IsJsonNull(data.j['maps'])) {
+            data.j['maps'] = Json::Object();
+            Persist();
+        }
+    }
+
     void SyncLoops() {
+        EnsureInit();
         startnew(CoroutineFunc(_SyncLoopMapData));
+        startnew(CoroutineFunc(_SyncLoopThumbnails));
     }
 
     void _SyncLoopMapData() {
         // todo
+        /* - check if empty -> sleep
+           - get up to X mapUids from the queue (X <= 100?)
+           - call api.GetMapsInfo (or api.GetMap for 1?)
+           - add maps to db
+           - sleep
+        */
+        uint upToXMaps = 50;
+        while (true) {
+            string[] uids = array<string>();
+            while (!queueDb.IsEmpty() && uids.Length < upToXMaps) {
+                string uid = queueDb.GetQueueItemNow();
+                uids.InsertAt(uids.Length, uid);
+            }
+            if (uids.Length > 0) {
+                auto maps = api.GetMapsInfo(uids);
+                for (uint i = 0; i < maps.Length; i++) {
+                    auto map = maps[i];
+                    auto mapj = Json::Object();
+                    /* metadata */
+                    mapj['Id'] = map.Id;
+                    mapj['Uid'] = map.Uid;
+                    mapj['Type'] = tostring(map.Type);
+                    mapj['Name'] = tostring(map.Name);
+                    mapj['Style'] = tostring(map.Style);
+                    mapj['TimeStamp'] = '' + map.TimeStamp;
+                    /* author stuff */
+                    mapj['AuthorAccountId'] = map.AuthorAccountId;
+                    mapj['AuthorWebServicesUserId'] = map.AuthorWebServicesUserId;
+                    mapj['AuthorDisplayName'] = tostring(map.AuthorDisplayName);
+                    mapj['AuthorIsFirstPartyDisplayName'] = map.AuthorIsFirstPartyDisplayName;
+                    mapj['SubmitterWebServicesUserId'] = map.SubmitterWebServicesUserId;
+                    mapj['SubmitterAccountId'] = map.SubmitterAccountId;
+                    /* times */
+                    mapj['AuthorScore'] = map.AuthorScore;
+                    mapj['GoldScore'] = map.GoldScore;
+                    mapj['SilverScore'] = map.SilverScore;
+                    mapj['BronzeScore'] = map.BronzeScore;
+                    /* files */
+                    mapj['ThumbnailUrl'] = map.ThumbnailUrl;
+                    mapj['FileUrl'] = map.FileUrl;
+                    mapj['FileName'] = tostring(map.FileName);
+                    /* save it */
+                    data.j['maps'][map.Uid] = mapj;
+                    QueueThumbnailGet(map.ThumbnailUrl);
+                    logcall('SyncMap', 'Completed: ' + map.Uid);
+                }
+                Persist();
+            } else {
+                sleep(250);
+            }
+        }
+    }
+
+    void _SyncLoopThumbnails() {
+        while (true) {
+            if (!thumbQDb.IsEmpty()) {
+                startnew(CoroutineFunc(_DownloadNextThumb));
+                yield();
+                yield();
+            } else {
+                sleep(250);
+            }
+        }
+    }
+
+    void _DownloadNextThumb() {
+        string tnUrl = thumbQDb.GetQueueItemNow();
+        if (!PersistentData::ThumbnailCached(tnUrl)) {
+            PersistentData::DownloadThumbnail(tnUrl);
+        }
     }
 
     /* sync util functions */
@@ -474,6 +579,14 @@ class MapDb : JsonDb {
     void QueueMapGet(const string &in mapUid) {
         if (!MapIsCached(mapUid)) {
             queueDb.PutQueueEntry(Json::Value(mapUid));
+        } else {
+            QueueThumbnailGet(GetMap(mapUid)['ThumbnailUrl']);
+        }
+    }
+
+    void QueueThumbnailGet(const string &in tnUrl) {
+        if (!PersistentData::ThumbnailCached(tnUrl)) {
+            thumbQDb.PutQueueEntry(tnUrl);
         }
     }
 
@@ -481,6 +594,10 @@ class MapDb : JsonDb {
 
     bool MapIsCached(const string &in mapUid) {
         auto map = data.j['maps'][mapUid];
-        return !IsJsonNull(map) && !IsJsonNull(map['mapId']);
+        return !IsJsonNull(map) && !IsJsonNull(map['Id']);
+    }
+
+    Json::Value GetMap(const string &in uid) {
+        return data.j['maps'][uid];
     }
 }

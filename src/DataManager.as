@@ -89,7 +89,7 @@ namespace DataManager {
         print(r.Length);
         for (uint i = 0; i < r.Length; i++) {
             auto v = r[i];
-            print(tostring(v));
+            print(tostring(v.Name));
         }
     }
 

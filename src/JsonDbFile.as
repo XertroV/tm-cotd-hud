@@ -143,10 +143,11 @@ class JsonDb {
 class JsonQueueDb : JsonDb {
     JsonQueueDb(const string &in path, const string &in dbId) {
         super(path, dbId);
-        startnew(CoroutineFunc(SyncLoops));
+        StartSyncLoops();
+        // asdf
     }
 
-    void SyncLoops() {
+    void StartSyncLoops() {
         CheckInitQueueData();
         ValidateUpgradeQueue();
         startnew(CoroutineFunc(_SyncLoopQueueData));
