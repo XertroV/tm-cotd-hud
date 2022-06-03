@@ -127,6 +127,9 @@ void RenderSettingsHudHistogram() {
 
     Setting_HudHistPlayerColor = UI::InputColor3("Bar with Your Time", Setting_HudHistPlayerColor);
     AddSimpleTooltip("This will highlight the histogram bar that your time is in with this color.");
+
+    /*
+
     UI::TextWrapped(
         "The histogram spans a maximum of 5 ranks (200 players).\n"
         + "Normally, your rank is the middle one. That isn't the case if you're in the top or bottom 100 players, though."
@@ -148,6 +151,8 @@ void RenderSettingsHudHistogram() {
             + "C5: " + Vec3ToStr(Setting_HudHistColor5) + "\n"
         );
     }
+
+    */
 }
 
 

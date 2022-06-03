@@ -50,7 +50,7 @@ float JsonMinFloat(Json::Value v) {
 int[] JArrayToInt(Json::Value v) {
     AssertJsonArrayNonEmpty(v);
     int[] xs = array<int>(v.Length);
-    for (uint i = 1; i < v.Length; i++) {
+    for (uint i = 0; i < v.Length; i++) {
         xs[i] = v[i];
     }
     return xs;
@@ -59,7 +59,7 @@ int[] JArrayToInt(Json::Value v) {
 float[] JArrayToFloat(Json::Value v) {
     AssertJsonArrayNonEmpty(v);
     float[] xs = array<float>(v.Length);
-    for (uint i = 1; i < v.Length; i++) {
+    for (uint i = 0; i < v.Length; i++) {
         xs[i] = v[i];
     }
     return xs;
@@ -67,9 +67,9 @@ float[] JArrayToFloat(Json::Value v) {
 
 string[] JArrayToString(Json::Value v) {
     AssertJsonArrayNonEmpty(v);
-    string[] xs = array<string>(v.Length);
-    for (uint i = 1; i < v.Length; i++) {
-        xs[i] = v[i];
+    string[] xs = array<string>();
+    for (uint i = 0; i < v.Length; i++) {
+        xs.InsertLast(v[i]);
     }
     return xs;
 }

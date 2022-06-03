@@ -13,12 +13,12 @@
     - [x] Sync COTD qualifier raw data for times for histogram (ad-hoc)
     - [x] Sync Map data (ad-hoc)
     - [x] UI selection layout / styles
-    - [ ] Draw Histogram
+    - [x] Draw Histogram
 - [ ] COTD Friends
   - [ ] Show who's playing this COTD and their times
   - [ ] BChat integration (`/track-cotd @XertroV`) (or `/add-cotd-friend`)
   - [ ] Highlight the player in historical/explorer UI
   - [ ] Browse or view players in COTD + one-click add-as-friend
-- [ ] Cache Player ID data (like name)
+- [x] Cache Player ID data (like name)
 - [ ] Optimization: check current COTD data and don't re-request times unnecessarily -- should be cached once the COTD qualis are over.
 - [ ] About Page

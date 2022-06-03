@@ -11,14 +11,15 @@ namespace CotdExplorer {
 #endif
 
     BoolWP@ windowActive = BoolWP(false);
+    BoolWP@ windowCGradOpen = BoolWP(false);
     string icon = Icons::AreaChart;
     HistoryDb@ histDb;  /* instantiated in PersistentData */
     MapDb@ mapDb;  /* instantiated in PersistentData */
     vec2 gameRes;
     vec2 calendarDayBtnDims;
-    vec2 calendarMonthBtnDims;
+    vec2 calendarMonthBtnDims, challengeBtnDims;
     const vec2 mapThumbDims = vec2(256, 256);
-    const vec2 screenRes = vec2(Draw::GetWidth(), Draw::GetHeight());
+    vec2 screenRes = vec2(Draw::GetWidth(), Draw::GetHeight());
     int2 mousePos = int2(0, 0);
 
     dictionary@ cotdYMDMapTree;
@@ -52,6 +53,7 @@ namespace CotdExplorer {
         */
         calendarDayBtnDims = vec2(1920, 1080) * vec2(0.04, 0.05);
         calendarMonthBtnDims = vec2(1920, 1080) * vec2(0.0472, 0.05);
+        challengeBtnDims = vec2(1920, 1080) * vec2(.056, .05);
 #if DEV
         windowActive.v = true;
 #endif
@@ -134,7 +136,7 @@ namespace CotdExplorer {
             UI::SetNextWindowSize(730, 1000, UI::Cond::Always);
             windowActive.v = true;
         }
-        UI::Begin(ExplorerWindowTitle, windowActive.v);
+        UI::Begin(ExplorerWindowTitle, windowActive.v, GetWindowFlags());
 
         if (UI::IsWindowAppearing()) {
             UI::SetWindowSize(vec2(730, 1000), UI::Cond::Always);
@@ -142,6 +144,8 @@ namespace CotdExplorer {
             _DevSetExplorerCotdSelection();
             startnew(LoadCotdTreeFromDb);
         }
+
+        _RenderMenuBar();
 
         if (cotdYMDMapTree is null || cotdYMDMapTree.GetKeys().Length == 0) {
             _RenderExplorerLoading();
@@ -153,6 +157,7 @@ namespace CotdExplorer {
 
     int GetWindowFlags() {
         int ret = UI::WindowFlags::NoCollapse;
+        ret |= UI::WindowFlags::MenuBar;
         // ret |= UI::WindowFlags::AlwaysUseWindowPadding;
         return ret;
     }
@@ -263,6 +268,22 @@ namespace CotdExplorer {
         }
     }
 
+    /* MenuBar */
+
+    void _RenderMenuBar() {
+        if (UI::BeginMenuBar()) {
+
+            if (UI::BeginMenu("Utilities")) {
+                if (UI::MenuItem("Color Gradients Tool", "", windowCGradOpen.v)) {
+                    windowCGradOpen.v = !windowCGradOpen.v;
+                }
+                UI::EndMenu();
+            }
+
+            UI::EndMenuBar();
+        }
+    }
+
     /* Explorer UI Idea: Buttons + Breadcrumbs */
 
     /* idea for rendering UI:
@@ -335,6 +356,7 @@ namespace CotdExplorer {
         explYear.AsJust(2022);
         explMonth.AsJust(4);
         explDay.AsJust(29);
+        // OnSelectedCotdChallenge()
         // explCup.AsJust(2);
         // explQDiv.AsJust(1);
         // explMatch.AsJust(1);
@@ -504,6 +526,8 @@ namespace CotdExplorer {
     void DrawTotdMapInfoTable(Json::Value map, const string &in totdDate) {
         string tnUrl = map['ThumbnailUrl'];
         string authorName = map['AuthorDisplayName'];
+        string authorId = map['AuthorWebServicesUserId'];
+        if (IsSpecialPlayerId(authorId)) authorName = rainbowLoopColorCycle(authorName);
         string authorScore = Time::Format(map['AuthorScore']);
         string mapName = map['Name'];
         mapName = EscapeRawToOpenPlanet(MakeColorsOkayDarkMode(mapName));
@@ -545,7 +569,7 @@ namespace CotdExplorer {
         }
     }
 
-    const string[] COTD_BTNS = { "1st (COTD) @ 7pm CEST/CET", "2nd (COTN) @ 3am CEST/CET", "3rd (COTM) @ 11am CEST/CET" };
+    const string[] COTD_BTNS = { "1st (COTD)\n7pm CEST/CET", "2nd (COTN)\n3am CEST/CET", "3rd (COTM)\n11am CEST/CET" };
 
     void _RenderExplorerCotdCupSelection() {
         auto cIds = CotdChallengesForSelectedDate();
@@ -556,15 +580,20 @@ namespace CotdExplorer {
         } else {
             TextHeading(_ExplorerCotdTitleStr() + " | Select Cup");
             string btnLab;
-            for (int i = 0; i < Math::Min(cIds.Length, COTD_BTNS.Length); i++) {
-                auto c = histDb.GetChallenge(cIds[i]);
-                if (c['startDate'] < Time::Stamp) {
-                    btnLab = COTD_BTNS[i];
-                    int cotdNum = btnLab[0] - 48;  /* '1' = 49; 49 - 48 = 1. (ascii char value - 48 = int value); */
-                    if (UI::Button(btnLab)) {
-                        OnSelectedCotdChallenge(cotdNum, mapUid, cIds[i]);
+            if (UI::BeginTable(UI_EXPLORER + "-tableChooseCId", 5, TableFlagsFixedSame())) {
+                UI::TableNextColumn();
+                for (int i = 0; i < Math::Min(cIds.Length, COTD_BTNS.Length); i++) {
+                    auto c = histDb.GetChallenge(cIds[i]);
+                    if (c['startDate'] < Time::Stamp) {
+                        btnLab = COTD_BTNS[i];
+                        int cotdNum = btnLab[0] - 48;  /* '1' = 49; 49 - 48 = 1. (ascii char value - 48 = int value); */
+                        UI::TableNextColumn();
+                        if (UI::Button(btnLab, challengeBtnDims)) {
+                            OnSelectedCotdChallenge(cotdNum, mapUid, cIds[i]);
+                        }
                     }
                 }
+                UI::EndTable();
             }
         }
     }
@@ -577,7 +606,6 @@ namespace CotdExplorer {
         showHistogram = false;
         histUpperRank = highRankFilter = 99999;
         lowRankFilter = 0;
-
         if (PersistentData::MapTimesCached(mapUid, cId)) {
             startnew(_GenHistogramData);
         }
@@ -707,6 +735,7 @@ namespace CotdExplorer {
                 uint pad = 40;
                 auto wPos = UI::GetWindowPos();
                 auto wSize = UI::GetWindowSize();
+                screenRes = vec2(Draw::GetWidth(), Draw::GetHeight());
                 vec2 newPos = vec2(wPos.x + wSize.x + pad, wPos.y) / screenRes;
                 vec2 newSize = vec2(wSize.x, Math::Min(wSize.x, wSize.y) / 2.) / screenRes;
                 Histogram::Draw(
@@ -772,6 +801,7 @@ namespace CotdExplorer {
         auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
         uint nPlayers = jb.j['nPlayers'];
         uint chunkSize = jb.j['chunkSize'];
+        if (histUpperRank > 90000) highRankFilter = uint(Math::Floor(nPlayers * .97));
         histUpperRank = nPlayers;
         rawScores = array<uint>();
         divCutoffs = array<uint>();
@@ -823,7 +853,6 @@ namespace CotdExplorer {
                 if (UI::Button("Download")) {
                     lastCidDownload = cId;
                     mapDb.QueueMapChallengeTimesGet(mapUid, cId);
-                    //startnew(CoroutineFunc(mapDb._GetOneCotdMapTimes));
                 }
             } else {
                 UI::Dummy(vec2());
@@ -843,7 +872,7 @@ namespace CotdExplorer {
                 DrawAs2Cols("Total Divisions:", '' + Text::Format("%.1f", nPlayers / 64.));
                 UI::TableNextRow();
                 DrawAs2Cols("Last Div:", Text::Format("%d", (nPlayers - 1) % 64 + 1) + " Players");
-                DrawAs2Cols("Challenge ID:", Text::Format("%d", cId) + " Players");
+                DrawAs2Cols("Challenge ID:", Text::Format("%d", cId));
             }
             UI::EndTable();
         }

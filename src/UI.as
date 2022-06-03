@@ -73,7 +73,8 @@ namespace CotdHud {
                 DataManager::cotd_HistogramMinMaxRank,
                 DataManager::cotd_HistogramData,
                 histBarColor,
-                Histogram::TimeXLabelFmt
+                Histogram::TimeXLabelFmt,
+                getDivFromScore
                 );
         }
     }
@@ -126,19 +127,23 @@ namespace CotdHud {
         if (Math::Abs(int(pdr.timeMs) - int(score)) < halfBucketWidth) {
             return vec3To4(Setting_HudHistPlayerColor, .99);
         }
-
-        uint colTime = score;
-        uint div = 1;
-        for (uint i = 0; i < DataManager::divRows.Length; i++) {
-            uint divScore = DataManager::divRows[i].timeMs;
-            if (divScore >= colTime && divScore != MAX_DIV_TIME) {
-                div = i;
-                break;
-            }
-        }
+        uint div = getDivFromScore(score);
         float h = (87. * float(div)) % 360.;
         Color@ c = Color(vec3(h, 70, 50), ColorTy::HSL);
         return c.rgba(.8);
+    }
+
+    uint getDivFromScore(uint score) {
+        uint div = 0;
+        for (uint i = 0; i < DataManager::divRows.Length; i++) {
+            uint divScore = DataManager::divRows[i].timeMs;
+            if (divScore >= score && divScore != MAX_DIV_TIME) {
+                div = i + 1;
+                break;
+            }
+        }
+        if (div == 0) div = 99;
+        return div;
     }
 
     /* UI:: calls to draw heading

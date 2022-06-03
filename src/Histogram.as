@@ -89,7 +89,8 @@ namespace Histogram {
         for (uint b = 0; b <= nBuckets; b++) {
             float height = size.y * float(data[b]) / float(maxCount);
             uint xScore = uint(b * bucketWidth + hData.minXVal);
-            DrawBar(pos.x + barWidth * b, pos.y + size.y - height, barWidth, height, xScore, getDiv(xScore), barColorF(xScore, bucketWidth / 2));
+            uint bucketCount = hData.ys[b];
+            DrawBar(pos.x + barWidth * b, pos.y + size.y - height, barWidth, height, xScore, bucketCount, getDiv(xScore), barColorF(xScore, bucketWidth / 2));
         }
 
         /* draw X min/max labels */
@@ -110,11 +111,11 @@ namespace Histogram {
         _DebugPrintVariables(hData, barWidth, maxCount, bucketIxOfMax);
     }
 
-    void DrawBar(float x, float y, float w, float h, uint xScore, uint div, vec4 col) {
+    void DrawBar(float x, float y, float w, float h, uint xScore, uint bucketCount, uint div, vec4 col) {
         // x = Math::Ceil(x);
         bool mib = IsMouseInBox(x,y,w,h);
         if (mib) {
-            DrawHoverForBar(x + w/2, y + h, xScore, div);
+            DrawHoverForBar(x + w/2, y + h, xScore, bucketCount, div);
         }
         vec4 _col = mib ? vec4(.9, .8, .1, 1.0) : col;
         nvg::BeginPath();
@@ -134,8 +135,8 @@ namespace Histogram {
         nvg::ClosePath();
     }
 
-    void DrawHoverForBar(float x, float y, uint score, uint div) {
-        DrawLabelBelow(Time::Format(score) + " / Div " + div, vec2(x, y), 3.0, vec4(.1, .1, .1, .9));
+    void DrawHoverForBar(float x, float y, uint score, uint bucketCount, uint div) {
+        DrawLabelBelow(Time::Format(score) + " / " + bucketCount + " Players / Div " + div, vec2(x, y), 3.0, vec4(.1, .1, .1, .9));
     }
 
     bool IsMouseInBox(float x, float y, float w, float h) {
@@ -144,7 +145,7 @@ namespace Histogram {
         return (x <= mx && mx <= x + w) && (y <= my && my <= y + h);
     }
 
-    const float _TB_WIDTH = 200;
+    const float _TB_WIDTH = 500;
 
     void DrawLabelBelow(string &in l, vec2 pos, float dhMult = 1.0, vec4 bgColor = BG_COL) {
         /* set up */

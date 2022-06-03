@@ -892,7 +892,7 @@ class MapDb : JsonDb {
                 auto _playerIds = playerNameQDb.GetNQueueItemsNow(100);
                 string[] playerIds = JArrayToString(_playerIds);
                 yield();
-                logcall("_SyncLoopPlayerNames", "Fetching " + playerIds.Length + " player names.");
+                logcall("_SyncLoopPlayerNames", "Fetching " + playerIds.Length + " player names. " + playerIds[0] +  string::Join(playerIds, ","));
                 auto names = api.GetPlayersDisplayNames(playerIds);
                 playerNameDb.SetMany(playerIds, names);
                 logcall("_SyncLoopPlayerNames", "Completed " + names.Length + " player names.");
@@ -977,7 +977,7 @@ class MapDb : JsonDb {
         int c = 0;
         for (uint i = 0; i < playerIds.Length; i++) {
             pid = playerIds[i];
-            if (!playerNameDb.Exists(pid)) {
+            if (!playerNameDb.Exists(pid) && pid.Length > 0) {
                 playerNameQDb.PutQueueEntry(pid, false);
                 c++;
             }
