@@ -83,3 +83,22 @@ void DrawAs2Cols(const string &in c1, const string &in c2) {
     UI::TableNextColumn();
     UI::Text(c2);
 }
+
+/* cooldown colors */
+
+Color@ cooldownStart = Color(vec3(3., 0xc, 0xe) / 16.).ToHSL();
+Color@ cooldownMid = Color(vec3(.7,.9,.5)).ToHSL();
+Color@ cooldownEnd = Color(vec3(1,1,1)).ToHSL();
+string[] cooldownColors = ExtendStringArrs(
+    maniaColorForColors(gradientColors(cooldownStart, 20, cooldownMid)),
+    maniaColorForColors(gradientColors(cooldownMid, 8, cooldownEnd))
+    );
+
+string maniaColorForCooldown(int delta, int cooldownMs, bool escaped = false) {
+    uint ix = Math::Round(float((cooldownColors.Length - 1) * Math::Clamp(delta, 0, cooldownMs)) / float(cooldownMs));
+    string ret = cooldownColors[ix];
+    if (escaped) {
+        ret = "\\" + ret;
+    }
+    return ret;
+}

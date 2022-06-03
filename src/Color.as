@@ -308,6 +308,14 @@ Color@[] gradientColors(Color@ _from, uint length, Color@ _to) {
     return ret;
 }
 
+string[] maniaColorForColors(Color@[] cs) {
+    string[] mcs = array<string>();
+    for (uint i = 0; i < cs.Length; i++) {
+        mcs.InsertLast(cs[i].ManiaColor);
+    }
+    return mcs;
+}
+
 string TextGradient(const string &in text, Color@ _from, Color@ _to) {
     auto colors = gradientColors(_from, text.Length, _to);
     if (colors.Length != uint(text.Length)) {

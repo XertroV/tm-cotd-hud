@@ -106,6 +106,8 @@ namespace DataManager {
                 cotdLatest_MapId = gi.MapId();
                 // todo did this fix the issue when joining a new COTD?
                 startnew(_FullUpdateCotdStatsSeries);
+                // startnew(SetCurrentCotdData);
+                // startnew(UpdateDivs);
             }
         // } catch {
         //     warn("Exception in Update: " + getExceptionInfo());
@@ -205,6 +207,7 @@ namespace DataManager {
 
     void ApiUpdateCotdStatus() {
         cotdLatest_Status = api.GetCotdStatus();
+        logcall('ApiUpdateCotdStatus', Json::Write(cotdLatest_Status));
     }
 
     Json::Value GetChallenge() {

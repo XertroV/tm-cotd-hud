@@ -773,9 +773,14 @@ namespace CotdExplorer {
         _DrawCotdTimeTableRow(lastTimes[lastTimes.Length - 1], topScore);
     }
 
+    int copiedCooldownSince = 0;
+    int copiedCooldownMs = 1250;
+    string lastCopiedPid;
+
     void _DrawCotdTimeTableRow(Json::Value time, int topScore) {
         int rank = time['rank'];
         int score = time['score'];
+        string pid = time['player'];
         UI::TableNextColumn();
         UI::Text('' + rank);
         UI::TableNextColumn();
@@ -785,6 +790,23 @@ namespace CotdExplorer {
             UI::Text(c_timeOrange + "+" + Time::Format(score - topScore));
         UI::TableNextColumn();
         // todo player name
+        bool nameExists = mapDb.playerNameDb.Exists(pid);
+        int cooldownDelta = Time::Now - copiedCooldownSince;
+        bool showCooldownColor = lastCopiedPid == pid && cooldownDelta < copiedCooldownMs;
+        string hl = showCooldownColor
+            ? maniaColorForCooldown(cooldownDelta, copiedCooldownMs, true)
+            : nameExists ? "" : "\\$a42";
+        string pName = hl + (nameExists ? mapDb.playerNameDb.Get(pid) : "?? " + pid.Split('-')[0]);
+        UI::Text(pName);
+        if (UI::IsItemClicked()) {
+            trace("Copying to clipboard: " + pid);
+            IO::SetClipboard(pid);
+            lastCopiedPid = pid;
+            copiedCooldownSince = Time::Now;
+        }
+        if (!mapDb.playerNameDb.Exists(pid)) {
+            AddSimpleTooltip("Player ID not found. Click to copy.");
+        }
         UI::TableNextRow();
     }
 

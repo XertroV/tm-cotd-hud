@@ -184,9 +184,6 @@ void RenderSettingsAdvanced() {
     Setting_ShowHudEvenIfInterfaceHidden = UI::Checkbox("Show HUD even if interface is hidden?", Setting_ShowHudEvenIfInterfaceHidden);
     AddSimpleTooltip("This only will ignore whether the interface is hidden or not.\nYou should also enable 'General > Show HUD Always' if you want the HUD to be for-sure visible.");
 
-    // State_UserDidUnbindWhenPrompted = UI::Checkbox("User did unbind when prompted", State_UserDidUnbindWhenPrompted);
-    // AddSimpleTooltip("This flag is true if the user unbound giveup when prompted to.\nThis is used to figure out if the rebind prompt should be shown.");
-
     /*****/
     TextHeading("Current COTD Data");
 

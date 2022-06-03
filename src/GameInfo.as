@@ -12,14 +12,51 @@ class GameInfo {
         return cast<CTrackManiaNetworkServerInfo>(GetNetwork().ServerInfo);
     }
 
+    bool PlaygroundIsNull() {
+        auto network = GetNetwork();
+        return network.ClientManiaAppPlayground is null
+            || network.ClientManiaAppPlayground.Playground is null;
+    }
+
     bool PlaygroundNotNull() {
         auto network = GetNetwork();
         return network.ClientManiaAppPlayground !is null
             && network.ClientManiaAppPlayground.Playground !is null;
     }
 
+    /* some core objects that expose API methods for NadeoServices */
+
+    CGameDataFileManagerScript@ GetCoreApiThingForMaps() {
+        return GetTmApp().MenuManager.MenuCustom_CurrentManiaApp.DataFileMgr;
+    }
+
+    CGameUserManagerScript@ GetCoreUserManagerScript() {
+        return GetTmApp().UserManagerScript;
+    }
+
+    CGameManiaPlanetScriptAPI@ GetManiaPlanetScriptApi() {
+        return GetTmApp().ManiaPlanetScriptAPI;
+    }
+
+    /* menu / dialog stuff */
+
+    void BindInput(int ActionIndex, CInputScriptPad@ Device) {
+        auto mpsapi = GetManiaPlanetScriptApi();
+        mpsapi.Dialog_BindInput(ActionIndex, Device);
+    }
+
+    void UnbindInput(CInputScriptPad@ pad) {
+        GetManiaPlanetScriptApi().Dialog_UnbindInputDevice(pad);
+    }
+
+    /* Utility Functions */
+
     string PlayersId() {
         return GetNetwork().PlayerInfo.WebServicesUserId;
+    }
+
+    bool InGame() {
+        return PlaygroundNotNull() && (string(GetServerInfo().CurGameModeStr).Length > 0);
     }
 
     bool IsCotdQuali() {
@@ -56,6 +93,10 @@ class GameInfo {
 
     MwSArray<CGameNetPlayerInfo@> getPlayerInfos() {
         return GetNetwork().PlayerInfos;
+    }
+
+    CTrackManiaPlayerInfo@ NetPIToTrackmaniaPI(CGameNetPlayerInfo@ netpi) {
+        return cast<CTrackManiaPlayerInfo@>(netpi);
     }
 }
 

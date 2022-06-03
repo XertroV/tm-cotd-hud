@@ -677,6 +677,7 @@ class CotdTimesReqData {
 
 
 class MapDb : JsonDb {
+    GameInfo@ gi = GameInfo();
     CotdApi@ api;
     private HistoryDb@ histDb;
     private MapQueueDb@ queueDb;
@@ -684,7 +685,7 @@ class MapDb : JsonDb {
     private JsonQueueDb@ timesQDb;
     private JsonQueueDb@ recordsQDb;
     private CotdIndexDb@ cotdIndexDb;
-    private JsonDictDb@ playerNameDb;
+    JsonDictDb@ playerNameDb;
     private JsonQueueDb@ playerNameQDb;
 
     MapDb(const string &in path) {
@@ -719,6 +720,7 @@ class MapDb : JsonDb {
         startnew(CoroutineFunc(_SyncLoopRecords));
         startnew(CoroutineFunc(_SyncLoopCotdMapTimes));
         startnew(CoroutineFunc(_SyncLoopPlayerNames));
+        startnew(CoroutineFunc(_LoopCheckPlayerNamesInGame));
     }
 
     void _SyncLoopMapData() {
@@ -888,8 +890,28 @@ class MapDb : JsonDb {
                 logcall("_SyncLoopPlayerNames", "Fetching " + playerIds.Length + " player names.");
                 auto names = api.GetPlayersDisplayNames(playerIds);
                 playerNameDb.SetMany(playerIds, names);
+                logcall("_SyncLoopPlayerNames", "Completed " + names.Length + " player names.");
+                if (names.Length == 1) {
+                    logcall("_SyncLoopPlayerNames", "(" + playerIds[0] + " -> " + names[0] + ")");
+                }
             }
             sleep(250);
+        }
+    }
+
+    void _LoopCheckPlayerNamesInGame() {
+        while (true) {
+            logcall("_LoopCheckPlayerNamesInGame", "Checking...");
+            auto playerInfos = gi.getPlayerInfos();
+            for (uint i = 0; i < playerInfos.Length; i++) {
+                auto pi = gi.NetPIToTrackmaniaPI(playerInfos[i]);
+                if (!playerNameDb.Exists(pi.WebServicesUserId)) {
+                    trace("Caching player id -> name: (" + pi.WebServicesUserId + ", " + pi.Name + ")");
+                    playerNameDb.Set(pi.WebServicesUserId, pi.Name);
+                    yield();  // lazy instead of making a list of keys and vals
+                }
+            }
+            sleep(30 * 1000);
         }
     }
 

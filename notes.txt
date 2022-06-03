@@ -1,0 +1,16 @@
+notes
+
+void app.ManiaPlanetScriptApi.Dialog_Message('string')
+void app.ManiaPlanetScriptApi.Dialog_BindInput('string')
+string app.ManiaPlanetScriptApi.Authentication_Token
+
+..InputBindings_ActionNames
+..InputBindings_Bindings
+
+
+
+DataFileMgr
+MenuCustom_CurrentManiaApp
+MenuManager
+
+app.MenuManager.MenuCustom_CurrentManiaApp.DataFileMgr
