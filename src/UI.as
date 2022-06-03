@@ -145,7 +145,10 @@ namespace CotdHud {
     void RenderLastDivPop() {
         if (Setting_HudShowLastDivPop) {
             auto p = DataManager::GetCotdTotalPlayers() % 64;
-            UI::Text("Last Div: " + "\\$0e4" + p + "\\$z Players");
+            if (p == 0) p = 64;
+            string players = "Players";
+            if (p == 1) players = "Player \\$920(rip)";
+            UI::Text("Last Div: " + "\\$0e4" + p + "\\$z " + players);
         }
     }
 
@@ -203,7 +206,7 @@ namespace CotdHud {
             if (!isPlayer) {
                 int diff = int(DataManager::playerDivRow.timeMs) - int(dr.timeMs);
                 bool playerAhead = diff < 0;
-                hl = playerAhead ? "\\$d81+" : "\\$3ce-";
+                hl = playerAhead ? c_timeOrange + "+" : c_timeBlue + "-";
                 UI::TableNextColumn();
                 if (diff != 0) {
                     UI::Text(hl + Time::Format(Math::Abs(diff)));

@@ -38,6 +38,10 @@ class BoolWP {
     }
 
     bool get_v() {
-        return this.value;
+        return this.Get();
+    }
+
+    void set_v(bool v) {
+        this.Set(v);
     }
 }

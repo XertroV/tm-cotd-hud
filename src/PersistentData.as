@@ -21,7 +21,14 @@ namespace PersistentData {
     const string filepath_MapDb = MkPath("map-db.json");
     const string filepath_MapQueueDb = MkPath("map-queue-db.json");
     const string filepath_ThumbQueueDb = MkPath("thumbnail-queue-db.json");
+    const string filepath_TimesQueueDb = MkPath("map-times-queue-db.json");
+    const string filepath_RecordsQueueDb = MkPath("map-records-queue-db.json");
+    const string filepath_CotdIndexDb = MkPath("cotd-index-db.json");
+    const string filepath_PlayerNameDb = MkPath("player-name-db.json");
+    const string filepath_PlayerNameQDb = MkPath("player-name-q-db.json");
+
     const string folder_Thumbnails = MkPath("thumbnails");
+    const string folder_MapTimes = MkPath("map-times");
 
     HistoryDb@ histDb;
     MapDb@ mapDb;
@@ -40,6 +47,7 @@ namespace PersistentData {
     void CreateFilesFoldersIfNeeded() {
         CheckAndCreateFolder(dataFolder);
         CheckAndCreateFolder(folder_Thumbnails);
+        CheckAndCreateFolder(folder_MapTimes);
         // if (!IO::FileExists(filepath_Follows)) {
         //     // auto f = IO::File(filepath_Follows, IO::FileMode::Write);
         //     // // f.Open(IO::FileMode::Write);  /* Append, Read, None */
@@ -53,6 +61,8 @@ namespace PersistentData {
             IO::CreateFolder(folder, true);
         }
     }
+
+    /* thumbnails */
 
     bool ThumbnailCached(const string &in thumbnailFileName) {
         return IO::FileExists(ThumbnailPath(UrlToFileName(thumbnailFileName)));
@@ -104,10 +114,85 @@ namespace PersistentData {
         return t;
     }
 
-    void LoopMain() {
-        while (true) {
-            yield();
+    /* map times */
+
+    string MapTimesPath(const string &in uid, const string &in cotdSuffix) {
+        return folder_MapTimes + "/" + uid + "--" + cotdSuffix + ".json";
+    }
+
+    bool MapTimesCached(const string &in uid, int cId) {
+        string key = uid + "--" + cId;
+        return MAP_COTD_TIMES_JBOX.Exists(key) || IO::FileExists(MapTimesPath(uid, "" + cId));
+    }
+
+    /* cotd qualifying times */
+
+    dictionary@ MAP_COTD_TIMES_JBOX = dictionary();
+
+    JsonBox@ SaveCotdMapTimes(const string &in mapUid, int cId, Json::Value v) {
+        string key = mapUid + "--" + cId;
+        JsonBox@ jb;
+        if (MAP_COTD_TIMES_JBOX.Exists(key)) {
+            @jb = cast<JsonBox@>(MAP_COTD_TIMES_JBOX[key]);
+            jb.j = v;
+        } else {
+            @jb = JsonBox(v);
+            @MAP_COTD_TIMES_JBOX[key] = jb;
         }
+        Json::ToFile(MapTimesPath(mapUid, '' + cId), v);
+        return jb;
+    }
+
+    JsonBox@ GetCotdMapTimes(const string &in mapUid, int cId) {
+        string key = mapUid + "--" + cId;
+        if (MAP_COTD_TIMES_JBOX.Exists(key)) {
+            return cast<JsonBox@>(MAP_COTD_TIMES_JBOX[key]);
+        }
+        auto j = Json::FromFile(MapTimesPath(mapUid, '' + cId));
+        auto jb = JsonBox(j);
+        @MAP_COTD_TIMES_JBOX[key] = jb;
+        return jb;
+    }
+
+    /* totd records */
+
+    string MapRecordsPath(const string &in uid) {
+        return MapTimesPath(uid, "records");
+    }
+
+    bool MapRecordsCached(const string &in uid) {
+        return MAP_RECORDS_JBOX.Exists(uid) || IO::FileExists(MapRecordsPath(uid));
+    }
+
+    dictionary@ MAP_RECORDS_JBOX = dictionary();
+
+    JsonBox@ SaveMapRecord(const string &in mapUid, Json::Value apiResp) {
+        JsonBox@ jb;
+        if (MAP_RECORDS_JBOX.Exists(mapUid)) {
+            @jb = cast<JsonBox@>(MAP_RECORDS_JBOX[mapUid]);
+            jb.j = apiResp;
+        } else {
+            @jb = JsonBox(apiResp);
+            @MAP_RECORDS_JBOX[mapUid] = jb;
+        }
+        Json::ToFile(MapRecordsPath(mapUid), apiResp);
+        return jb;
+    }
+
+    JsonBox@ GetMapRecord(const string &in mapUid) {
+        if (MAP_RECORDS_JBOX.Exists(mapUid)) {
+            return cast<JsonBox@>(MAP_RECORDS_JBOX[mapUid]);
+        }
+        auto j = Json::FromFile(MapRecordsPath(mapUid));
+        auto jb = JsonBox(j);
+        @MAP_RECORDS_JBOX[mapUid] = jb;
+        return jb;
+    }
+
+    void LoopMain() {
+        // while (true) {
+        //     yield();
+        // }
     }
 }
 
@@ -226,8 +311,15 @@ class HistoryDb : JsonDb {
                 @md[sDay] = JsonBox(map);
             }
         }
-
         return d;
+    }
+
+    int GetChallengesMaxId() {
+        return data.j['challenges']['maxId'];
+    }
+
+    Json::Value GetChallenge(int id) {
+        return data.j['challenges']['items']['' + id];
     }
 
     // string[]@ ListTotdYears() {
@@ -495,16 +587,116 @@ class MapQueueDb : JsonQueueDb {
 }
 
 
+class CotdIndexDb : JsonDb {
+    private HistoryDb@ histDb;
+
+    CotdIndexDb(const string &in path, const string &in dbId) {
+        super(path, dbId);
+        Init();
+    }
+
+    void Init() {
+        if (IsJsonNull(data.j['maxId'])) {
+            data.j['maxId'] = -1;
+            data.j['ymdToCotdChallenges'] = Json::Object();
+            Persist();
+        }
+    }
+
+    void SetHistDb(HistoryDb@ _db) {
+        @histDb = _db;
+    }
+
+    void DoScan() {
+        int maxId = GetMaxId();
+        int cMaxId = histDb.GetChallengesMaxId();
+        for (int i = maxId + 1; i <= cMaxId; i++) {
+            Json::Value c = histDb.GetChallenge(i);
+            AddChallenge(i, c);
+        }
+        Persist();
+    }
+
+    private void SetMaxId(int maxId) {
+        data.j['maxId'] = maxId;
+    }
+
+    void AddChallenge(int id, Json::Value c) {
+        if (!IsJsonNull(c)) {
+            int cId = c['id'];
+            if (cId != id) {
+                throw("[AddChallenge] Challenge ID Mismatch! " + id + " vs " + cId);
+            }
+            string name = c['name'];
+            if (name.SubStr(0, 14) == "Cup of the Day") {
+                string date = name.SubStr(15, 10); // 2022-05-30
+                string[] ymd = date.Split('-');
+                auto ymdObj = data.j['ymdToCotdChallenges'];
+                auto year = Json::Value(ymdObj.Get(ymd[0], Json::Object()));
+                auto month = Json::Value(year.Get(ymd[1], Json::Object()));
+                auto day = Json::Value(month.Get(ymd[2], Json::Array()));
+                day.Add(cId);
+                month[ymd[2]] = day;
+                year[ymd[1]] = month;
+                data.j['ymdToCotdChallenges'][ymd[0]] = year;
+            }
+        }
+        SetMaxId(id);
+    }
+
+    int GetMaxId() {
+        return data.j['maxId'];
+    }
+
+    int[] GetChallengesForDate(const string &in year, const string &in month, const string &in day) {
+        auto cs = data.j['ymdToCotdChallenges']
+            .Get(year, Json::Object())
+            .Get(month, Json::Object())
+            .Get(day, Json::Array());
+        int[] _cs = array<int>(cs.Length);
+        for (uint i = 0; i < cs.Length; i++) {
+            _cs[i] = cs[i];
+        }
+        return _cs;
+    }
+}
+
+
+class CotdTimesReqData {
+    string mapUid;
+    int cId;
+    uint rank;
+    uint length;
+    CotdTimesReqData(string mapUid, int cId, uint rank, uint length) {
+        this.mapUid = mapUid;
+        this.cId = cId;
+        this.rank = rank;
+        this.length = length;
+    }
+}
+
+
 class MapDb : JsonDb {
     CotdApi@ api;
+    private HistoryDb@ histDb;
     private MapQueueDb@ queueDb;
     private JsonQueueDb@ thumbQDb;
+    private JsonQueueDb@ timesQDb;
+    private JsonQueueDb@ recordsQDb;
+    private CotdIndexDb@ cotdIndexDb;
+    private JsonDictDb@ playerNameDb;
+    private JsonQueueDb@ playerNameQDb;
 
     MapDb(const string &in path) {
         super(path, 'mapDb-with-sync-queue');
         @api = CotdApi();
         @queueDb = MapQueueDb(PersistentData::filepath_MapQueueDb);
         @thumbQDb = JsonQueueDb(PersistentData::filepath_ThumbQueueDb, 'thumbQueueDb-v1');
+        @timesQDb = JsonQueueDb(PersistentData::filepath_TimesQueueDb, 'timesQueueDb-v1');
+        @recordsQDb = JsonQueueDb(PersistentData::filepath_RecordsQueueDb, 'recordsQueueDb-v1');
+        @cotdIndexDb = CotdIndexDb(PersistentData::filepath_CotdIndexDb, 'cotdIndexDb-v1');
+        @playerNameDb = JsonDictDb(PersistentData::filepath_PlayerNameDb, 'playerNameDb-v1');
+        @playerNameQDb = JsonQueueDb(PersistentData::filepath_PlayerNameQDb, 'playerNameQDb-v1');
         startnew(CoroutineFunc(SyncLoops));
     }
 
@@ -513,12 +705,20 @@ class MapDb : JsonDb {
             data.j['maps'] = Json::Object();
             Persist();
         }
+        while (histDb is null) {
+            @histDb = PersistentData::histDb;
+        }
+        cotdIndexDb.SetHistDb(histDb);
     }
 
     void SyncLoops() {
         EnsureInit();
         startnew(CoroutineFunc(_SyncLoopMapData));
         startnew(CoroutineFunc(_SyncLoopThumbnails));
+        startnew(CoroutineFunc(_IndexLoopCotd));
+        startnew(CoroutineFunc(_SyncLoopRecords));
+        startnew(CoroutineFunc(_SyncLoopCotdMapTimes));
+        startnew(CoroutineFunc(_SyncLoopPlayerNames));
     }
 
     void _SyncLoopMapData() {
@@ -595,7 +795,111 @@ class MapDb : JsonDb {
         }
     }
 
+    void _IndexLoopCotd() {
+        while (true) {
+            int challengesMaxId = histDb.GetChallengesMaxId();
+            if (cotdIndexDb.GetMaxId() < challengesMaxId) {
+                cotdIndexDb.DoScan();
+            }
+            sleep(250);
+        }
+    }
+
+    void _SyncLoopRecords() {
+        logcall("_SyncLoopRecords", "Starting");
+        while (true) {
+            if (!recordsQDb.IsEmpty()) {
+                auto toGet = recordsQDb.GetQueueItemNow();
+                string mapUid = toGet['uid'];
+                if (!PersistentData::MapRecordsCached(mapUid) || toGet.Get('force', false)) {
+                    string seasonUid = toGet['seasonUid'];
+                    logcall("_SyncLoopRecords", "Downloading " + seasonUid);
+                    auto resp = api.GetMapRecords(seasonUid, mapUid);
+                    logcall("_SyncLoopRecords", "\\$zResponse: " + Json::Write(resp));
+                    if (!IsJsonNull(resp['tops'])) {
+                        PersistentData::SaveMapRecord(mapUid, resp);
+                    }
+                } else {
+                    string id = toGet['id'];
+                    logcall("_SyncLoopRecords", "skipping " + id);
+                }
+            } else {
+                sleep(250);
+            }
+            yield();
+        }
+    }
+
+    void _SyncLoopCotdMapTimes() {
+        logcall("_SyncLoopCotdMapTimes", "Starting");
+        while (true) {
+            if (!timesQDb.IsEmpty()) {
+                _GetOneCotdMapTimes();
+                yield();
+            } else {
+                sleep(250);
+            }
+        }
+    }
+
+    void _GetOneCotdMapTimes() {
+        auto toGet = timesQDb.GetQueueItemNow();
+        string mapUid = toGet['uid'];
+        int cId = Text::ParseInt(toGet['challengeId']);
+        if (PersistentData::MapTimesCached(mapUid, cId)) return;
+        auto initData = Json::Object();
+        uint chunkSize = 100;
+        initData['chunkSize'] = chunkSize;
+        initData['ranges'] = Json::Object();
+        uint nPlayers = api.GetPlayerRank(cId, mapUid, '')['cardinal'];
+        initData['nPlayers'] = nPlayers;
+        auto jb = PersistentData::SaveCotdMapTimes(mapUid, cId, initData);
+        for (uint rank = 1; rank < nPlayers; rank += chunkSize) {
+            startnew(
+                CoroutineFuncUserdata(_GetCotdMapTimesRange),
+                CotdTimesReqData(mapUid, cId, rank, chunkSize)
+            );
+            // sleep a bit to be nice to the api
+            sleep(100);
+        }
+    }
+
+    void _GetCotdMapTimesRange(ref@ _args) {
+        auto args = cast<CotdTimesReqData@>(_args);
+        auto times = api.GetCotdTimes(args.cId, args.mapUid, args.length, args.rank - 1);
+        string[] playerIds = array<string>(times.Length);
+        for (uint i = 0; i < times.Length; i++) {
+            times[i].Remove('uid');
+            playerIds[i] = times[i]['player'];
+        }
+        auto jb = PersistentData::GetCotdMapTimes(args.mapUid, args.cId);
+        jb.j['ranges']['' + args.rank] = times;
+        PersistentData::SaveCotdMapTimes(args.mapUid, args.cId, jb.j);
+        QueuePlayerNamesGet(playerIds);
+    }
+
+    void _SyncLoopPlayerNames() {
+        logcall("_SyncLoopPlayerNames", "Starting");
+        while (true) {
+            if (!playerNameQDb.IsEmpty()) {
+                auto _playerIds = playerNameQDb.GetNQueueItemsNow(100);
+                string[] playerIds = JArrayToString(_playerIds);
+                yield();
+                logcall("_SyncLoopPlayerNames", "Fetching " + playerIds.Length + " player names.");
+                auto names = api.GetPlayersDisplayNames(playerIds);
+                playerNameDb.SetMany(playerIds, names);
+            }
+            sleep(250);
+        }
+    }
+
     /* sync util functions */
+
+    bool HaveIndexedChallenge(int cId) {
+        auto v = cotdIndexDb.data.j['indexed']['cId'];
+        if (IsJsonNull(v)) return false;
+        return v;
+    }
 
     // todo
 
@@ -616,6 +920,44 @@ class MapDb : JsonDb {
         }
     }
 
+    void QueueMapChallengeTimesGet(const string &in mapUid, int challengeId) {
+        if (!PersistentData::MapTimesCached(mapUid, challengeId)) {
+            auto obj = Json::Object();
+            obj['id'] = mapUid + "|" + challengeId;
+            obj['uid'] = mapUid;
+            obj['challengeId'] = '' + challengeId;
+            timesQDb.PutQueueEntry(obj);
+        }
+    }
+
+    void QueueMapRecordGet(const string &in seasonUid, const string &in mapUid, bool force = false) {
+        if (!PersistentData::MapRecordsCached(mapUid)) {
+            auto obj = Json::Object();
+            obj['id'] = mapUid;
+            obj['uid'] = mapUid;
+            obj['seasonUid'] = seasonUid;
+            obj['force'] = force;
+            recordsQDb.PutQueueEntry(obj);
+        }
+    }
+
+    void QueuePlayerNameGet(const string &in playerId) {
+        QueuePlayerNamesGet({playerId});
+    }
+
+    void QueuePlayerNamesGet(const string[] &in playerIds) {
+        string pid;
+        int c = 0;
+        for (uint i = 0; i < playerIds.Length; i++) {
+            pid = playerIds[i];
+            if (!playerNameDb.Exists(pid)) {
+                playerNameQDb.PutQueueEntry(pid, false);
+                c++;
+            }
+        }
+        if (c > 0) playerNameQDb.Persist();
+    }
+
     /* access functions */
 
     bool MapIsCached(const string &in mapUid) {
@@ -631,5 +973,9 @@ class MapDb : JsonDb {
         auto map = GetMap(uid);
         if (IsJsonNull(map)) { return map; }
         return map['ThumbnailUrl'];
+    }
+
+    int[] GetChallengesForDate(const string &in year, const string &in month, const string &in day) {
+        return cotdIndexDb.GetChallengesForDate(year, month, day);
     }
 }

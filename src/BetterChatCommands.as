@@ -100,7 +100,7 @@ namespace BcCommands {
             //     msg += "$<$lhttps://openplanet.nl/plugin/206$>";
             // }
 
-            msg += " $z(" + byLineB + "$z)";
+            msg += " $fff(" + byLineB + "$fff)";
 
             if (this.send) {
                 _SendMsg(msg);

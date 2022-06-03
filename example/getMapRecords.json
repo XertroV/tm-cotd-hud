@@ -1,0 +1,141 @@
+{
+    "groupUid": "ae30dd2b-bc83-4c0b-943b-0544efd11a57",
+    "mapUid": "0nQ6A5WWlCR87S7iFpadgU1fjE5",
+    "tops": [{
+        "zoneId": "301e1b69-7e13-11e8-8060-e284abfd2bc4",
+        "zoneName": "World",
+        "top": [{
+            "accountId": "a6ae76c9-9030-4a7b-b533-cacfd6e85cb2",
+            "zoneId": "301f68d0-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "Drôme",
+            "position": 1,
+            "score": 43299
+        }, {
+            "accountId": "98b7dfd7-6706-47f4-9b47-6362e9daf7a2",
+            "zoneId": "3022ea33-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "Oregon",
+            "position": 2,
+            "score": 43409
+        }, {
+            "accountId": "0691c70d-c69d-46a9-a209-6600d708b4bd",
+            "zoneId": "301fec4d-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "Maine-et-Loire",
+            "position": 3,
+            "score": 43484
+        }, {
+            "accountId": "6f67d602-f64b-4bed-a608-347adcf8cad1",
+            "zoneId": "301fde16-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "Haute-Garonne",
+            "position": 4,
+            "score": 43484
+        }, {
+            "accountId": "a1cac8bd-f89b-4d7d-a140-8ef428c20f1e",
+            "zoneId": "301f64f2-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "Ain",
+            "position": 5,
+            "score": 43618
+        }]
+    }, {
+        "zoneId": "301e237a-7e13-11e8-8060-e284abfd2bc4",
+        "zoneName": "Oceania",
+        "top": [{
+            "accountId": "2e5aa9a5-85a2-429c-8985-b353452d9ea8",
+            "zoneId": "30209ed5-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "New Zealand",
+            "position": 1,
+            "score": 45034
+        }, {
+            "accountId": "edc8d2bf-08e8-4969-84d4-e95883406881",
+            "zoneId": "301e3d01-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "Western Australia",
+            "position": 2,
+            "score": 45174
+        }, {
+            "accountId": "003eaab4-d2da-40d3-a6a8-cb5d217a79a5",
+            "zoneId": "301e3d01-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "Western Australia",
+            "position": 3,
+            "score": 45468
+        }, {
+            "accountId": "8899ffb2-41bb-470f-9cac-7e181fe290c2",
+            "zoneId": "301e3d01-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "Western Australia",
+            "position": 4,
+            "score": 45578
+        }, {
+            "accountId": "ec5ac6da-2daf-461d-ab2c-5923fbeb1c4c",
+            "zoneId": "301e309b-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "New South Wales",
+            "position": 5,
+            "score": 45592
+        }]
+    }, {
+        "zoneId": "301e2dc2-7e13-11e8-8060-e284abfd2bc4",
+        "zoneName": "Australia",
+        "top": [{
+            "accountId": "edc8d2bf-08e8-4969-84d4-e95883406881",
+            "zoneId": "301e3d01-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "Western Australia",
+            "position": 1,
+            "score": 45174
+        }, {
+            "accountId": "003eaab4-d2da-40d3-a6a8-cb5d217a79a5",
+            "zoneId": "301e3d01-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "Western Australia",
+            "position": 2,
+            "score": 45468
+        }, {
+            "accountId": "8899ffb2-41bb-470f-9cac-7e181fe290c2",
+            "zoneId": "301e3d01-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "Western Australia",
+            "position": 3,
+            "score": 45578
+        }, {
+            "accountId": "ec5ac6da-2daf-461d-ab2c-5923fbeb1c4c",
+            "zoneId": "301e309b-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "New South Wales",
+            "position": 4,
+            "score": 45592
+        }, {
+            "accountId": "16f2d7af-f9bd-420b-ab14-f5bf7f263ac6",
+            "zoneId": "301e3d01-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "Western Australia",
+            "position": 5,
+            "score": 45595
+        }]
+    }, {
+        "zoneId": "301e309b-7e13-11e8-8060-e284abfd2bc4",
+        "zoneName": "New South Wales",
+        "top": [{
+            "accountId": "ec5ac6da-2daf-461d-ab2c-5923fbeb1c4c",
+            "zoneId": "301e309b-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "New South Wales",
+            "position": 1,
+            "score": 45592
+        }, {
+            "accountId": "349c5f7a-c331-4781-b0f9-03d0ef7abcfd",
+            "zoneId": "301e309b-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "New South Wales",
+            "position": 2,
+            "score": 45625
+        }, {
+            "accountId": "7afc1d61-0b96-4358-ba64-a761e4c5a1a2",
+            "zoneId": "301e309b-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "New South Wales",
+            "position": 3,
+            "score": 45638
+        }, {
+            "accountId": "5dace400-a8a4-46dc-a70a-292f1d46c3fc",
+            "zoneId": "301e309b-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "New South Wales",
+            "position": 4,
+            "score": 45793
+        }, {
+            "accountId": "133f181f-d7c9-40cf-b7cc-37bf5313b986",
+            "zoneId": "301e309b-7e13-11e8-8060-e284abfd2bc4",
+            "zoneName": "New South Wales",
+            "position": 5,
+            "score": 46094
+        }]
+    }]
+}

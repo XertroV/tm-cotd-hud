@@ -104,8 +104,8 @@ namespace DataManager {
             // When we enter a COTD server
             if (isCotd.ChangedToTrue()) {
                 cotdLatest_MapId = gi.MapId();
-                startnew(SetCurrentCotdData);
-                startnew(UpdateDivs);
+                // todo did this fix the issue when joining a new COTD?
+                startnew(_FullUpdateCotdStatsSeries);
             }
         // } catch {
         //     warn("Exception in Update: " + getExceptionInfo());

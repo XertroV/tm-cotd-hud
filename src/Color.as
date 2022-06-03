@@ -5,6 +5,11 @@ const string c_debug = c_brightBlue;
 const string c_mid_grey = "\\$777";
 const string c_dark_grey = "\\$333";
 
+
+const string c_timeOrange = "\\$d81";
+const string c_timeBlue = "\\$3ce";
+
+
 Color@ CGreen = Color(vec3(0.082, 0.961, 0.208));  // #15F535
 Color@ CBlack = Color(vec3(0, 0, 0));  // #15F535
 
@@ -337,7 +342,85 @@ string TextGradient2Point0(Color@[] colors, uint nColors, ColorTy mode, string &
 
 
 string EscapeRawToOpenPlanet(const string &in raw) {
-    return raw.Replace("$$", "_^&^_").Replace("$", "\\$").Replace("_^&^_", "\\$$");
+    return raw.Replace("$$", "_^&^_")
+        .Replace("$o", "") /* strip out $o b/c openplanet renders it as `o` */
+        .Replace("$O", "") /* strip out $o b/c openplanet renders it as `o` */
+        .Replace("$n", "") /* as above */
+        .Replace("$N", "") /* as above */
+        .Replace("$i", "") /* as above */
+        .Replace("$I", "") /* as above */
+        .Replace("$w", "") /* as above */
+        .Replace("$W", "") /* as above */
+        .Replace("$t", "") /* testing -- '$cfa$tSan$af7har$9f4aja $4f1ft' Krnz' doesn't render right */
+        .Replace("$", "\\$")
+        .Replace("_^&^_", "\\$$");
+}
+
+const uint asciiDollarSign = "$"[0];
+
+bool IsCharInt(int char) {
+    return 48 <= char && char <= 57;
+}
+
+bool IsCharInAToF(int char) {
+    return (97 <= char && char <= 102) /* lower case */
+        || (65 <= char && char <= 70); /* upper case */
+}
+
+bool IsCharHex(int char) {
+    return IsCharInt(char) || IsCharInAToF(char);
+}
+
+uint8 HexCharToInt(int char) {
+    if (IsCharInt(char)) {
+        return char - 48;
+    }
+    if (IsCharInAToF(char)) {
+        int v = char - 65 + 10;  // A = 65 ascii
+        if (v < 16) return v;
+        return v - (97 - 65);    // a = 97 ascii
+    }
+    throw("HexCharToInt got char with code " + char + " but that isn't 0-9 or a-f or A-F in ascii.");
+    return 0;
+}
+
+dictionary@ DARK_MODE_CACHE = dictionary();
+
+string MakeColorsOkayDarkMode(const string &in raw) {
+    /* - find color values
+       - for each color value:
+         - luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
+         - luma < .4 { replace color }
+       return;
+    */
+    // we need at least 4 chars to test $123, so only go to length-3 to test for $.
+    if (DARK_MODE_CACHE.Exists(raw)) {
+        return string(DARK_MODE_CACHE[raw]);
+    }
+    string ret = string(raw);
+    string _test;
+    for (int i = 0; i < int(ret.Length) - 3; i++) {
+        if (ret[i] == asciiDollarSign) {
+            _test = ret.SubStr(i, 4);
+            if (IsCharHex(_test[1]) && IsCharHex(_test[2]) && IsCharHex(_test[3])) {
+                auto c = Color(vec3(
+                    float(HexCharToInt(_test[1])) / 16.,
+                    float(HexCharToInt(_test[2])) / 16.,
+                    float(HexCharToInt(_test[3])) / 16.
+                ));
+                c.AsHSL();
+                float l = c.v.z;  /* lightness part of HSL */
+                if (l < 50) {
+                    logcall("MakeColorsOkayDarkMode", "fixing color: " + _test + " / " + c.ManiaColor + " / " + c.ToString());
+                    c.v = vec3(c.v.x, c.v.y, 100. - l);
+                    logcall("MakeColorsOkayDarkMode", "new color: " + Vec3ToStr(c.get_rgb()) + " / " + c.get_ManiaColor() + " / " + c.ToString());
+                    ret = ret.Replace(_test, c.get_ManiaColor());
+                }
+            }
+        }
+    }
+    DARK_MODE_CACHE[raw] = ret;
+    return ret;
 }
 
 
@@ -355,6 +438,7 @@ void TestColors() {
     TestOneColor(vec3(.3, .5, .1));
     TestOneColor(vec3(.99, .1, .6));
     TestHexTri();
+    logcall('TestColors', 'completed successfully!');
 }
 
 void TestOneColor(vec3 rgb) {
@@ -388,6 +472,7 @@ void TestHexTri() {
     assert(ht == "f80", 'ht /= "f80"; ht=' + ht + ' from ' + c.ToString());
     assert(rgbToHexTri(vec3(1, 1, 1)) == "fff", "hextri: fff");
     assert(rgbToHexTri(vec3(1./16., 2/16., 3/16.)) == "123", "hextri: 123");
+    assert(rgbToHexTri(vec3(13., 5, 1) / 16.) == 'd51', 'hextri: d51');
 }
 
 void assert(bool condition, string msg) {

@@ -130,12 +130,15 @@ class JsonDb {
         db['time'] = "" + Time::Stamp;  /* as string to avoid losing precision */
         db['data'] = _data.j;
         db['dbId'] = dbId;
+        // string sz = Json::Write(db);
+        // yield();
+        // IO::File file(path, IO::FileMode::Write);
+        // file.Write(sz);
         Json::ToFile(path, db);
+        Unlock();
         if (!IO::FileExists(path)) {
-            Unlock();
             throw("Attempted to persist JsonDb and the file does not exist!!!!");
         }
-        Unlock();
     }
 }
 
@@ -186,7 +189,7 @@ class JsonQueueDb : JsonDb {
          1. a unique string; or
          2. an object with j['id'] property that's a unique string.
     */
-    void PutQueueEntry(Json::Value j) {
+    void PutQueueEntry(Json::Value j, bool persist = true) {
         auto ty = j.GetType();
         if (ty != Json::Type::String && ty != Json::Type::Object) {
             throw("Json value is not a string nor an object.");
@@ -203,7 +206,7 @@ class JsonQueueDb : JsonDb {
         meta['isEmpty'] = false;
         meta['lastUpdated'] = "" + Time::Stamp;
         data.j['meta'] = meta;
-        Persist();
+        if (persist) Persist();
     }
 
     int GetQueueEnd() {
@@ -215,7 +218,7 @@ class JsonQueueDb : JsonDb {
     }
 
     /* can return null */
-    Json::Value GetQueueItemNow() {
+    Json::Value GetQueueItemNow(bool persist = true) {
         // return null if no queue items available
         if (IsEmpty()) { return Json::Value(); }
         // init
@@ -245,8 +248,18 @@ class JsonQueueDb : JsonDb {
         data.j['meta'] = meta;
         data.j['queue'].Remove('' + start);
         // save and return
-        Persist();
+        if (persist) Persist();
         return item;
+    }
+
+    Json::Value GetNQueueItemsNow(uint n) {
+        Json::Value items = Json::Array();
+        for (uint i = 0; i < n; i++) {
+            if(IsEmpty()) break;
+            items.Add(GetQueueItemNow(false));
+        }
+        Persist();
+        return items;
     }
 
     /* will yield until a value is available and throw if timeout is reached */

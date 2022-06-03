@@ -1,6 +1,16 @@
 
 namespace CotdExplorer {
-    bool windowActive = true;
+#if RELEASE
+    const string ExplorerWindowTitle = "COTD Explorer";
+#elif DEV
+    const string ExplorerWindowTitle = "COTD Explorer (Dev)";
+#elif UNIT_TEST
+    const string ExplorerWindowTitle = "COTD Explorer (Unit)";
+#else
+    const string ExplorerWindowTitle = "COTD Explorer (Unk)";
+#endif
+
+    BoolWP@ windowActive = BoolWP(false);
     string icon = Icons::AreaChart;
     HistoryDb@ histDb;  /* instantiated in PersistentData */
     MapDb@ mapDb;  /* instantiated in PersistentData */
@@ -10,6 +20,8 @@ namespace CotdExplorer {
     const vec2 mapThumbDims = vec2(256, 256);
 
     dictionary@ cotdYMDMapTree;
+
+
 
     bool WaitNullRefs() {
         /* these should be set in Main */
@@ -37,27 +49,30 @@ namespace CotdExplorer {
         */
         calendarDayBtnDims = vec2(1920, 1080) * vec2(0.04, 0.05);
         calendarMonthBtnDims = vec2(1920, 1080) * vec2(0.0472, 0.05);
+#if DEV
+        windowActive.v = true;
+#endif
     }
 
     /* window controls */
 
     bool IsVisible() {
-        return windowActive;
+        return windowActive.v;
     }
 
     void ShowWindow() {
-        windowActive = true;
+        windowActive.Set(true);
         startnew(OnWindowShow);
     }
 
     void HideWindow() {
-        windowActive = false;
+        windowActive.Set(false);
         DataManager::cotd_OverrideChallengeId.AsNothing();
     }
 
     void ToggleWindow() {
-        if (IsVisible()) { HideWindow(); }
-        else { ShowWindow(); }
+        if (IsVisible()) HideWindow();
+        else ShowWindow();
     }
 
     /* Rendering Top-Level */
@@ -106,9 +121,14 @@ namespace CotdExplorer {
     /* explorer window */
 
     void _RenderExplorerWindow() {
-        UI::Begin(UI_EXPLORER, windowActive);
+        if (windowActive.ChangedToTrue()) {
+            UI::SetNextWindowSize(730, 1000, UI::Cond::Always);
+            windowActive.v = true;
+        }
+        UI::Begin(ExplorerWindowTitle, windowActive.v);
 
         if (UI::IsWindowAppearing()) {
+            UI::SetWindowSize(vec2(730, 1000), UI::Cond::Always);
             _ResetExplorerCotdSelection();
             _DevSetExplorerCotdSelection();
             startnew(LoadCotdTreeFromDb);
@@ -118,14 +138,7 @@ namespace CotdExplorer {
             _RenderExplorerLoading();
         } else {
             _RenderExplorerCotdSelection();
-
-            // VPad();
-            // UI::Separator();
-            // VPad();
-
-            // _RenderExplorerMainTree();
         }
-
         UI::End();
     }
 
@@ -203,6 +216,44 @@ namespace CotdExplorer {
         }
     }
 
+    void DrawMapTooltip(const string &in mapUid) {
+        auto map = mapDb.GetMap(mapUid);
+        if (IsJsonNull(map)) return;
+        if (UI::IsItemHovered()) {  /* && PersistentData::ThumbnailCached(tnUrl) */
+            // UI::PushStyleColor(UI::Col::PopupBg, vec4(.2, .2, .2, .4));
+            UI::BeginTooltip();
+            DrawMapInfo(map, false, true, 1.0);
+            UI::EndTooltip();
+            // UI::PopStyleColor(1);
+        }
+    }
+
+    void DrawMapInfo(Json::Value map, bool isTitle = false, bool drawThumbnail = true, float thumbnailSizeRel = 1.0) {
+        string tnUrl = map['ThumbnailUrl'];
+        string authorName = map['AuthorDisplayName'];
+        string authorScore = Time::Format(map['AuthorScore']);
+        string mapName = map['Name'];
+        mapName = EscapeRawToOpenPlanet(MakeColorsOkayDarkMode(mapName));
+        if (isTitle) TextHeading(mapName);
+        else UI::Text(mapName);
+        UI::Text(EscapeRawToOpenPlanet("By: " + authorName));
+        UI::Text("Author Time: " + authorScore);
+        if (drawThumbnail) {
+            VPad();
+            _DrawThumbnail(tnUrl, true, thumbnailSizeRel);
+        }
+    }
+
+    void DrawMapThumbnailBigTooltip(const string &in tnUrl) {
+        if (UI::IsItemHovered()) {  /* && PersistentData::ThumbnailCached(tnUrl) */
+            // UI::PushStyleColor(UI::Col::PopupBg, vec4(.2, .2, .2, .4));
+            UI::BeginTooltip();
+            _DrawThumbnail(tnUrl, true, 4.0);
+            UI::EndTooltip();
+            // UI::PopStyleColor(1);
+        }
+    }
+
     /* Explorer UI Idea: Buttons + Breadcrumbs */
 
     /* idea for rendering UI:
@@ -246,6 +297,7 @@ namespace CotdExplorer {
               explMonth = MaybeInt(),
               explDay = MaybeInt(),
               explCup = MaybeInt(),
+              explChallenge = MaybeInt(),
               explQDiv = MaybeInt(),
               explMatch = MaybeInt()
               ;
@@ -261,7 +313,10 @@ namespace CotdExplorer {
         if (level <= 0) explYear.AsNothing();
         if (level <= 1) explMonth.AsNothing();
         if (level <= 2) explDay.AsNothing();
-        if (level <= 3) explCup.AsNothing();
+        if (level <= 3) {
+            explCup.AsNothing();
+            explChallenge.AsNothing();
+        }
         if (level <= 4) explQDiv.AsNothing();
         if (level <= 5) explMatch.AsNothing();
         resetLevel = 0;  /* always reset this to be 0 afterwards so unprepped calls to _Reset do something sensible. */
@@ -271,7 +326,7 @@ namespace CotdExplorer {
         explYear.AsJust(2022);
         explMonth.AsJust(4);
         explDay.AsJust(1);
-        explCup.AsJust(2);
+        // explCup.AsJust(2);
         // explQDiv.AsJust(1);
         // explMatch.AsJust(1);
     }
@@ -289,24 +344,36 @@ namespace CotdExplorer {
             _RenderExplorerCotdMonthSelection();
         } else if (explDay.isNone) {
             _RenderExplorerCotdDaySelection();
-        } else if (explCup.isNone) {
-            _RenderExplorerCotdCupSelection();
-        } else {
-            _RenderExplorerCotdCup();
+        } else { // if (explCup.isNone)
+            _RenderExplorerTotd();
         }
+        // else {
+        //     _RenderExplorerCotdCup();
+        // }
     }
 
     string _ExplorerCotdTitleStr() {
-        string ret = "COTD ";
+        string ret = "COTD " + SelectedCotdDateStr();
+        ret += explCup.isNone ? " #X" : Text::Format(" #%1d", explCup.val);
+        return ret;
+    }
+
+    string SelectedCotdDateStr() {
+        string ret = "";
         ret += explYear.isNone ? "XXXX" : Text::Format("%4d", explYear.val);
         ret += explMonth.isNone ? "-XX" : Text::Format("-%02d", explMonth.val);
         ret += explDay.isNone ? "-XX" : Text::Format("-%02d", explDay.val);
-        ret += explCup.isNone ? " #X" : Text::Format(" #%1d", explCup.val);
         return ret;
     }
 
     int TableFlagsFixed() {
         return UI::TableFlags::SizingFixedFit;
+    }
+    int TableFlagsFixedSame() {
+        return UI::TableFlags::SizingFixedSame;
+    }
+    int TableFlagsStretch() {
+        return UI::TableFlags::SizingStretchProp;
     }
 
     void _RenderExplorerCotdYearSelection() {
@@ -314,7 +381,7 @@ namespace CotdExplorer {
         // UI::BeginTable(UI_EXPLORER + "-yrs");
         auto yrs = cotdYMDMapTree.GetKeys();
         yrs.SortAsc();
-        if (UI::BeginTable(UI_EXPLORER + "-y-table", 6, TableFlagsFixed())) {
+        if (UI::BeginTable(UI_EXPLORER + "-y-table", 6, TableFlagsFixedSame())) {
             for (uint i = 0; i < yrs.Length; i++) {
                 UI::TableNextColumn();
                 string yr = yrs[i];
@@ -324,6 +391,7 @@ namespace CotdExplorer {
             }
             UI::EndTable();
         }
+
     }
 
     void _RenderExplorerCotdMonthSelection() {
@@ -336,7 +404,7 @@ namespace CotdExplorer {
         int _last = Text::ParseInt(months[months.Length - 1]);
         int _nMonths = months.Length;
         bool _disable;
-        if (UI::BeginTable(UI_EXPLORER + "-ym-table", 6, TableFlagsFixed())) {
+        if (UI::BeginTable(UI_EXPLORER + "-ym-table", 6, TableFlagsFixedSame())) {
             for (int x = 1; x <= 12; x++) {
                 UI::TableNextColumn();
                 _disable = x < _offs || x - _offs >= _nMonths;
@@ -370,7 +438,7 @@ namespace CotdExplorer {
         JsonBox@ map1 = cast<JsonBox@>(dd[days[0]]);
         JsonBox@ map;
         uint dayOffset = map1.j["day"];  /* .monthDay is the calendar day number (1-31); .day is 0-6 */
-        if (UI::BeginTable(UI_EXPLORER + "-ymd-table", 7, TableFlagsFixed())) {
+        if (UI::BeginTable(UI_EXPLORER + "-ymd-table", 7, TableFlagsFixedSame())) {
             // UI::TableNextRow();
             for (uint i = 0; i < dayOffset; i++) {
                 UI::TableNextColumn();  /* skip some columns based on offset */
@@ -379,17 +447,13 @@ namespace CotdExplorer {
                 day = days[i];
                 UI::TableNextColumn();
                 @map = cast<JsonBox@>(dd[day]);
-                if (map is null) continue;
-                if (UI::Button(day, calendarDayBtnDims)) {
+                if (map is null || IsJsonNull(map.j['mapUid'])) continue;
+                string mapUid = map.j['mapUid'];
+                bool _disabled = mapUid.Length < 10;
+                if (MDisabledButton(_disabled, day, calendarDayBtnDims)) {
                     OnSelectedCotdDay(Text::ParseInt(day));
                 }
-                auto tnUrl = mapDb.MapUidToThumbnailUrl(map.j['mapUid']);
-                if (!IsJsonNull(tnUrl) && PersistentData::ThumbnailCached(tnUrl) && UI::IsItemHovered()) {
-                    UI::BeginTooltip();
-                    // RenderMapName();
-                    _DrawThumbnail(tnUrl);
-                    UI::EndTooltip();
-                }
+                DrawMapTooltip(mapUid);
             }
             UI::EndTable();
         }
@@ -423,20 +487,102 @@ namespace CotdExplorer {
         */
         JsonBox@ day = CotdTreeYMD();
         string uid = day.j['mapUid'];
+        string seasonUid = day.j['seasonUid'];
         mapDb.QueueMapGet(uid);
+        mapDb.QueueMapRecordGet(seasonUid, uid);
+    }
+
+    void DrawTotdMapInfoTable(Json::Value map, const string &in totdDate) {
+        string tnUrl = map['ThumbnailUrl'];
+        string authorName = map['AuthorDisplayName'];
+        string authorScore = Time::Format(map['AuthorScore']);
+        string mapName = map['Name'];
+        mapName = EscapeRawToOpenPlanet(MakeColorsOkayDarkMode(mapName));
+        mapName += " \\$z(TOTD for " + totdDate + ")";
+        TextHeading(mapName);
+        if (UI::BeginTable(UI_EXPLORER + '-mapInfo', 2, TableFlagsStretch())) {
+            UI::TableNextColumn();
+            UI::Text(EscapeRawToOpenPlanet("Mapper: " + authorName));
+            UI::Text("Author Time: " + authorScore);
+            DrawMapRecordsOrLoading(map['Uid']);
+
+            UI::TableNextColumn();
+            _DrawThumbnail(tnUrl, true, 1.0);
+            DrawMapThumbnailBigTooltip(tnUrl);
+
+            UI::EndTable();
+        }
+    }
+
+    void DrawMapRecordsOrLoading(const string &in uid) {
+        if (PersistentData::MapRecordsCached(uid)) {
+            auto mr = PersistentData::GetMapRecord(uid);
+            UI::Text("TOTD Record: " + Time::Format(mr.j['tops'][0]['top'][0]['score']));
+        } else {
+            UI::Text("Loading map records...");
+        }
+    }
+
+    void _RenderExplorerTotd() {
+        auto mapInfo = CotdTreeYMD();
+        DrawTotdMapInfoTable(mapDb.GetMap(mapInfo.j['mapUid']), SelectedCotdDateStr());
+        PaddedSep();
+        /* either select cup or draw cup info */
+        if (explCup.isNone) {
+            _RenderExplorerCotdCupSelection();
+        } else {
+            // UI::Text('' + explChallenge.val);
+            _RenderExplorerCotdCup();
+        }
     }
 
     const string[] COTD_BTNS = { "1st (COTD) @ 7pm CEST/CET", "2nd (COTN) @ 3am CEST/CET", "3rd (COTM) @ 11am CEST/CET" };
 
     void _RenderExplorerCotdCupSelection() {
-        TextHeading(_ExplorerCotdTitleStr() + " | Select Cup");
-        string btnLab;
-        for (uint i = 0; i < COTD_BTNS.Length; i++) {
-            btnLab = COTD_BTNS[i];
-            int cotdNum = btnLab[0] - 48;  /* '1' = 49; 49 - 48 = 1. (ascii char value - 48 = int value); */
-            if (UI::Button(btnLab)) {
-                explCup.AsJust(cotdNum);
+        auto cIds = CotdChallengesForSelectedDate();
+        JsonBox@ totdInfo = CotdTreeYMD();
+        string mapUid = totdInfo.j['mapUid'];
+        if (cIds.Length == 0) {
+            UI::Text("\\$f81 Warning: cannot find challengeIds for COTDs on " + SelectedCotdDateStr() + "; nChallenges=" + cIds.Length);
+        } else {
+            TextHeading(_ExplorerCotdTitleStr() + " | Select Cup");
+            string btnLab;
+            for (int i = 0; i < Math::Min(cIds.Length, COTD_BTNS.Length); i++) {
+                auto c = histDb.GetChallenge(cIds[i]);
+                if (c['startDate'] < Time::Stamp) {
+                    btnLab = COTD_BTNS[i];
+                    int cotdNum = btnLab[0] - 48;  /* '1' = 49; 49 - 48 = 1. (ascii char value - 48 = int value); */
+                    if (UI::Button(btnLab)) {
+                        OnSelectedCotdChallenge(cotdNum, mapUid, cIds[i]);
+                    }
+                }
             }
+        }
+    }
+
+    void OnSelectedCotdChallenge(int cotdNum, const string &in mapUid, int cId) {
+        explCup.AsJust(cotdNum);
+        explChallenge.AsJust(cId);
+        startnew(EnsurePlayerNames);
+    }
+
+    void EnsurePlayerNames() {
+        int cId = explChallenge.val;
+        JsonBox@ totdInfo = CotdTreeYMD();
+        string mapUid = totdInfo.j['mapUid'];
+        if (PersistentData::MapTimesCached(mapUid, cId)) {
+            auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
+            int nPlayers = jb.j['nPlayers'];
+            int chunkSize = jb.j['chunkSize'];
+            string[] playerIds = array<string>(nPlayers);
+            string[] keys = jb.j['ranges'].GetKeys();
+            for (uint i = 0; i < keys.Length; i++) {
+                auto times = jb.j['ranges'][keys[i]];
+                for (uint j = 0; j < times.Length; j++) {
+                    playerIds[i * chunkSize + j] = times[j]['player'];
+                }
+            }
+            mapDb.QueuePlayerNamesGet(playerIds);
         }
     }
 
@@ -452,20 +598,18 @@ namespace CotdExplorer {
         return cast<JsonBox@>(CotdTreeYM()[Text::Format("%02d", explDay.val)]);
     }
 
-    // Json:: _ThumbnailFromUidIfPresent(const string &in uid) {
-    //     auto map = mapDb.GetMap(mapUid);
-    //     if (IsJsonNull(map)) { return; }
-    //     return _DrawThumbnail(UrlToFileName(map['ThumbnailUrl']), false);
-    // }
+    int[] CotdChallengesForSelectedDate() {
+        return mapDb.GetChallengesForDate('' + explYear.val, Text::Format("%02d", explMonth.val), Text::Format("%02d", explDay.val));
+    }
 
     /* returns false when showLoading=false and the image is loading */
-    bool _DrawThumbnail(const string &in urlOrFileName, bool showLoading = true) {
+    bool _DrawThumbnail(const string &in urlOrFileName, bool showLoading = true, float sizeMult = 1.5) {
         if (PersistentData::ThumbnailCached(urlOrFileName)) {
             auto tex = PersistentData::GetThumbTex(urlOrFileName);
             if (tex is null) {
                 UI::Text("Null texture thumbnail...");
             } else {
-                UI::Image(tex, mapThumbDims);
+                _DrawThumbnailWSize(tex, sizeMult);
             }
             return true;
         } else {
@@ -474,14 +618,174 @@ namespace CotdExplorer {
         }
     }
 
+    void _DrawThumbnailWSize(Resources::Texture@ tex, float sizeMult) {
+        UI::Image(tex, mapThumbDims * sizeMult);
+    }
+
     void _RenderExplorerCotdCup() {
+        int cId = explChallenge.val;
         TextHeading(_ExplorerCotdTitleStr());
         auto mapInfo = CotdTreeYMD();
         string mapUid = mapInfo.j['mapUid'];
-        auto map = mapDb.GetMap(mapUid);
-        UI::Text("Map ID: " + mapUid);
-        string tnFile = UrlToFileName(map['ThumbnailUrl']);
-        _DrawThumbnail(tnFile);
+        string seasonUid = mapInfo.j['seasonUid'];
+        // auto map = mapDb.GetMap(mapUid);
+
+        if (UI::BeginTable(UI_EXPLORER + "-cotdOuter", 4, TableFlagsStretch())) {
+            // UI::TableSetupColumn("Nil", UI::TableColumnFlags::WidthFixed, 20.);
+            UI::TableNextColumn();
+
+            // UI::TableSetupColumn("Qualifying Times", UI::TableColumnFlags::WidthFixed, 320.);
+            UI::TableNextColumn();
+            TextHeading("Qualifiers");
+            _CotdQualiTimesTable(cId);
+
+            // UI::TableSetupColumn("Nil", UI::TableColumnFlags::WidthFixed, 20.);
+            UI::TableNextColumn();
+
+            // UI::TableSetupColumn("Histogram", UI::TableColumnFlags::WidthFixed, 350.);
+            UI::TableNextColumn();
+            TextHeading("Histogram");
+            _CotdQualiHistogram(mapUid, cId);
+
+            UI::EndTable();
+        }
+    }
+
+    dictionary@ COTD_HISTOGRAM_DATA = dictionary();
+    int lastHistGen;
+    string histToShow;
+    int nBuckets = 60;
+
+    void _CotdQualiHistogram(const string &in mapUid, int cId) {
+        UI::Dummy(vec2());
+        if (!PersistentData::MapTimesCached(mapUid, cId)) {
+            UI::TextWrapped("Please download the qualifying times first.");
+        } else {
+            string key = mapUid + "--" + cId;
+            bool isGenerated = COTD_HISTOGRAM_DATA.Exists(key);
+            UI::Text("Generation Parameters:");
+            nBuckets = UI::SliderInt('Number of bars', nBuckets, 10, 200);
+            if (MDisabledButton(Time::Now - lastHistGen > 1000, (isGenerated ? "Reg" : "G") + "enerate Histogram Data")) {
+                // todo
+                lastHistGen = Time::Now;
+                histToShow = key;
+            }
+            if (isGenerated) {
+                auto histData = cast<Histogram::HistData>(COTD_HISTOGRAM_DATA[key]);
+
+            }
+        }
+    }
+
+    int lastCidDownload = -1;
+
+    void _CotdQualiTimesTable(int cId) {
+        auto mapInfo = CotdTreeYMD();
+        string mapUid = mapInfo.j['mapUid'];
+        // string seasonUid = mapInfo.j['seasonUid'];
+        bool gotTimes = PersistentData::MapTimesCached(mapUid, cId);
+        bool canDownload = !(gotTimes || lastCidDownload == cId);
+        bool dlDone = false;
+
+        if (UI::BeginTable(UI_EXPLORER + "-cotdStatus", 2, TableFlagsFixed())) {
+            /* map times */
+            UI::TableNextColumn();
+            UI::Dummy(vec2());
+            UI::Text("Qualifying Times:");
+            UI::TableNextColumn();
+            if (canDownload) {
+                if (UI::Button("Download")) {
+                    lastCidDownload = cId;
+                    mapDb.QueueMapChallengeTimesGet(mapUid, cId);
+                    //startnew(CoroutineFunc(mapDb._GetOneCotdMapTimes));
+                }
+            } else {
+                UI::Dummy(vec2());
+                if (!gotTimes) {
+                    UI::Text("Downloading...");
+                } else {
+                    dlDone = _DrawCotdTimesDownloadStatus(mapUid, cId);
+                }
+            }
+            /* other status things? */
+            if (dlDone) {
+                auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
+                int nPlayers = jb.j['nPlayers'];
+                // UI::TableNextRow();
+                // DrawAs2Cols("Total Players", '' + nPlayers);
+                UI::TableNextRow();
+                DrawAs2Cols("Total Divisions:", '' + Text::Format("%.1f", nPlayers / 64.));
+                UI::TableNextRow();
+                DrawAs2Cols("Last Div:", Text::Format("%d", (nPlayers - 1) % 64 + 1) + " Players");
+            }
+            UI::EndTable();
+        }
+
+        if (dlDone) {
+            VPad();
+            UI::PushFont(subheadingFont);
+            UI::Text("Times:");
+            UI::PopFont();
+            VPad();
+            if (UI::BeginTable(UI_EXPLORER + "-cotdRecords", 4, TableFlagsFixed())) {
+                _DrawCotdTimesTableColumns(mapUid, cId);
+                UI::EndTable();
+            }
+        }
+    }
+
+    bool _DrawCotdTimesDownloadStatus(const string &in mapUid, int cId) {
+        auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
+        float nPlayers = jb.j['nPlayers'];
+        int chunksDone = jb.j['ranges'].Length;
+        float chunkSize = jb.j['chunkSize'];
+        int expected = int(Math::Ceil(nPlayers / chunkSize));
+        bool dlDone = expected == chunksDone;
+        float nDone = chunksDone * chunkSize;
+        float pctDone = nDone / nPlayers * 100.;
+        if (!dlDone) {
+            UI::Text('' + int(nDone) + ' / ' + nPlayers + ' (' + Text::Format("%4.1f", pctDone) + ' %)');
+        } else {
+            UI::Text('' + nPlayers);
+        }
+        return dlDone;
+    }
+
+    void _DrawCotdTimesTableColumns(const string &in mapUid, int cId) {
+        auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
+        float nPlayers = jb.j['nPlayers'];
+        float chunkSize = jb.j['chunkSize'];
+        uint drawNTopTimes = 10;
+        auto times = jb.j['ranges']['1'];
+        int lastChunkIx = int(Math::Floor((nPlayers - 1) / chunkSize) * chunkSize) + 1;
+        auto lastTimes = jb.j['ranges']['' + lastChunkIx];
+        // logcall('_DrawCotdTimesTableCOls', 'last times ix: ' + lastChunkIx + '; j=' + Json::Write(lastTimes));
+        int topScore = times[0]['score'];
+        for (uint i = 0; i < drawNTopTimes; i++) {
+            _DrawCotdTimeTableRow(times[i], topScore);
+        }
+        UI::TableNextColumn();
+        UI::Text("...");
+        // UI::TableNextColumn();
+        UI::TableNextRow();
+        if (lastTimes.Length >= 2)
+            _DrawCotdTimeTableRow(lastTimes[lastTimes.Length - 2], topScore);
+        _DrawCotdTimeTableRow(lastTimes[lastTimes.Length - 1], topScore);
+    }
+
+    void _DrawCotdTimeTableRow(Json::Value time, int topScore) {
+        int rank = time['rank'];
+        int score = time['score'];
+        UI::TableNextColumn();
+        UI::Text('' + rank);
+        UI::TableNextColumn();
+        UI::Text(Time::Format(score));
+        UI::TableNextColumn();
+        if (rank > 1)
+            UI::Text(c_timeOrange + "+" + Time::Format(score - topScore));
+        UI::TableNextColumn();
+        // todo player name
+        UI::TableNextRow();
     }
 
     /* Explorer UI Idea: Tree Structure
@@ -559,6 +863,17 @@ namespace CotdExplorer {
                 }
                 UI::Text(dayLine);
             }
+        }
+    }
+
+    void _RenderTestHistogram() {
+        auto hData = DataManager::cotd_HistogramData;
+        if (hData !is null) {
+            float[] data = array<float>(hData.ys.Length);
+            for (uint i = 0; i < hData.ys.Length; i++) {
+                data[i] = float(hData.ys[i]);
+            }
+            UI::PlotHistogram('asdf', data, 0, 40.);
         }
     }
 }

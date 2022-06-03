@@ -1,25 +1,3 @@
-Resources::Font@ headingFont = Resources::GetFont("DroidSans.ttf", 20, -1, -1, true, true);;
-Resources::Font@ stdBold = Resources::GetFont("DroidSans-Bold.ttf", 16, -1, -1, true, true);;
-
-void VPad() { UI::Dummy(vec2(10, 2)); }
-
-void PaddedSep() {
-    VPad();
-    UI::Separator();
-    VPad();
-}
-
-void TextHeading(string t) {
-    UI::PushFont(headingFont);
-    VPad();
-    UI::Text(t);
-    UI::Separator();
-    VPad();
-    UI::PopFont();
-}
-
-
-
 /* global vars for settingsCustom that enable detecting the active tab */
 
 BoolWP@ sTabHudHistogramActive = BoolWP(false);
@@ -32,6 +10,50 @@ namespace SettingsCustom {
             yield();
         }
     }
+}
+
+/*
+    #######  ##     ## ####  ######  ##    ##     ######  ######## ######## ######## #### ##    ##  ######    ######
+   ##     ## ##     ##  ##  ##    ## ##   ##     ##    ## ##          ##       ##     ##  ###   ## ##    ##  ##    ##
+   ##     ## ##     ##  ##  ##       ##  ##      ##       ##          ##       ##     ##  ####  ## ##        ##
+   ##     ## ##     ##  ##  ##       #####        ######  ######      ##       ##     ##  ## ## ## ##   ####  ######
+   ##  ## ## ##     ##  ##  ##       ##  ##            ## ##          ##       ##     ##  ##  #### ##    ##        ##
+   ##    ##  ##     ##  ##  ##    ## ##   ##     ##    ## ##          ##       ##     ##  ##   ### ##    ##  ##    ##
+    ##### ##  #######  ####  ######  ##    ##     ######  ########    ##       ##    #### ##    ##  ######    ######
+
+ QUICK SETTINGS
+
+ */
+
+[SettingsTab name="Quick Settings"]
+void RenderSettingsQuickSettings() {
+    TextHeading("Quick Settings");
+
+    if (UI::Button("Set Large HUD Histogram (21:9)")) {
+        Setting_HudHistogramPos = vec2(.77, .75);
+        Setting_HudHistogramSize = vec2(.2, .2);
+    }
+    AddSimpleTooltip("Set's histogram to lower right corner with width and height set to 20%.\nSuitable for ultrawide monitors.");
+
+    VPad();
+
+    if (UI::Button("Set HUD to show lots of rankings")) {
+        Setting_HudShowAboveDiv = 3;
+        Setting_HudShowBelowDiv = 3;
+        Setting_HudShowTopDivCutoffs = 5;
+        Setting_HudShowLastDivPop = true;
+        Setting_HudShowPlayerDiv = true;
+        Setting_HudShowDeltas = true;
+        ::OnSettingsChanged();
+    }
+    AddSimpleTooltip("This sets the HUD to show:\n"
+        + "  - Top 5 div cutoffs \n"
+        + "  - 3 divs above yours \n"
+        + "  - 3 divs below yours \n"
+        + "  - Your div and time \n"
+        + "  - # of players in last div \n"
+        + "  - Deltas for times compared to yours"
+        );
 }
 
 
@@ -166,7 +188,7 @@ void RenderSettingsAdvanced() {
     // AddSimpleTooltip("This flag is true if the user unbound giveup when prompted to.\nThis is used to figure out if the rebind prompt should be shown.");
 
     /*****/
-    TextHeading("COTD Data");
+    TextHeading("Current COTD Data");
 
     UI::TextWrapped(
         "Reload data from Nadeo API?\n" +
@@ -186,34 +208,6 @@ void RenderSettingsAdvanced() {
     Setting_AdvCheckPriorCotd = UI::Checkbox("Check Prior COTD?", Setting_AdvCheckPriorCotd);
     AddSimpleTooltip("Check this box to always get data for the previous COTD instead of the current one. (Except when you're actually in COTD.)\nUseful for testing. Make sure to reload COTD data after changing this setting.");
 
-    /*****/
-    TextHeading("Quick Settings");
-
-    if (UI::Button("Set Large HUD Histogram (21:9)")) {
-        Setting_HudHistogramPos = vec2(.77, .75);
-        Setting_HudHistogramSize = vec2(.2, .2);
-    }
-    AddSimpleTooltip("Set's histogram to lower right corner with width and height set to 20%.\nSuitable for ultrawide monitors.");
-
-    VPad();
-
-    if (UI::Button("Set HUD to show lots of rankings")) {
-        Setting_HudShowAboveDiv = 3;
-        Setting_HudShowBelowDiv = 3;
-        Setting_HudShowTopDivCutoffs = 5;
-        Setting_HudShowLastDivPop = true;
-        Setting_HudShowPlayerDiv = true;
-        Setting_HudShowDeltas = true;
-        ::OnSettingsChanged();
-    }
-    AddSimpleTooltip("This sets the HUD to show:\n"
-        + "  - Top 5 div cutoffs \n"
-        + "  - 3 divs above yours \n"
-        + "  - 3 divs below yours \n"
-        + "  - Your div and time \n"
-        + "  - # of players in last div \n"
-        + "  - Deltas for times compared to yours"
-        );
 }
 
 

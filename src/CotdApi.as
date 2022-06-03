@@ -104,10 +104,17 @@ class CotdApi {
         return CallLiveApiPath("/api/token/map/" + mapUid);
     }
 
-    // Json::Value GetMaps(const string[] &in mapUids) {
-    //     return CallLiveApiPath("/api/token/map/" + string::Join(mapUids, ","));
-    // }
+    // todo ret value
+    Json::Value GetMapRecords(const string &in seasonUid) {
+        // Personal_Best
+        return CallLiveApiPath("/api/token/leaderboard/group/" + seasonUid + "/top");
+    }
 
+    /* see example/getMapRecords.json */
+    Json::Value GetMapRecords(const string &in seasonUid, const string &in mapUid) {
+        // Personal_Best
+        return CallLiveApiPath("/api/token/leaderboard/group/" + seasonUid + "/map/" + mapUid + "/top");
+    }
 
     /* CORE SERVICES API CALLS */
 
@@ -115,6 +122,10 @@ class CotdApi {
 
     CGameDataFileManagerScript@ GetCoreApiThingForMaps() {
         return GetTmApp().MenuManager.MenuCustom_CurrentManiaApp.DataFileMgr;
+    }
+
+    CGameUserManagerScript@ GetCoreUserManagerScript() {
+        return GetTmApp().UserManagerScript;
     }
 
     MwId GetUserMwId() {
@@ -135,27 +146,21 @@ class CotdApi {
         return req2.MapList;
     }
 
-    // string GetCoreAuthToken() {
-    //     return GetTmApp().ManiaPlanetScriptAPI.Authentication_Token;
-    // }
-
-
-    // Json::Value CallCoreApiPath(const string &in authToken, const string &in path) {
-    //     AssertGoodPath(path);
-    //     return FetchCoreEndpoint(authToken, coreUrl + path);
-    // }
-
-    // // // todo
-    // // /* example ret val */
-    // Json::Value GetMapInfo(const string &in mapUid) {
-    //     // https://prod.trackmania.core.nadeo.online/maps/?mapUidList=
-    //     return CallCoreApiPath(GetCoreAuthToken(), "/maps?mapUidList=" + mapUid);
-    // }
-
-    // Json::Value GetMapsInfo(const string[] &in mapUids) {
-    //     // https://prod.trackmania.core.nadeo.online/maps?mapUidList=
-    //     return CallCoreApiPath(GetCoreAuthToken(), "/maps?mapUidList=" + string::Join(mapUids, ","));
-    // }
+    string[] GetPlayersDisplayNames(const string[] &in playerWebServicesIds) {
+        auto ums = GetCoreUserManagerScript();
+        MwFastBuffer<wstring> playerIds = MwFastBuffer<wstring>();
+        for (uint i = 0; i < playerWebServicesIds.Length; i++) playerIds.Add(playerWebServicesIds[i]);
+        auto req = ums.GetDisplayName(GetUserMwId(), playerIds);
+        while (req.IsProcessing) yield();
+        if (req.HasFailed || req.IsCanceled || !req.HasSucceeded) {
+            throw("[GetPlayersDisplayNames] req failed or canceled. errorType=" + req.ErrorType + "; errorCode=" + req.ErrorCode + "; errorDescription=" + req.ErrorDescription);
+        }
+        string[] playerNames = array<string>(playerIds.Length);
+        for (uint i = 0; i < playerIds.Length; i++) {
+            playerNames[i] = string(req.GetDisplayName(wstring(playerIds[i])));
+        }
+        return playerNames;
+    }
 }
 
 Json::Value FetchClubEndpoint(const string &in route) {
