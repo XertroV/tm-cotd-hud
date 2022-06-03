@@ -81,16 +81,16 @@ namespace DataManager {
         cotdLatest_MapId = tmIoApi.GetTotdMapId();
         // todo: save all of GetTotdMap data so that we can look at past COTDs, too
 
-        // todo:
-        sleep(500);
-        print("api.GetMapsInfo");
-        //
-        auto r = api.GetMapsInfo({cotdLatest_MapId, "EBfG4g4zDXp3OzsBjV7r91_4QO0"});
-        print(r.Length);
-        for (uint i = 0; i < r.Length; i++) {
-            auto v = r[i];
-            print(tostring(v.Name));
-        }
+        // // todo:
+        // sleep(500);
+        // print("api.GetMapsInfo");
+        // //
+        // auto r = api.GetMapsInfo({cotdLatest_MapId, "EBfG4g4zDXp3OzsBjV7r91_4QO0"});
+        // print(r.Length);
+        // for (uint i = 0; i < r.Length; i++) {
+        //     auto v = r[i];
+        //     print(tostring(v.Name));
+        // }
     }
 
     void Update(float dt) {

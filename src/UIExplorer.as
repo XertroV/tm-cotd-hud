@@ -7,6 +7,7 @@ namespace CotdExplorer {
     vec2 gameRes;
     vec2 calendarDayBtnDims;
     vec2 calendarMonthBtnDims;
+    const vec2 mapThumbDims = vec2(256, 256);
 
     dictionary@ cotdYMDMapTree;
 
@@ -360,8 +361,9 @@ namespace CotdExplorer {
     /* select a monthDay for COTD -- draw calendar for the month */
     void _RenderExplorerCotdDaySelection() {
         TextHeading(_ExplorerCotdTitleStr() + " | Select Day");
-        auto md = cast<dictionary@>(cotdYMDMapTree["" + explYear.val]);
-        auto dd = cast<dictionary@>(md[Text::Format("%02d", explMonth.val)]);
+        // auto md = cast<dictionary@>(cotdYMDMapTree["" + explYear.val]);
+        // auto dd = cast<dictionary@>(md[Text::Format("%02d", explMonth.val)]);
+        dictionary@ dd = CotdTreeYM();
         auto days = dd.GetKeys();
         days.SortAsc();
         string day;
@@ -375,14 +377,18 @@ namespace CotdExplorer {
             }
             for (uint i = 0; i < days.Length; i++) {
                 day = days[i];
-                // if (i > 0 && i + dayOffset % 7 == 0) {
-                //     UI::TableNextRow();
-                // }
                 UI::TableNextColumn();
                 @map = cast<JsonBox@>(dd[day]);
                 if (map is null) continue;
                 if (UI::Button(day, calendarDayBtnDims)) {
                     OnSelectedCotdDay(Text::ParseInt(day));
+                }
+                auto tnUrl = mapDb.MapUidToThumbnailUrl(map.j['mapUid']);
+                if (!IsJsonNull(tnUrl) && PersistentData::ThumbnailCached(tnUrl) && UI::IsItemHovered()) {
+                    UI::BeginTooltip();
+                    // RenderMapName();
+                    _DrawThumbnail(tnUrl);
+                    UI::EndTooltip();
                 }
             }
             UI::EndTable();
@@ -446,11 +452,36 @@ namespace CotdExplorer {
         return cast<JsonBox@>(CotdTreeYM()[Text::Format("%02d", explDay.val)]);
     }
 
+    // Json:: _ThumbnailFromUidIfPresent(const string &in uid) {
+    //     auto map = mapDb.GetMap(mapUid);
+    //     if (IsJsonNull(map)) { return; }
+    //     return _DrawThumbnail(UrlToFileName(map['ThumbnailUrl']), false);
+    // }
+
+    /* returns false when showLoading=false and the image is loading */
+    bool _DrawThumbnail(const string &in urlOrFileName, bool showLoading = true) {
+        if (PersistentData::ThumbnailCached(urlOrFileName)) {
+            auto tex = PersistentData::GetThumbTex(urlOrFileName);
+            if (tex is null) {
+                UI::Text("Null texture thumbnail...");
+            } else {
+                UI::Image(tex, mapThumbDims);
+            }
+            return true;
+        } else {
+            UI::Text("Loading thumbnail...");
+            return showLoading;
+        }
+    }
+
     void _RenderExplorerCotdCup() {
         TextHeading(_ExplorerCotdTitleStr());
-        auto map = CotdTreeYMD();
-        string mapUid = map.j['mapUid'];
+        auto mapInfo = CotdTreeYMD();
+        string mapUid = mapInfo.j['mapUid'];
+        auto map = mapDb.GetMap(mapUid);
         UI::Text("Map ID: " + mapUid);
+        string tnFile = UrlToFileName(map['ThumbnailUrl']);
+        _DrawThumbnail(tnFile);
     }
 
     /* Explorer UI Idea: Tree Structure

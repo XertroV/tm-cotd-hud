@@ -63,19 +63,45 @@ namespace PersistentData {
         if (ThumbnailCached(fname)) return;
         logcall("DownloadThumbnail", "Starting Download: " + fname);
         auto r = Net::HttpGet(url);
-        // r.SaveToFile(ThumbnailPath(fname));
         r.Start();
         while (!r.Finished()) yield();
         if (r.ResponseCode() >= 300) {
             warn("DownloadThumbnail failed with error code " + r.ResponseCode());
         } else {
-            r.SaveToFile(ThumbnailPath(fname)); /* do this twice, one should error right? */
+            r.SaveToFile(ThumbnailPath(fname));
             logcall("DownloadThumbnail", "Downloaded: " + fname);
         }
     }
 
     string ThumbnailPath(const string &in fname) {
         return folder_Thumbnails + "/" + fname;
+    }
+
+    dictionary@ _textureCache = dictionary();
+
+    Resources::Texture@ _ReadFileTex(IO::File f) {
+        return Resources::GetTexture(f.Read(f.Size()));
+    }
+
+    Resources::Texture@ GetThumbTex(const string &in tnFile) {
+        Resources::Texture@ t;
+        string fname = UrlToFileName(tnFile);
+        if (_textureCache.Exists(fname)) {
+            @t = cast<Resources::Texture@>(_textureCache[fname]);
+        } else {
+            // string p = mainFolderName + "/" + PM + "/thumbnails/" + fname;
+            string p = ThumbnailPath(fname);
+            logcall("GetThumbTex", "Loading texture from disk: " + p);
+            IO::File file(p, IO::FileMode::Read);
+            @t = Resources::GetTexture(file.Read(file.Size()));
+            // this does not work:
+            // auto t = Resources::GetTexture(p);
+            @_textureCache[fname] = t;
+        }
+        if (t is null) {
+            warn("[GetThumbTex] got null texture for " + fname);
+        }
+        return t;
     }
 
     void LoopMain() {
@@ -599,5 +625,11 @@ class MapDb : JsonDb {
 
     Json::Value GetMap(const string &in uid) {
         return data.j['maps'][uid];
+    }
+
+    Json::Value MapUidToThumbnailUrl(const string &in uid) {
+        auto map = GetMap(uid);
+        if (IsJsonNull(map)) { return map; }
+        return map['ThumbnailUrl'];
     }
 }
