@@ -71,53 +71,74 @@ namespace CotdHud {
             Histogram::Draw(
                 Setting_HudHistogramPos, Setting_HudHistogramSize,
                 DataManager::cotd_HistogramMinMaxRank,
-                // DataManager::cotd_TimesForHistogram, 30,
-                _HistogramColors,
+                DataManager::cotd_HistogramData,
+                histBarColor,
                 Histogram::TimeXLabelFmt
                 );
         }
     }
 
-    vec4 _HistogramColors(uint score, float halfBucketWidth) {
+    // vec4 _HistogramColors(uint score, float halfBucketWidth) {
+    //     auto pdr = DataManager::playerDivRow;
+    //     // first check if this is the player's bar
+    //     if (Math::Abs(int(pdr.timeMs) - int(score)) < halfBucketWidth) {
+    //         return vec3To4(Setting_HudHistPlayerColor, .8);
+    //     }
+    //     // make sure we actually have times
+    //     if (DataManager::cotd_TimesForHistogram.Length == 0
+    //         || DataManager::cotd_TimesForHistogram[0] == 0
+    //         ) {
+    //         return vec4(1, 1, 1, 1);
+    //     }
+
+    //     // how many divs?
+    //     uint upperDivIx = 0;
+    //     for (uint i = 0; i < DataManager::divRows.Length; i++) {
+    //         auto dr = DataManager::divRows[i];
+    //         upperDivIx = i;
+    //         if (dr.timeMs > DataManager::cotd_TimesForHistogram[0]) {
+    //             break;
+    //         }
+    //     }
+
+    //     /* get actual colors now */
+    //     for (uint d = 0; d < 5; d++) {
+    //         if (upperDivIx + d >= DataManager::divRows.Length) { break; }
+    //         if (DataManager::divRows[upperDivIx + d].timeMs > score) {
+    //             switch (d) {
+    //                 // see python function at top of file to generate colors from hex
+    //                 case 0: return vec3To4(Setting_HudHistColor1, .8);
+    //                 case 1: return vec3To4(Setting_HudHistColor2, .8);
+    //                 case 2: return vec3To4(Setting_HudHistColor3, .8);
+    //                 case 3: return vec3To4(Setting_HudHistColor4, .8);
+    //                 case 4: return vec3To4(Setting_HudHistColor5, .8);
+    //             }
+    //         }
+    //     }
+
+    //     // shouldn't happen but w/e
+    //     return vec4(1, 1, 1, 1);
+    // }
+
+    vec4 histBarColor(uint score, float halfBucketWidth) {
         auto pdr = DataManager::playerDivRow;
         // first check if this is the player's bar
         if (Math::Abs(int(pdr.timeMs) - int(score)) < halfBucketWidth) {
-            return vec3To4(Setting_HudHistPlayerColor, .8);
-        }
-        // make sure we actually have times
-        if (DataManager::cotd_TimesForHistogram.Length == 0
-            || DataManager::cotd_TimesForHistogram[0] == 0
-            ) {
-            return vec4(1, 1, 1, 1);
+            return vec3To4(Setting_HudHistPlayerColor, .99);
         }
 
-        // how many divs?
-        uint upperDivIx = 0;
+        uint colTime = score;
+        uint div = 1;
         for (uint i = 0; i < DataManager::divRows.Length; i++) {
-            auto dr = DataManager::divRows[i];
-            upperDivIx = i;
-            if (dr.timeMs > DataManager::cotd_TimesForHistogram[0]) {
+            uint divScore = DataManager::divRows[i].timeMs;
+            if (divScore >= colTime && divScore != MAX_DIV_TIME) {
+                div = i;
                 break;
             }
         }
-
-        /* get actual colors now */
-        for (uint d = 0; d < 5; d++) {
-            if (upperDivIx + d >= DataManager::divRows.Length) { break; }
-            if (DataManager::divRows[upperDivIx + d].timeMs > score) {
-                switch (d) {
-                    // see python function at top of file to generate colors from hex
-                    case 0: return vec3To4(Setting_HudHistColor1, .8);
-                    case 1: return vec3To4(Setting_HudHistColor2, .8);
-                    case 2: return vec3To4(Setting_HudHistColor3, .8);
-                    case 3: return vec3To4(Setting_HudHistColor4, .8);
-                    case 4: return vec3To4(Setting_HudHistColor5, .8);
-                }
-            }
-        }
-
-        // shouldn't happen but w/e
-        return vec4(1, 1, 1, 1);
+        float h = (87. * float(div)) % 360.;
+        Color@ c = Color(vec3(h, 70, 50), ColorTy::HSL);
+        return c.rgba(.8);
     }
 
     /* UI:: calls to draw heading

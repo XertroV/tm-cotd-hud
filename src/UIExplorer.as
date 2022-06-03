@@ -18,6 +18,8 @@ namespace CotdExplorer {
     vec2 calendarDayBtnDims;
     vec2 calendarMonthBtnDims;
     const vec2 mapThumbDims = vec2(256, 256);
+    const vec2 screenRes = vec2(Draw::GetWidth(), Draw::GetHeight());
+    int2 mousePos = int2(0, 0);
 
     dictionary@ cotdYMDMapTree;
 
@@ -52,6 +54,12 @@ namespace CotdExplorer {
 #if DEV
         windowActive.v = true;
 #endif
+    }
+
+    void OnMouseMove(int x, int y) {
+        mousePos.x = x;
+        mousePos.y = y;
+        // logcall('OnMouseMove', '' + mousePos.x + ", " + mousePos.y);
     }
 
     /* window controls */
@@ -564,6 +572,14 @@ namespace CotdExplorer {
         explCup.AsJust(cotdNum);
         explChallenge.AsJust(cId);
         startnew(EnsurePlayerNames);
+        histToShow = mapUid + "--" + cId;
+        showHistogram = false;
+        histUpperRank = highRankFilter = 99999;
+        lowRankFilter = 0;
+
+        if (PersistentData::MapTimesCached(mapUid, cId)) {
+            startnew(_GenHistogramData);
+        }
     }
 
     void EnsurePlayerNames() {
@@ -654,7 +670,13 @@ namespace CotdExplorer {
     dictionary@ COTD_HISTOGRAM_DATA = dictionary();
     int lastHistGen;
     string histToShow;
+    bool showHistogram;
     int nBuckets = 60;
+    Histogram::HistData@ histData;
+    int2 minMaxRank = int2(0, 0);
+    uint[] rawScores;
+    uint[] divCutoffs;
+    uint lowRankFilter = 0, highRankFilter = 99999, histUpperRank = 99999;
 
     void _CotdQualiHistogram(const string &in mapUid, int cId) {
         UI::Dummy(vec2());
@@ -664,17 +686,118 @@ namespace CotdExplorer {
             string key = mapUid + "--" + cId;
             bool isGenerated = COTD_HISTOGRAM_DATA.Exists(key);
             UI::Text("Generation Parameters:");
-            nBuckets = UI::SliderInt('Number of bars', nBuckets, 10, 200);
-            if (MDisabledButton(Time::Now - lastHistGen > 1000, (isGenerated ? "Reg" : "G") + "enerate Histogram Data")) {
+            nBuckets = UI::SliderInt('Number of bars', nBuckets, 10, Math::Max(200, divCutoffs.Length * 8));
+            highRankFilter = Math::Min(histUpperRank, highRankFilter);
+            int upperRankLimit = Math::Min(histUpperRank, highRankFilter);
+            lowRankFilter = UI::SliderInt('Exclude Ranks Below', lowRankFilter, 0, upperRankLimit);
+            highRankFilter = UI::SliderInt('Exclude Ranks Above', highRankFilter, lowRankFilter, histUpperRank);
+            // generate histogram data
+            if (MDisabledButton(Time::Now - lastHistGen < 1000, (isGenerated ? "Reg" : "G") + "enerate Histogram Data")) {
                 // todo
                 lastHistGen = Time::Now;
                 histToShow = key;
+                showHistogram = true;
+                startnew(_GenHistogramData);
             }
-            if (isGenerated) {
+            if (isGenerated && showHistogram) {
                 auto histData = cast<Histogram::HistData>(COTD_HISTOGRAM_DATA[key]);
+                uint pad = 40;
+                auto wPos = UI::GetWindowPos();
+                auto wSize = UI::GetWindowSize();
+                vec2 newPos = vec2(wPos.x + wSize.x + pad, wPos.y) / screenRes;
+                vec2 newSize = vec2(wSize.x, Math::Min(wSize.x, wSize.y) / 2.) / screenRes;
+                Histogram::Draw(
+                    newPos, newSize, minMaxRank,
+                    histData,
+                    histBarColor,
+                    Histogram::TimeXLabelFmt,
+                    histGetDiv,
+                    vec4(.1, .1, .1, .9)
+                );
+                if (UI::Button("Hide Histogram")) {
+                    showHistogram = false;
+                }
+            } else if (isGenerated) {
+                if (UI::Button("Show Histogram")) {
+                    showHistogram = true;
+                }
+            }
 
+            VPad();
+            if (nBuckets > 180) {
+                UI::TextWrapped('\\$ec2' + "Caution: histograms with many bars may increase frame times.");
             }
         }
+    }
+
+    const float HistHueDegreesPerDiv = 87;
+    // const float HistHueDegreesPerDiv = 193;
+
+    vec4 histBarColor(uint x, float halfBucketWidth) {
+        // debug("histBarColor, x=" + x);
+        uint colTime = x;
+        // uint div = 1;
+        // for (uint i = 0; i < divCutoffs.Length; i++) {
+        //     if (divCutoffs[i] >= colTime) {
+        //         div = i;
+        //         break;
+        //     }
+        // }
+        uint div = histGetDiv(x);
+        float h = (HistHueDegreesPerDiv * float(div)) % 360.;
+        Color@ c = Color(vec3(h, 60, 50), ColorTy::HSL);
+        return c.rgba(1);
+    }
+
+    uint histGetDiv(uint xScore) {
+        uint div = 0;
+        for (uint i = 0; i < divCutoffs.Length; i++) {
+            if (divCutoffs[i] >= xScore) {
+                div = i + 1;
+                break;
+            }
+        }
+        if (div == 0) div = divCutoffs.Length + 1;
+        return div;
+    }
+
+    void _GenHistogramData() {
+        string key = histToShow;
+        auto parts = key.Split('--');
+        string mapUid = parts[0];
+        int cId = Text::ParseInt(parts[1]);
+        auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
+        uint nPlayers = jb.j['nPlayers'];
+        uint chunkSize = jb.j['chunkSize'];
+        histUpperRank = nPlayers;
+        rawScores = array<uint>();
+        divCutoffs = array<uint>();
+        uint minR = 99999, maxR = 1, rank, score, lastScore;
+        bool isLast;
+        for (uint i = 1; i <= nPlayers; i += chunkSize) {
+            auto times = jb.j['ranges']['' + i];
+            for (uint j = 0; j < times.Length; j++) {
+                isLast = i == nPlayers && j + 1 == times.Length;
+                score = times[j]['score'];
+                rank = times[j]['rank'];
+                if ((rank % 64 == 0 || isLast)) {
+                    divCutoffs.InsertLast(score);
+                }
+                if (rank <= lowRankFilter || rank > highRankFilter) continue;
+                rawScores.InsertLast(score);
+                minR = Math::Min(minR, rank);
+                maxR = Math::Max(maxR, rank);
+                lastScore = score;
+            }
+        }
+        logcall("_GenHistogramData", "div cutoffs: " + string::Join(ArrayUintToString(divCutoffs), ", "));
+        minMaxRank = int2(minR, maxR);
+        @histData = Histogram::RawDataToHistData(rawScores, nBuckets);
+        @COTD_HISTOGRAM_DATA[key] = histData;
+    }
+
+    void GenerateHistogramData(ref@ HistData) {
+
     }
 
     int lastCidDownload = -1;

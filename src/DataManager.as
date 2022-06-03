@@ -78,7 +78,13 @@ namespace DataManager {
 
     void Initialize() {
         // only request this at app startup -- will be updated when we join a COTD server
-        cotdLatest_MapId = tmIoApi.GetTotdMapId();
+        auto days = api.GetTotdByMonth(1)["monthList"][0]["days"];
+        string mapUid;
+        for (uint i = 0; i < days.Length; i++) {
+            mapUid = days[i]['mapUid'];
+            if (mapUid.Length > 0) cotdLatest_MapId = mapUid;
+            else break;
+        }
         // todo: save all of GetTotdMap data so that we can look at past COTDs, too
 
         // // todo:
@@ -410,7 +416,8 @@ namespace DataManager {
             // trace(logpre + " res: " + Json::Write(res));
             /* note: res[0]["score"] and res[0]["time"] appear to be identical */
             _row.timeMs = (res.Length == 0) ? MAX_DIV_TIME : res[0]["score"];
-            _row.lastJson = res[0];
+            if (res.Length > 0)
+                _row.lastJson = res[0];
         }
 
         _row.lastUpdateDone = Time::get_Now();

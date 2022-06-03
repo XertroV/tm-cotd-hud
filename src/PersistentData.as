@@ -26,9 +26,11 @@ namespace PersistentData {
     const string filepath_CotdIndexDb = MkPath("cotd-index-db.json");
     const string filepath_PlayerNameDb = MkPath("player-name-db.json");
     const string filepath_PlayerNameQDb = MkPath("player-name-q-db.json");
+    const string filepath_HistogramGenQDb = MkPath("histogram-gen-q-db.json");
 
     const string folder_Thumbnails = MkPath("thumbnails");
     const string folder_MapTimes = MkPath("map-times");
+    const string folder_HistogramData = MkPath("histograms");
 
     HistoryDb@ histDb;
     MapDb@ mapDb;
@@ -48,6 +50,7 @@ namespace PersistentData {
         CheckAndCreateFolder(dataFolder);
         CheckAndCreateFolder(folder_Thumbnails);
         CheckAndCreateFolder(folder_MapTimes);
+        CheckAndCreateFolder(folder_HistogramData);
         // if (!IO::FileExists(filepath_Follows)) {
         //     // auto f = IO::File(filepath_Follows, IO::FileMode::Write);
         //     // // f.Open(IO::FileMode::Write);  /* Append, Read, None */
@@ -687,6 +690,7 @@ class MapDb : JsonDb {
     private CotdIndexDb@ cotdIndexDb;
     JsonDictDb@ playerNameDb;
     private JsonQueueDb@ playerNameQDb;
+    // private JsonQueueDb@ histGenQDb;
 
     MapDb(const string &in path) {
         super(path, 'mapDb-with-sync-queue');
@@ -698,6 +702,7 @@ class MapDb : JsonDb {
         @cotdIndexDb = CotdIndexDb(PersistentData::filepath_CotdIndexDb, 'cotdIndexDb-v1');
         @playerNameDb = JsonDictDb(PersistentData::filepath_PlayerNameDb, 'playerNameDb-v1');
         @playerNameQDb = JsonQueueDb(PersistentData::filepath_PlayerNameQDb, 'playerNameQDb-v1');
+        // @playerNameQDb = JsonQueueDb(PersistentData::filepath_HistogramGenQDb, 'histGenQDb-v1');
         startnew(CoroutineFunc(SyncLoops));
     }
 

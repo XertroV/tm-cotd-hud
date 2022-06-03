@@ -45,11 +45,11 @@ uint Setting_HudHistogramBuckets = 42;
 
 // [Setting category="HUD Histogram" name="Position of HUD Histogram?"]
 [Setting hidden]
-vec2 Setting_HudHistogramPos = vec2(.85, .85);
+vec2 Setting_HudHistogramPos = vec2(.763, .772);
 
 // [Setting category="HUD Histogram" name="Size of HUD Histogram?"]
 [Setting hidden]
-vec2 Setting_HudHistogramSize = vec2(.1, .1);
+vec2 Setting_HudHistogramSize = vec2(.2, .16);
 
 
 

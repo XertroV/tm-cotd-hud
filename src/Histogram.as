@@ -1,6 +1,7 @@
 namespace Histogram {
     funcdef vec4 BarColor(uint, float);
     funcdef string XLabelFmt(uint x);
+    funcdef uint GetDivFunc(uint xScore);
 
     /* function defaults for parameters to Draw */
 
@@ -10,6 +11,10 @@ namespace Histogram {
 
     string TimeXLabelFmt(uint x) {
         return x > 0 ? Time::Format(x) : "-:--.---";
+    }
+
+    uint nopDiv(uint xScore) {
+        return 1;
     }
 
     /* Main drawing */
@@ -23,11 +28,17 @@ namespace Histogram {
     void Draw(
             vec2 uvPos, vec2 uvSize,
             int2 minMaxRank,
-            // uint[] &in rawData, uint nBuckets,
+            HistData@ hData,
             BarColor@ barColorF = NullBarColor,
-            XLabelFmt@ xLabelFmt = TimeXLabelFmt
+            XLabelFmt@ xLabelFmt = TimeXLabelFmt,
+            GetDivFunc@ getDiv = nopDiv,
+            vec4 bgColor = BG_COL
             ) {
         /** */
+        // if (hData is null) {
+        //     warn("Histogram called with null hData");
+        // }
+
         float sw = Draw::GetWidth();
         float sh = Draw::GetHeight();
         vec2 pos = uvPos * vec2(sw, sh);
@@ -40,7 +51,7 @@ namespace Histogram {
         // draw bg
         nvg::BeginPath();
         nvg::Rect(pos.x, pos.y, size.x, size.y);
-        nvg::FillColor(BG_COL);
+        nvg::FillColor(bgColor);
         nvg::Fill();
         nvg::ClosePath();
 
@@ -54,7 +65,7 @@ namespace Histogram {
 
         /* parameters of histogram */
         // auto hData = RawDataToHistData(rawData, nBuckets);
-        auto hData = DataManager::cotd_HistogramData;
+        // auto hData = DataManager::cotd_HistogramData;
         if (hData is null) {
             DrawTitle("No Data", vec2(pos.x, pos.y + .8 * size.y), size);
             return;
@@ -78,41 +89,71 @@ namespace Histogram {
         for (uint b = 0; b <= nBuckets; b++) {
             float height = size.y * float(data[b]) / float(maxCount);
             uint xScore = uint(b * bucketWidth + hData.minXVal);
-            DrawBar(pos.x + barWidth * b, pos.y + size.y, barWidth, -height, barColorF(xScore, bucketWidth / 2));
+            DrawBar(pos.x + barWidth * b, pos.y + size.y - height, barWidth, height, xScore, getDiv(xScore), barColorF(xScore, bucketWidth / 2));
         }
 
         /* draw X min/max labels */
         string leftXL = xLabelFmt(uint(hData.minXVal));
         string rightXL = xLabelFmt(uint(hData.maxXVal));
-        DrawLabelBelow(leftXL, pos + vec2(barWidth/2., size.y));
-        DrawLabelBelow(rightXL, pos + size - vec2(barWidth/2., 0));
+        DrawLabelBelow(leftXL, pos + vec2(barWidth/2., size.y), 1.0, bgColor);
+        DrawLabelBelow(rightXL, pos + size - vec2(barWidth/2., 0), 1.0, bgColor);
 
         /* draw title */
-        auto t = "Ranks " + minMaxRank.x + " to " + minMaxRank.y;
+        string t;
+        if (minMaxRank.x > 0 && minMaxRank.y > 0)
+            t = "Ranks " + minMaxRank.x + " to " + minMaxRank.y;
+        else
+            t = "";
         // auto t = DataManager::GetChallengeTitle() + " (" + ranksStr + ")";
         DrawTitle(t, pos, size);
 
         _DebugPrintVariables(hData, barWidth, maxCount, bucketIxOfMax);
     }
 
-    void DrawBar(float x, float y, float w, float h, vec4 col) {
+    void DrawBar(float x, float y, float w, float h, uint xScore, uint div, vec4 col) {
+        // x = Math::Ceil(x);
+        bool mib = IsMouseInBox(x,y,w,h);
+        if (mib) {
+            DrawHoverForBar(x + w/2, y + h, xScore, div);
+        }
+        vec4 _col = mib ? vec4(.9, .8, .1, 1.0) : col;
         nvg::BeginPath();
-        nvg::Rect(x, y, w, h);
-        nvg::FillColor(col);
+        if (mib) {
+            nvg::Rect(x+1, y+1, w-1, h-1);
+            nvg::StrokeColor(_BLACK);
+            nvg::StrokeWidth(5);
+            nvg::Stroke();
+        } else {
+            nvg::Rect(x, y, w, h);
+            nvg::StrokeColor(_WHITE * .5);
+            nvg::StrokeWidth(w > 3 ? 1 : 0);
+        }
+        nvg::Stroke();
+        nvg::FillColor(_col);
         nvg::Fill();
         nvg::ClosePath();
     }
 
+    void DrawHoverForBar(float x, float y, uint score, uint div) {
+        DrawLabelBelow(Time::Format(score) + " / Div " + div, vec2(x, y), 3.0, vec4(.1, .1, .1, .9));
+    }
+
+    bool IsMouseInBox(float x, float y, float w, float h) {
+        int mx = CotdExplorer::mousePos.x, my = CotdExplorer::mousePos.y;
+        // trace("mx=" + mx + ", x=" + x + ", my=" + my+ ", y=" + y);
+        return (x <= mx && mx <= x + w) && (y <= my && my <= y + h);
+    }
+
     const float _TB_WIDTH = 200;
 
-    void DrawLabelBelow(string &in l, vec2 pos) {
+    void DrawLabelBelow(string &in l, vec2 pos, float dhMult = 1.0, vec4 bgColor = BG_COL) {
         /* set up */
-        auto dh = Draw::GetHeight() * 0.01;
+        auto dh = Draw::GetHeight() * 0.01 * dhMult;
         auto lSize = Draw::MeasureString(l , labelFont, 20, _TB_WIDTH) * 1.3;
         auto lPos = pos - vec2(1.05 * lSize.x / 2, lSize.y * 0.115 - dh);  /* 0.115 = (1-1/1.3)/2
 
         /* bg rect */
-        nvg::FillColor(BG_COL * vec4(1,1,1,.7));
+        nvg::FillColor(bgColor);
         nvg::BeginPath();
         nvg::Rect(lPos.x, lPos.y, lSize.x, lSize.y);
         nvg::Fill();
@@ -127,9 +168,9 @@ namespace Histogram {
 
         /* tick mark */
         nvg::StrokeColor(_BLACK);
-        nvg::StrokeWidth(.5);
+        nvg::StrokeWidth(1);
         nvg::BeginPath();
-        nvg::Rect(pos.x - 1, pos.y, 1.5, dh * .6);
+        nvg::Rect(pos.x - 1, pos.y, 1.5, dh * .8);
         nvg::Fill();
         // nvg::Stroke();
         nvg::ClosePath();
@@ -204,6 +245,7 @@ namespace Histogram {
 
         float bucketWidth = float(xSpan) / float(nBuckets);
         // trace("min: " + minRawD + ", max: " + maxRawD);
+        debug("bucketWidth: " + bucketWidth + " = " + xSpan + " / " + nBuckets);
 
         /* organize data */
         // todo: need to do bucket allocation properly

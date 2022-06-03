@@ -60,6 +60,10 @@ void OnSettingsChanged() {
     CotdExplorer::OnSettingsChanged();
 }
 
+void OnMouseMove(int x, int y) {
+    CotdExplorer::OnMouseMove(x, y);
+}
+
 /* Plan:
 
 UI Components:
