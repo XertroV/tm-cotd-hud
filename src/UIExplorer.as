@@ -38,6 +38,7 @@ namespace CotdExplorer {
             yield();
         }
         startnew(ExplorerManager::ManageHistoricalTotdData);
+        print(Vec3ToStr(loopColorStart.v));
     }
 
     void InitAndCalcUIElementSizes() {
@@ -333,7 +334,7 @@ namespace CotdExplorer {
     void _DevSetExplorerCotdSelection() {
         explYear.AsJust(2022);
         explMonth.AsJust(4);
-        explDay.AsJust(1);
+        explDay.AsJust(29);
         // explCup.AsJust(2);
         // explQDiv.AsJust(1);
         // explMatch.AsJust(1);
@@ -653,7 +654,7 @@ namespace CotdExplorer {
             // UI::TableSetupColumn("Qualifying Times", UI::TableColumnFlags::WidthFixed, 320.);
             UI::TableNextColumn();
             TextHeading("Qualifiers");
-            _CotdQualiTimesTable(cId);
+            bool dlDone = _CotdQualiTimesTable(cId);
 
             // UI::TableSetupColumn("Nil", UI::TableColumnFlags::WidthFixed, 20.);
             UI::TableNextColumn();
@@ -661,7 +662,7 @@ namespace CotdExplorer {
             // UI::TableSetupColumn("Histogram", UI::TableColumnFlags::WidthFixed, 350.);
             UI::TableNextColumn();
             TextHeading("Histogram");
-            _CotdQualiHistogram(mapUid, cId);
+            _CotdQualiHistogram(mapUid, cId, dlDone);
 
             UI::EndTable();
         }
@@ -678,7 +679,7 @@ namespace CotdExplorer {
     uint[] divCutoffs;
     uint lowRankFilter = 0, highRankFilter = 99999, histUpperRank = 99999;
 
-    void _CotdQualiHistogram(const string &in mapUid, int cId) {
+    void _CotdQualiHistogram(const string &in mapUid, int cId, bool dlDone) {
         UI::Dummy(vec2());
         if (!PersistentData::MapTimesCached(mapUid, cId)) {
             UI::TextWrapped("Please download the qualifying times first.");
@@ -691,8 +692,10 @@ namespace CotdExplorer {
             int upperRankLimit = Math::Min(histUpperRank, highRankFilter);
             lowRankFilter = UI::SliderInt('Exclude Ranks Below', lowRankFilter, 0, upperRankLimit);
             highRankFilter = UI::SliderInt('Exclude Ranks Above', highRankFilter, lowRankFilter, histUpperRank);
+            bool _disabled = Time::Now - lastHistGen < 1000;
+            _disabled = _disabled || !dlDone;
             // generate histogram data
-            if (MDisabledButton(Time::Now - lastHistGen < 1000, (isGenerated ? "Reg" : "G") + "enerate Histogram Data")) {
+            if (MDisabledButton(_disabled, (isGenerated ? "Reg" : "G") + "enerate Histogram Data")) {
                 // todo
                 lastHistGen = Time::Now;
                 histToShow = key;
@@ -802,7 +805,7 @@ namespace CotdExplorer {
 
     int lastCidDownload = -1;
 
-    void _CotdQualiTimesTable(int cId) {
+    bool _CotdQualiTimesTable(int cId) {
         auto mapInfo = CotdTreeYMD();
         string mapUid = mapInfo.j['mapUid'];
         // string seasonUid = mapInfo.j['seasonUid'];
@@ -840,6 +843,7 @@ namespace CotdExplorer {
                 DrawAs2Cols("Total Divisions:", '' + Text::Format("%.1f", nPlayers / 64.));
                 UI::TableNextRow();
                 DrawAs2Cols("Last Div:", Text::Format("%d", (nPlayers - 1) % 64 + 1) + " Players");
+                DrawAs2Cols("Challenge ID:", Text::Format("%d", cId) + " Players");
             }
             UI::EndTable();
         }
@@ -855,6 +859,8 @@ namespace CotdExplorer {
                 UI::EndTable();
             }
         }
+
+        return dlDone;
     }
 
     bool _DrawCotdTimesDownloadStatus(const string &in mapUid, int cId) {
@@ -919,7 +925,10 @@ namespace CotdExplorer {
         string hl = showCooldownColor
             ? maniaColorForCooldown(cooldownDelta, copiedCooldownMs, true)
             : nameExists ? "" : "\\$a42";
-        string pName = hl + (nameExists ? mapDb.playerNameDb.Get(pid) : "?? " + pid.Split('-')[0]);
+        string nameRaw = nameExists ? mapDb.playerNameDb.Get(pid) : "?? " + pid.Split('-')[0];
+        string pName = IsSpecialPlayerId(pid)
+            ? "\\$s" + rainbowLoopColorCycle(nameRaw, true)
+            : hl + nameRaw;
         UI::Text(pName);
         if (UI::IsItemClicked()) {
             trace("Copying to clipboard: " + pid);
