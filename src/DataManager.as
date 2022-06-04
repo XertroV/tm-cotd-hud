@@ -415,9 +415,11 @@ namespace DataManager {
             }
             // trace(logpre + " res: " + Json::Write(res));
             /* note: res[0]["score"] and res[0]["time"] appear to be identical */
-            _row.timeMs = (res.Length == 0) ? MAX_DIV_TIME : res[0]["score"];
-            if (res.Length > 0)
-                _row.lastJson = res[0];
+            if (res.GetType() == Json::Type::Array) {
+                _row.timeMs = (res.Length == 0) ? MAX_DIV_TIME : res[0]["score"];
+                if (res.Length > 0)
+                    _row.lastJson = res[0];
+            }
         }
 
         _row.lastUpdateDone = Time::get_Now();
