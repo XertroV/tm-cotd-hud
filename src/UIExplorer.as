@@ -10,8 +10,9 @@ namespace CotdExplorer {
     const string ExplorerWindowTitle = "COTD Explorer (Unk)";
 #endif
 
+    const string ByCotdHudStr = EscapeRawToOpenPlanet(BcCommands::byLineB);
+
     BoolWP@ windowActive = BoolWP(false);
-    BoolWP@ windowCGradOpen = BoolWP(false);
     string icon = Icons::AreaChart;
     HistoryDb@ histDb;  /* instantiated in PersistentData */
     MapDb@ mapDb;  /* instantiated in PersistentData */
@@ -144,7 +145,16 @@ namespace CotdExplorer {
             startnew(LoadCotdTreeFromDb);
         }
 
+        /* menu bar */
+
         _RenderMenuBar();
+
+        /* header */
+
+        CenteredTextBigHeading("TOTD + COTD Explorer", ByCotdHudStr);
+        UI::Separator();
+
+        /* main body */
 
         if (cotdYMDMapTree is null || cotdYMDMapTree.GetKeys().Length == 0) {
             _RenderExplorerLoading();
@@ -173,7 +183,7 @@ namespace CotdExplorer {
     /* General UI components */
 
     void _RenderExplorerLoading() {
-        UI::Text("Loading...");
+        UI::Text("Loading Initial Data...");
     }
 
     const string ResetIcon =
@@ -188,11 +198,25 @@ namespace CotdExplorer {
         ;
 
     void ExplorerBreadcrumbs() {
-        DrawAsRow(_ExplorerBreadcrumbs, UI_EXPLORER + "-breadcrumbs", 7);
+        UI::PushStyleColor(UI::Col::ChildBg, vec4(.1, .5, 1., .02));
+        if (UI::BeginChild( "-breadcrumbsOuter", vec2(0, 40))) {
+            UI::Dummy(vec2(1, 0));
+            DrawAsRow(_ExplorerBreadcrumbs, UI_EXPLORER + "-breadcrumbs", 7);
+            UI::EndChild();
+        }
+        UI::PopStyleColor();
     }
 
     /* the function that's passed in is meant to be run before each chunk of UI elements */
     void _ExplorerBreadcrumbs(DrawUiElems@ f) {
+        f();
+        UI::Dummy(vec2(2, 0));
+
+        f();
+
+        UI::AlignTextToFramePadding();
+        UI::Text("Nav:");
+
         f();  // always run at least once
 
         if (explYear.isNone) { // return early before explYear is set (we are on init screen; nothing to reset)
@@ -363,6 +387,7 @@ namespace CotdExplorer {
 
     void _RenderExplorerCotdSelection() {
         ExplorerBreadcrumbs();
+        UI::Separator();
         // /* we are in the selection phase while explCup.isNone */
         // if (explYear.isNone) {
         //     TextHeading("Select COTD");
@@ -396,27 +421,28 @@ namespace CotdExplorer {
         return ret;
     }
 
-    int TableFlagsFixed() {
-        return UI::TableFlags::SizingFixedFit;
-    }
-    int TableFlagsFixedSame() {
-        return UI::TableFlags::SizingFixedSame;
-    }
-    int TableFlagsStretch() {
-        return UI::TableFlags::SizingStretchProp;
-    }
-
     void _RenderExplorerCotdYearSelection() {
         TextHeading(_ExplorerCotdTitleStr() + " | Select Year");
-        // UI::BeginTable(UI_EXPLORER + "-yrs");
         auto yrs = cotdYMDMapTree.GetKeys();
         yrs.SortAsc();
-        if (UI::BeginTable(UI_EXPLORER + "-y-table", 6, TableFlagsFixedSame())) {
+        if (UI::BeginTable(UI_EXPLORER + "-y-table", 5, TableFlagsStretch())) {
+            UI::TableSetupColumn("left", UI::TableColumnFlags::WidthStretch);
+            UI::TableSetupColumn("1", UI::TableColumnFlags::WidthFixed);
+            UI::TableSetupColumn("2", UI::TableColumnFlags::WidthFixed);
+            UI::TableSetupColumn("3", UI::TableColumnFlags::WidthFixed);
+            UI::TableSetupColumn("right", UI::TableColumnFlags::WidthStretch);
+
+            UI::TableNextColumn(); /* empty */
+
             for (uint i = 0; i < yrs.Length; i++) {
                 UI::TableNextColumn();
                 string yr = yrs[i];
                 if (UI::Button(yr, calendarMonthBtnDims)) {
                     explYear.AsJust(Text::ParseInt(yr));
+                }
+                if ((i + 1) % 3 == 0) {
+                    UI::TableNextColumn();
+                    UI::TableNextColumn(); /* new row */
                 }
             }
             UI::EndTable();
@@ -434,15 +460,29 @@ namespace CotdExplorer {
         int _last = Text::ParseInt(months[months.Length - 1]);
         int _nMonths = months.Length;
         bool _disable;
-        if (UI::BeginTable(UI_EXPLORER + "-ym-table", 6, TableFlagsFixedSame())) {
+        if (UI::BeginTable(UI_EXPLORER + "-ym-table", 8, TableFlagsFixedSame())) {
+            UI::TableSetupColumn("left", UI::TableColumnFlags::WidthStretch);
+            for (uint i = 0; i < 6; i++) UI::TableSetupColumn("" + i, UI::TableColumnFlags::WidthFixed);
+            UI::TableSetupColumn("right", UI::TableColumnFlags::WidthStretch);
+
+            UI::TableNextColumn();
             for (int x = 1; x <= 12; x++) {
                 UI::TableNextColumn();
                 _disable = x < _offs || x - _offs >= _nMonths;
                 if (MDisabledButton(_disable, MONTH_NAMES[x], calendarMonthBtnDims)) {
                     OnSelectedCotdMonth(x);
                 }
+                if (x % 6 == 0) {
+                    UI::TableNextColumn();
+                    UI::TableNextColumn();
+                }
             }
             UI::EndTable();
+        }
+        if (explYear.val == 2020) {
+            VPad();
+            VPad();
+            TextBigStrong("\\$f81" + "Notice: COTD stats are not available prior to 2020-11-02. (A new API was introduced at that point, which is what this plugin uses.)");
         }
     }
 
@@ -468,11 +508,17 @@ namespace CotdExplorer {
         JsonBox@ map1 = cast<JsonBox@>(dd[days[0]]);
         JsonBox@ map;
         uint dayOffset = map1.j["day"];  /* .monthDay is the calendar day number (1-31); .day is 0-6 */
-        if (UI::BeginTable(UI_EXPLORER + "-ymd-table", 7, TableFlagsFixedSame())) {
-            // UI::TableNextRow();
+        if (UI::BeginTable(UI_EXPLORER + "-ymd-table", 9, TableFlagsStretch())) {
+            UI::TableSetupColumn("left", UI::TableColumnFlags::WidthStretch);
+            for (uint i = 0; i < 7; i++) UI::TableSetupColumn("" + i, UI::TableColumnFlags::WidthFixed);
+            UI::TableSetupColumn("right", UI::TableColumnFlags::WidthStretch);
+
+            UI::TableNextColumn();
+
             for (uint i = 0; i < dayOffset; i++) {
                 UI::TableNextColumn();  /* skip some columns based on offset */
             }
+
             for (uint i = 0; i < days.Length; i++) {
                 day = days[i];
                 UI::TableNextColumn();
@@ -484,7 +530,12 @@ namespace CotdExplorer {
                     OnSelectedCotdDay(Text::ParseInt(day));
                 }
                 DrawMapTooltip(mapUid);
+                if ((i + 1 + dayOffset) % 7 == 0) {
+                    UI::TableNextColumn();
+                    UI::TableNextColumn();
+                }
             }
+
             UI::EndTable();
         }
     }
@@ -523,6 +574,10 @@ namespace CotdExplorer {
     }
 
     void DrawTotdMapInfoTable(Json::Value map, const string &in totdDate) {
+        if (IsJsonNull(map)) {
+            TextBigStrong("\\$fa4" + "Map is not found or data corrupted.");
+            return;
+        }
         string tnUrl = map['ThumbnailUrl'];
         string authorName = map['AuthorDisplayName'];
         string authorId = map['AuthorWebServicesUserId'];
@@ -532,16 +587,28 @@ namespace CotdExplorer {
         mapName = EscapeRawToOpenPlanet(MakeColorsOkayDarkMode(mapName));
         mapName += " \\$z(TOTD for " + totdDate + ")";
         TextHeading(mapName);
-        if (UI::BeginTable(UI_EXPLORER + '-mapInfo', 2, TableFlagsStretch())) {
-            UI::TableNextColumn();
+        if (UI::BeginTable(UI_EXPLORER + '-mapInfo', 5, TableFlagsStretch())) {
+            UI::TableSetupColumn("left", UI::TableColumnFlags::WidthStretch);
+            UI::TableSetupColumn("mapinfo", UI::TableColumnFlags::WidthFixed);
+            UI::TableSetupColumn("mid", UI::TableColumnFlags::WidthFixed);
+            UI::TableSetupColumn("thumbnail", UI::TableColumnFlags::WidthFixed);
+            UI::TableSetupColumn("right", UI::TableColumnFlags::WidthStretch);
+
+            UI::TableNextColumn(); /* left */
+
+            UI::TableNextColumn(); /* map info */
             UI::Text(EscapeRawToOpenPlanet("Mapper: " + authorName));
             UI::Text("Author Time: " + authorScore);
             DrawMapRecordsOrLoading(map['Uid']);
 
-            UI::TableNextColumn();
+            UI::TableNextColumn(); /* mid */
+            UI::Dummy(vec2(75, 0));
+
+            UI::TableNextColumn(); /* thumbnail */
             _DrawThumbnail(tnUrl, true, 1.0);
             DrawMapThumbnailBigTooltip(tnUrl);
 
+            UI::TableNextColumn(); /* right */
             UI::EndTable();
         }
     }
@@ -579,7 +646,12 @@ namespace CotdExplorer {
         } else {
             TextHeading(_ExplorerCotdTitleStr() + " | Select Cup");
             string btnLab;
-            if (UI::BeginTable(UI_EXPLORER + "-tableChooseCId", 5, TableFlagsFixedSame())) {
+            UI::PushStyleVar(UI::StyleVar::ButtonTextAlign, vec2(.5, .5));
+            if (UI::BeginTable(UI_EXPLORER + "-tableChooseCId", 5, TableFlagsStretch())) {
+                UI::TableSetupColumn("left", UI::TableColumnFlags::WidthStretch);
+                for (uint i = 0; i < 3; i++) UI::TableSetupColumn("" + i, UI::TableColumnFlags::WidthFixed);
+                UI::TableSetupColumn("right", UI::TableColumnFlags::WidthStretch);
+
                 UI::TableNextColumn();
                 for (int i = 0; i < Math::Min(cIds.Length, COTD_BTNS.Length); i++) {
                     auto c = histDb.GetChallenge(cIds[i]);
@@ -601,6 +673,7 @@ namespace CotdExplorer {
                 }
                 UI::EndTable();
             }
+            UI::PopStyleVar();
         }
     }
 
@@ -750,11 +823,12 @@ namespace CotdExplorer {
                     histBarColor,
                     Histogram::TimeXLabelFmt,
                     histGetDiv,
-                    vec4(.1, .1, .1, .9)
+                    vec4(.1, .1, .1, .98)
                 );
                 if (UI::Button("Hide Histogram")) {
                     showHistogram = false;
                 }
+                UI::TextWrapped(c_brightBlue + 'Note: the histogram will appear on the right of this window. It might be underneath other OpenPlanet windows (if you have any open).');
             } else if (isGenerated) {
                 if (UI::Button("Show Histogram")) {
                     showHistogram = true;

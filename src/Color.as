@@ -175,6 +175,19 @@ string rgbToHexTri(vec3 rgb) {
     return ret;
 }
 
+vec3 hexTriToRgb(const string &in hexTri) {
+    if (hexTri.Length != 3) { throw ("hextri must have 3 characters. bad input: " + hexTri); }
+    try {
+        float r = HexCharToInt(hexTri[0]);
+        float g = HexCharToInt(hexTri[1]);
+        float b = HexCharToInt(hexTri[2]);
+        return vec3(r, g, b) / 16.;
+    } catch {
+        throw("Exception while processing hexTri (" + hexTri + "): " + getExceptionInfo());
+    }
+    return vec3();
+}
+
 
 class Color {
     ColorTy ty;
@@ -418,9 +431,9 @@ string MakeColorsOkayDarkMode(const string &in raw) {
                 ));
                 c.AsHSL();
                 float l = c.v.z;  /* lightness part of HSL */
-                if (l < 50) {
+                if (l < 60) {
                     logcall("MakeColorsOkayDarkMode", "fixing color: " + _test + " / " + c.ManiaColor + " / " + c.ToString());
-                    c.v = vec3(c.v.x, c.v.y, 100. - l);
+                    c.v = vec3(c.v.x, c.v.y, Math::Max(100. - l, 60));
                     logcall("MakeColorsOkayDarkMode", "new color: " + Vec3ToStr(c.get_rgb()) + " / " + c.get_ManiaColor() + " / " + c.ToString());
                     ret = ret.Replace(_test, c.get_ManiaColor());
                 }

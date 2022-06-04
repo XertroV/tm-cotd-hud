@@ -220,14 +220,24 @@ namespace CotdHud {
         }
     }
 
+    bool ShowTimeAsRainbow(DivRow@&in dr, bool isPlayer) {
+        bool div1Condition = dr.div == 1 && Setting_HudShowMyTimeAsRainbowInDiv1;
+        bool ret = isPlayer && (div1Condition || Setting_HudAlwaysShowRainbowPlayerTime);
+        return ret;
+    }
+
     void RenderDivRowFromDR(DivRow@&in dr, bool isPlayer = false) {
         // highlight
         string hl = isPlayer ? "\\$f4b" : "\\$z";
+        string time = dr.FmtTime();
+        if (ShowTimeAsRainbow(dr, isPlayer)) {
+            time = rainbowLoopColorCycle(time, true, 1.3);
+        }
         UI::TableNextRow();
         UI::TableNextColumn();
         UI::Text(hl + dr.FmtDiv());
         UI::TableNextColumn();
-        UI::Text(hl + dr.FmtTime());
+        UI::Text(hl + time);
         if (ShouldShowDeltas()) {
             if (!isPlayer) {
                 int diff = int(DataManager::playerDivRow.timeMs) - int(dr.timeMs);

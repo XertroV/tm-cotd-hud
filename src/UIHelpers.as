@@ -1,6 +1,8 @@
 
+Resources::Font@ bigHeadingFont = Resources::GetFont("DroidSans.ttf", 26, -1, -1, true, true);;
 Resources::Font@ headingFont = Resources::GetFont("DroidSans.ttf", 20, -1, -1, true, true);;
 Resources::Font@ subheadingFont = Resources::GetFont("DroidSans.ttf", 18, -1, -1, true, true);;
+Resources::Font@ subheadingBolFont = Resources::GetFont("DroidSans-Bold.ttf", 18, -1, -1, true, true);;
 Resources::Font@ stdBold = Resources::GetFont("DroidSans-Bold.ttf", 16, -1, -1, true, true);;
 
 /* tooltips */
@@ -40,21 +42,117 @@ void PaddedSep() {
     VPad();
 }
 
-/* heading */
+/* heading & text */
 
-void TextHeading(string t) {
+void TextBigStrong(const string &in t) {
+    UI::PushFont(subheadingBolFont);
+    UI::Text(t);
+    UI::PopFont();
+}
+
+void TextHeading(string t, bool withLine = true) {
     UI::PushFont(headingFont);
     VPad();
     UI::Text(t);
-    UI::Separator();
+    if (withLine) UI::Separator();
     VPad();
     UI::PopFont();
+}
+
+void TextBigHeading(string t, bool withLine = false) {
+    UI::PushFont(bigHeadingFont);
+    VPad();
+    UI::Text(t);
+    if (withLine) UI::Separator();
+    VPad();
+    UI::PopFont();
+}
+
+void CenteredTextBigHeading(const string &in t, const string &in subtitle = "") {
+    DrawCenteredInTable(t, function(ref@ r) {
+        StrPairBox@ b = cast<StrPairBox@>(r);
+        UI::PushFont(bigHeadingFont);
+        UI::Text(b.fst);
+        UI::PopFont();
+    }, StrPairBox(t, subtitle));
+    if (subtitle.Length > 0) {
+        DrawCenteredInTable(subtitle, function(ref@ r) {
+            StrPairBox@ b = cast<StrPairBox@>(r);
+            UI::PushFont(headingFont);
+            UI::Text(b.snd);
+            UI::PopFont();
+        }, StrPairBox(t, subtitle));
+    }
+}
+
+/* tables */
+
+int TableFlagsFixed() {
+    return UI::TableFlags::SizingFixedFit;
+}
+int TableFlagsFixedSame() {
+    return UI::TableFlags::SizingFixedSame;
+}
+int TableFlagsStretch() {
+    return UI::TableFlags::SizingStretchProp;
+}
+int TableFlagsStretchSame() {
+    return UI::TableFlags::SizingStretchSame;
+}
+int TableFBorders() {
+    return UI::TableFlags::Borders;
+}
+
+
+void DrawCenteredInTable(const string &in tableId, DrawUiElems@ f) {
+    /* cast the function to a ref so we can delcare an anon function that casts it back to a normal function and then calls it. */
+    DrawCenteredInTable(tableId, function(ref@ _r){
+        DrawUiElems@ r = cast<DrawUiElems@>(_r);
+        r();
+    }, f);
+}
+
+void DrawCenteredInTable(const string &in tableId, DrawUiElemsWRef@ f, ref@ r) {
+    // UI::PushStyleColor(UI::Col::TableBorderLight, vec4(1,1,1,1));
+    // UI::PushStyleColor(UI::Col::TableBorderStrong, vec4(1,1,1,1));
+    // UI::PopStyleColor(2);
+    //  | TableFBorders()
+    if (UI::BeginTable(tableId, 3, TableFlagsStretch())) {
+        /* CENTERING!!! */
+        UI::TableSetupColumn("left", UI::TableColumnFlags::WidthStretch);
+        UI::TableSetupColumn("content", UI::TableColumnFlags::WidthFixed);
+        UI::TableSetupColumn("right", UI::TableColumnFlags::WidthStretch);
+        UI::TableNextColumn();
+        UI::TableNextColumn();
+        f(r);
+        UI::TableNextColumn();
+        UI::EndTable();
+    }
+}
+
+
+bool BeginCenteredTable(const string &in id) {
+    if (UI::BeginTable(id, 3, TableFlagsStretch())) {
+        UI::TableSetupColumn("left", UI::TableColumnFlags::WidthStretch);
+        UI::TableSetupColumn("content", UI::TableColumnFlags::WidthFixed);
+        UI::TableSetupColumn("right", UI::TableColumnFlags::WidthStretch);
+        UI::TableNextColumn();
+        UI::TableNextColumn();
+        return true;
+    }
+    return false;
+}
+
+void EndCenteredTable() {
+    UI::TableNextColumn();
+    UI::EndTable();
 }
 
 
 /* sorta functional way to draw elements dynamically as a list or row or other things. */
 
 funcdef void DrawUiElems();
+funcdef void DrawUiElemsWRef(ref@ r);
 funcdef void DrawUiElemsF(DrawUiElems@ f);
 
 void DrawAsRow(DrawUiElemsF@ f, const string &in id, int cols = 64) {
@@ -119,9 +217,10 @@ string[] loopColors = ExtendStringArrs(
 // string[] loopColors = maniaColorForColors(gradientColors(loopColorStart, 60, loopColorEnd));
 uint nLoopColors = loopColors.Length;
 
-string rainbowLoopColorCycle(const string &in text, bool escape = false, float loopSecDuration = 1.5, bool fwds = true) {
+string rainbowLoopColorCycle(const string &in text, bool escape = false, float loopSecDuration = 1.5, bool fwds = true, float startIx = -1) {
     float msPerC = 1000. * loopSecDuration / float(nLoopColors);
-    float startIx = uint(Time::Now / msPerC) % nLoopColors;
+    if (startIx < 0)
+        startIx = uint(Time::Now / msPerC) % nLoopColors;
     string ret = "";
     string c;
     for (int i = 0; i < text.Length; i++) {

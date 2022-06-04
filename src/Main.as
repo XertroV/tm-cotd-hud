@@ -13,6 +13,8 @@ void Main() {
 
     startnew(SettingsCustom::LoopSetTabsInactive);
 
+    startnew(ColorGradientWindow_Setup);
+
 #if DEPENDENCY_BETTERCHAT
     startnew(BcCommands::Main);
 #endif
@@ -39,6 +41,7 @@ void Render() {
 void RenderInterface() {
     CotdHud::RenderInterface();
     CotdExplorer::RenderInterface();
+    RenderWindowUtilityColorGradients();
 }
 
 void RenderMenu() {
@@ -58,6 +61,7 @@ void OnSettingsChanged() {
     DataManager::OnSettingsChanged();
     CotdHud::OnSettingsChanged();
     CotdExplorer::OnSettingsChanged();
+    OnSettingsChanged_UiGradientWindow();
 }
 
 void OnMouseMove(int x, int y) {

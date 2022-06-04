@@ -9,3 +9,17 @@ const string[] MONTH_NAMES = {
 };
 
 const uint A_MONTH_IN_MS = uint(31 * 24 * 60 * 60 * 1000);
+
+
+
+
+const dictionary@ NAMED_COLORS = {
+    {'justRed', vec3(1, 0, 0)},
+    {'justGreen', vec3(0, 1, 0)},
+    {'justBlue', vec3(0, 0, 1)},
+    {'white', vec3(1, 1, 1)},
+    {'black', vec3(0, 0, 0)},
+    {'fuchsia', vec3(0xf, 1, 9) / 16.}
+};
+
+const array<string> COLOR_NAMES = NAMED_COLORS.GetKeys();

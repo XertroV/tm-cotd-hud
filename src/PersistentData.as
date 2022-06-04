@@ -916,8 +916,8 @@ class MapDb : JsonDb {
     }
 
     void _LoopCheckPlayerNamesInGame() {
+        logcall("_LoopCheckPlayerNamesInGame", "Starting...");
         while (true) {
-            logcall("_LoopCheckPlayerNamesInGame", "Checking...");
             auto playerInfos = gi.getPlayerInfos();
             for (uint i = 0; i < playerInfos.Length; i++) {
                 auto pi = gi.NetPIToTrackmaniaPI(playerInfos[i]);

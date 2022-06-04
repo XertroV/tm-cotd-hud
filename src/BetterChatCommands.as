@@ -112,6 +112,88 @@ namespace BcCommands {
     }
 
 
+    Color@ InputToColor(const string &in str) {
+        vec3 rgb;
+        if (str.Length == 3) {
+            try {
+                rgb = hexTriToRgb(str);
+                return Color(rgb);
+            } catch {
+                // bad hextri
+            }
+        }
+        // otherwise let's scan known colors
+        if (NAMED_COLORS.Exists(str)) {
+            return Color(vec3(NAMED_COLORS[str]));
+        }
+        throw("Unknown color");
+        return Color(vec3(1,1,1));
+    }
+
+
+    class SayRgbToChatCommand : BetterChat::ICommand {
+        string Icon() {
+            return '\\$94d' + Icons::PaintBrush;
+            // return "\\$f19I\\$74bI\\$08dI\\$08dI\\$0a7I\\$0c1I";
+        }
+
+        string Description() {
+            // auto _action = send ? "Tells chat" : "Prints";
+            return "Args: [color1] [color2] [message...]. Apply a gradient to a chat message.";
+        }
+
+        void Run(const string &in text) {
+            auto parts = text.Split(' ', 4);
+            print("Got msg parts: " + string::Join(parts, " | "));
+            if (parts.Length < 4) {
+                _LocalMsg("To use " + parts[0] + " you must provide these arguments:\n"
+                + '$s$9d1' + ">  $s" + parts[0] + " [color1] [color2] [your message ...]\n"
+                + "$fff  Colors can be a 3-letter hex value (e.g., f19 or 7f0 or ff2), or specified by name.\n"
+                + "  To list available colors by name, run /list-colors.\n");
+                return;
+            }
+            string _c1 = parts[1];
+            string _c2 = parts[2];
+            string msg = parts[3];
+            try {
+                Color@ c1 = InputToColor(_c1);
+                Color@ c2 = InputToColor(_c2);
+                _SendMsg(TextGradient(msg, c1, c2));
+            } catch {
+                string exInfo = getExceptionInfo();
+                string errMsg = "Exception parsing colors ("+_c1+","+_c2+"): " + exInfo;
+                warn(errMsg);
+                _LocalMsg(errMsg);
+            }
+        }
+    }
+
+    class ListColorsCommand :BetterChat::ICommand {
+        string Icon() {
+            return c_timeOrange + Icons::List;
+        }
+
+        string Description() {
+            return "Lists available named colors for use with /rgb";
+        }
+
+        void Run(const string &in text) {
+            _LocalMsg("$fa4Todo: list colors.");
+            string colors = "";
+            Color@ c;
+            vec3 cv;
+            string name;
+            for (uint i = 0; i < COLOR_NAMES.Length; i++) {
+                name = COLOR_NAMES[i];
+                cv = vec3(NAMED_COLORS[name]);
+                @c = Color(cv);
+                colors += "$z" + c.ManiaColor + name + "$z\n";
+            }
+            _LocalMsg("Available colors: \n" + colors);
+        }
+    }
+
+
     void Main() {
         /* run once on start, set up commands */
         RegisterBcCommands();
@@ -120,6 +202,8 @@ namespace BcCommands {
     void RegisterBcCommands() {
         BetterChat::RegisterCommand("cotd", @TellCotdCommand(false));
         BetterChat::RegisterCommand("tell-cotd", @TellCotdCommand(true));
+        BetterChat::RegisterCommand("rgb", @SayRgbToChatCommand());
+        BetterChat::RegisterCommand("list-colors", @ListColorsCommand());
         print(c_green + "[RegisterBcCommands] Done.");
     }
 }

@@ -61,6 +61,15 @@ namespace Histogram {
             DrawBiggerTitle("COTD HISTOGRAM\nPREVIEW", vec2(pos.x, pos.y + .2 * size.y), size);
         }
 
+        /* draw title */
+        string t;
+        if (minMaxRank.x > 0 && minMaxRank.y > 0)
+            t = "Ranks " + minMaxRank.x + " to " + minMaxRank.y;
+        else
+            t = "";
+        // auto t = DataManager::GetChallengeTitle() + " (" + ranksStr + ")";
+        DrawTitle(t, pos, size);
+
         /* now draw histogram */
 
         /* parameters of histogram */
@@ -84,6 +93,7 @@ namespace Histogram {
             }
         }
 
+
         float barWidth = size.x / float(nBuckets + 1);
         /* draw each bar */
         for (uint b = 0; b <= nBuckets; b++) {
@@ -98,15 +108,6 @@ namespace Histogram {
         string rightXL = xLabelFmt(uint(hData.maxXVal));
         DrawLabelBelow(leftXL, pos + vec2(barWidth/2., size.y), 1.0, bgColor);
         DrawLabelBelow(rightXL, pos + size - vec2(barWidth/2., 0), 1.0, bgColor);
-
-        /* draw title */
-        string t;
-        if (minMaxRank.x > 0 && minMaxRank.y > 0)
-            t = "Ranks " + minMaxRank.x + " to " + minMaxRank.y;
-        else
-            t = "";
-        // auto t = DataManager::GetChallengeTitle() + " (" + ranksStr + ")";
-        DrawTitle(t, pos, size);
 
         _DebugPrintVariables(hData, barWidth, maxCount, bucketIxOfMax);
     }
@@ -246,7 +247,7 @@ namespace Histogram {
 
         float bucketWidth = float(xSpan) / float(nBuckets);
         // trace("min: " + minRawD + ", max: " + maxRawD);
-        debug("bucketWidth: " + bucketWidth + " = " + xSpan + " / " + nBuckets);
+        // debug("bucketWidth: " + bucketWidth + " = " + xSpan + " / " + nBuckets);
 
         /* organize data */
         // todo: need to do bucket allocation properly
