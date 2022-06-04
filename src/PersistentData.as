@@ -14,7 +14,7 @@ namespace PersistentData {
 
     /* set our data folder to include the path mod (PM) set above */
     const string dataFolder = IO::FromDataFolder(mainFolderName + "/" + PM);
-    string MkPath(string fname) { return dataFolder + "/" + fname; };
+string MkPath(string fname) { return dataFolder + "/" + fname; };
 
     const string filepath_Follows = MkPath("follows.json");
     const string filepath_HistoricalCotd = MkPath("historical-cotd.json");
@@ -318,11 +318,15 @@ class HistoryDb : JsonDb {
     }
 
     int GetChallengesMaxId() {
-        return data.j['challenges']['maxId'];
+        return data.j['challenges'].Get('maxId', 0);
     }
 
     Json::Value GetChallenge(int id) {
-        return data.j['challenges']['items']['' + id];
+        string _cid = '' + id;
+        if (!data.j['challenges'].HasKey('items') || !data.j['challenges']['items'].HasKey(_cid)) {
+            return Json::Value();
+        }
+        return data.j['challenges']['items'][_cid];
     }
 
     // string[]@ ListTotdYears() {
@@ -411,6 +415,9 @@ class HistoryDb : JsonDb {
 
     void _SyncChallengesProgress() {
         auto sd = ChallengesSyncData();
+        if (!data.j.HasKey('challenges') || IsJsonNull(data.j['challenges'])) {
+            data.j['challenges'] = Json::Object();
+        }
         if (DbSync::IsInProg(sd)) {
             if (Time::Stamp - Text::ParseInt(sd['state']['updatedAt']) > 3600) {
                 /* if we updated a long time ago, update our offset based
@@ -437,7 +444,7 @@ class HistoryDb : JsonDb {
                 newCs = api.GetChallenges(length, offset);
             }
             if (newCs.Length > 0) {  // we'll get `[]` response when offset is too high.
-                auto chs = Json::Value(data.j.Get('challenges', Json::Object()));
+                auto chs = data.j['challenges'];
                 chs['maxId'] = newCs[0]['id'];  // first entry always has highest id
                 auto items = Json::Value(chs.Get('items', Json::Object()));
                 for (uint i = 0; i < newCs.Length; i++) {
@@ -445,7 +452,11 @@ class HistoryDb : JsonDb {
                     int _id = c['id'];
                     string id = "" + _id;
                     if (IsJsonNull(items[id])) {
+                        int startDate = c['startDate'];
+                        int endDate = c['endDate'];
                         items[id] = c;
+                        items[id]['startDate'] = '' + startDate;
+                        items[id]['endDate'] = '' + endDate;
                     } else {
                         trace("[SyncChallenges] Skipping challenge " + id + " since it's already in the DB.");
                     }
@@ -948,6 +959,10 @@ class MapDb : JsonDb {
     }
 
     void QueueMapChallengeTimesGet(const string &in mapUid, int challengeId) {
+        auto challenge = histDb.GetChallenge(challengeId);
+        int cStart = Text::ParseInt(challenge['startDate']);
+        int dontDownloadBefore = cStart * 30 * 60;
+        if (dontDownloadBefore > Time::Stamp) { return; }
         if (!PersistentData::MapTimesCached(mapUid, challengeId)) {
             auto obj = Json::Object();
             obj['id'] = mapUid + "|" + challengeId;

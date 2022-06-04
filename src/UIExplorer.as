@@ -39,7 +39,6 @@ namespace CotdExplorer {
             yield();
         }
         startnew(ExplorerManager::ManageHistoricalTotdData);
-        print(Vec3ToStr(loopColorStart.v));
     }
 
     void InitAndCalcUIElementSizes() {
@@ -584,13 +583,20 @@ namespace CotdExplorer {
                 UI::TableNextColumn();
                 for (int i = 0; i < Math::Min(cIds.Length, COTD_BTNS.Length); i++) {
                     auto c = histDb.GetChallenge(cIds[i]);
-                    if (c['startDate'] < Time::Stamp) {
-                        btnLab = COTD_BTNS[i];
-                        int cotdNum = btnLab[0] - 48;  /* '1' = 49; 49 - 48 = 1. (ascii char value - 48 = int value); */
-                        UI::TableNextColumn();
-                        if (UI::Button(btnLab, challengeBtnDims)) {
-                            OnSelectedCotdChallenge(cotdNum, mapUid, cIds[i]);
+                    if (!IsJsonNull(c)) {
+                        if (900 + Text::ParseInt(c['startDate']) < Time::Stamp) {
+                            btnLab = COTD_BTNS[i];
+                            int cotdNum = btnLab[0] - 48;  /* '1' = 49; 49 - 48 = 1. (ascii char value - 48 = int value); */
+                            UI::TableNextColumn();
+                            if (UI::Button(btnLab, challengeBtnDims)) {
+                                OnSelectedCotdChallenge(cotdNum, mapUid, cIds[i]);
+                            }
                         }
+                    } else {
+                        UI::TableNextColumn();
+                        UI::TextWrapped("\\$f81 Warning: challenge should exist but does not. (It may be being downloaded currently.)");
+                        UI::TableNextColumn();
+                        UI::TextWrapped(c_green + "Sync status: " + Json::Write(histDb.ChallengesSyncData()));
                     }
                 }
                 UI::EndTable();
@@ -895,6 +901,11 @@ namespace CotdExplorer {
     bool _DrawCotdTimesDownloadStatus(const string &in mapUid, int cId) {
         auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
         float nPlayers = jb.j['nPlayers'];
+        if (nPlayers == 0) {
+            UI::TableNextColumn();
+            UI::TextWrapped("\\$fa4" + "Warning: nPlayers == 0");
+            return false;
+        }
         int chunksDone = jb.j['ranges'].Length;
         float chunkSize = jb.j['chunkSize'];
         int expected = int(Math::Ceil(nPlayers / chunkSize));
