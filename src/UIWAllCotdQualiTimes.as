@@ -34,7 +34,7 @@ namespace WAllTimes {
     void PopulateCache() {
         playerId = DataManager::gi.PlayersId();
         nPlayers = times.Length;
-        nDivs = uint(Math::Ceil(nPlayers / 64)) + 1;
+        nDivs = uint(Math::Ceil(nPlayers / 64.)) + 1;
         cache_Ranks.Resize(nPlayers + nDivs);
         cache_Times.Resize(nPlayers + nDivs);
         cache_Deltas.Resize(nPlayers + nDivs);
