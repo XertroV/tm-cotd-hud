@@ -1,3 +1,6 @@
+[Setting category="General" name="HUD Enabled?" description="If false, the HUD will not be displayed."]
+bool Setting_ShowHud = true;
+
 [Setting category="General" name="Show HUD in COTD Qualifier?"]
 bool Setting_ShowHudInCotdQuali = true;
 

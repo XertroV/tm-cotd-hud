@@ -6,9 +6,12 @@ const string c_mid_grey = "\\$777";
 const string c_dark_grey = "\\$333";
 const string c_orange_600 = "\\$f61";
 const string c_green_700 = "\\$3a3";
+const string c_fuchsia = "\\$f19";
 
 const string c_timeOrange = "\\$d81";
 const string c_timeBlue = "\\$3ce";
+
+const string c_menuIconColor = c_fuchsia;
 
 
 Color@ CGreen = Color(vec3(0.082, 0.961, 0.208));  // #15F535

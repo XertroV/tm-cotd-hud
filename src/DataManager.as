@@ -28,7 +28,7 @@ namespace DataManager {
     DivRow@ playerDivRow = DivRow(0, 0, RowTy::Player);
 
     /* if we are showing a histogram, we'll need to track the 100 times above and below us */
-    uint[] cotd_TimesForHistogram = array<uint>(10000, 0);
+    uint[] cotd_TimesForHistogram = array<uint>(10000);
     Histogram::HistData@ cotd_HistogramData;
     int2 cotd_HistogramMinMaxRank = int2(0, 0);
 
@@ -59,6 +59,7 @@ namespace DataManager {
         startnew(LoopUpdateCotdStatus);
         startnew(LoopUpdateDivsInCotd);
         startnew(CoroLoopSaveAllTimes);
+        startnew(CoroLoadInitHistogramData);
 
 #if DEV
         startnew(LoopDevPrintState);
@@ -476,16 +477,16 @@ namespace DataManager {
         string toWrite = "";
         if (timesData.GetType() == Json::Type::Array) {
             for (uint i = 0; i < timesData.Length; i++) {
-                timesData[i].Remove('uid');
-                if (int(timesData[i]['time']) == int(timesData[i]['score'])) {
-                    timesData[i].Remove('time');
-                }
+                // timesData[i].Remove('uid');
+                // if (int(timesData[i]['time']) == int(timesData[i]['score'])) {
+                //     timesData[i].Remove('time');
+                // }
                 toWrite += "" + int(timesData[i]['rank']) + "," + int(timesData[i]['score']) + "," + string(timesData[i]['player']) + "\n";
             }
             UpdateCurrentCotdTimes(args, timesData);
         }
         // auto s = Json::Write(timesData);
-        IO::File td(PersistentData::folder_LiveTimesCache + "/cotdLive-" + cotdLatest_MapId + "-" + args.ts + ".json.txt", IO::FileMode::Append);
+        IO::File td(PersistentData::folder_LiveTimesCache + "/cotdLive-" + cotdLatest_MapId + "-" + args.ts + ".csv", IO::FileMode::Append);
         td.WriteLine(toWrite);
         td.Close();
     }
@@ -508,9 +509,25 @@ namespace DataManager {
         RegenHistogramData();
     }
 
+    void CoroLoadInitHistogramData() {
+        // don't do this if we're in a cotd
+        if (gi.IsCotdQuali()) return;
+        // wait for cotd data to be available
+        while (cotdLatest_MapId == "" || GetChallengeId() == 0) yield();
+        // wait for histogram data to be available through persistent data
+        while (!PersistentData::MapTimesCached(cotdLatest_MapId, GetChallengeId())) sleep(500);
+        sleep(50);
+        auto times = PersistentData::GetCotdMapTimesAll(cotdLatest_MapId, GetChallengeId());
+        for (uint i = 0; i < times.Length; i++) {
+            cotd_TimesForHistogram[i] = times[i];
+        }
+        RegenHistogramData();
+    }
+
     void RegenHistogramData() {
         if (Setting_HudShowHistogram && !IsJsonNull(cotdLatest_PlayerRank)) {
-            int pRank = 101;
+            int pRank = cotdLatest_PlayerRank["records"][0]["rank"];
+            logcall("RegenHistogramData", "Regenerating, player rank: " + pRank);
             if (cotdLatest_PlayerRank["records"].Length > 0) {
                 // adjust player's rank down 50 so that we get (-150, +50) times
                 pRank = Math::Max(51, cotdLatest_PlayerRank["records"][0]["rank"]) - 50;
@@ -522,11 +539,13 @@ namespace DataManager {
                 pRank = GetCotdTotalPlayers() - 99;
             }
 
-            assert(pRank >= 151, "pRank must be greater than 151 for things not to break.");
-            int minR = pRank - 150;
-            int maxR = pRank + 49;
-            cotd_HistogramMinMaxRank = int2(pRank - 150, pRank + 49);
-            uint[] hd = array<uint>(200, 0);
+            // assert(pRank >= 151, "pRank must be greater than 151 for things not to break.");
+            pRank = Math::Max(pRank, 101);
+            int minR = pRank - 100;
+            int maxR = pRank + 99;
+            cotd_HistogramMinMaxRank = int2(minR, maxR);
+            trace("RegenHistogramData: min: " + minR + "max: " + maxR);
+            uint[] hd = array<uint>(200);
             for (uint i = 0; i < 200 && minR + i < 10000; i++) {
                 hd[i] = cotd_TimesForHistogram[minR-1 + i];
             }

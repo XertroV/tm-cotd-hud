@@ -106,7 +106,7 @@ namespace CotdExplorer {
     void _CheckOtherRenderReasons() {}
 
     void RenderMenu() {
-        if (UI::MenuItem(c_brightBlue + icon + "\\$z COTD Explorer", "", IsVisible())) {
+        if (UI::MenuItem(c_menuIconColor + icon + "\\$z COTD Explorer", "", IsVisible())) {
             ToggleWindow();
         }
     }

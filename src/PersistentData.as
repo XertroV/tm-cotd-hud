@@ -159,6 +159,22 @@ string MkPath(string fname) { return dataFolder + "/" + fname; };
         return jb;
     }
 
+    uint[] GetCotdMapTimesAll(const string &in mapUid, int cId) {
+        auto jb = GetCotdMapTimes(mapUid, cId);
+        int nPlayers = jb.j['nPlayers'];
+        int chunkSize = jb.j['chunkSize'];
+        uint[] scores = array<uint>(nPlayers);
+        string[] keys = jb.j['ranges'].GetKeys();
+        for (uint i = 0; i < keys.Length; i++) {
+            auto times = jb.j['ranges'][keys[i]];
+            for (uint j = 0; j < times.Length; j++) {
+                int rank = times[j]['rank'];
+                scores[rank - 1] = times[j]['score'];
+            }
+        }
+        return scores;
+    }
+
     /* totd records */
 
     string MapRecordsPath(const string &in uid) {
