@@ -89,18 +89,10 @@ namespace CotdExplorer {
     /* Rendering Top-Level */
 
     void Render() {
-        if (Setting_ShowHudEvenIfInterfaceHidden) {
-            _RenderAll();
-        }
     }
 
     void RenderInterface() {
-        /* we check Setting_ShowHudEvenIfInterfaceHidden here because
-        * we don't want to double-render.
-        */
-        if (!Setting_ShowHudEvenIfInterfaceHidden) {
-            _RenderAll();
-        }
+        _RenderAll();
     }
 
     void _RenderAll() {
@@ -133,13 +125,13 @@ namespace CotdExplorer {
 
     void _RenderExplorerWindow() {
         if (windowActive.ChangedToTrue()) {
-            UI::SetNextWindowSize(730, 1000, UI::Cond::Always);
+            UI::SetNextWindowSize(730, 1100, UI::Cond::Always);
             windowActive.v = true;
         }
         UI::Begin(ExplorerWindowTitle, windowActive.v, GetWindowFlags());
 
         if (UI::IsWindowAppearing()) {
-            UI::SetWindowSize(vec2(730, 1000), UI::Cond::Always);
+            UI::SetWindowSize(vec2(730, 1100), UI::Cond::Always);
             _ResetExplorerCotdSelection();
             _DevSetExplorerCotdSelection();
             startnew(LoadCotdTreeFromDb);
@@ -856,7 +848,7 @@ namespace CotdExplorer {
         //     }
         // }
         uint div = histGetDiv(x);
-        float h = (HistHueDegreesPerDiv * float(div)) % 360.;
+        float h = 15 + (HistHueDegreesPerDiv * float(div)) % 360.;
         Color@ c = Color(vec3(h, 60, 50), ColorTy::HSL);
         return c.rgba(1);
     }
@@ -959,9 +951,23 @@ namespace CotdExplorer {
 
         if (dlDone) {
             VPad();
+
+            /* Top times:     [show all] */
+            UI::BeginTable('cotd-times-and-show-all', 2, TableFlagsStretchSame());
+
+            UI::TableNextColumn();
             UI::PushFont(subheadingFont);
-            UI::Text("Times:");
+            UI::AlignTextToFramePadding();
+            UI::Text("Top Times:");
             UI::PopFont();
+
+            UI::TableNextColumn();
+            if (UI::Button((w_AllCotdQualiTimes.IsVisible() ? "Hide" : "Show") + " All Times")) {
+                w_AllCotdQualiTimes.Toggle();
+            }
+
+            UI::EndTable();
+
             VPad();
             if (UI::BeginTable(UI_EXPLORER + "-cotdRecords", 4, TableFlagsFixed())) {
                 _DrawCotdTimesTableColumns(mapUid, cId);

@@ -4,7 +4,7 @@ bool Setting_ShowHudInCotdQuali = true;
 [Setting category="General" name="Show HUD in COTD KO?"]
 bool Setting_ShowHudInCotdKO = true;
 
-[Setting category="General" name="Show HUD Always?" description="Useful for repositioning the window, or checking last COTD stats, etc. NOTE: the HUD will still be hidden when the interface is hidden (see 'Dev' tab for override)."]
+[Setting category="General" name="Show HUD Always?" description="Useful for repositioning the window, or checking last COTD stats, etc. NOTE: the HUD will still be hidden when the interface is hidden."]
 bool Setting_ShowHudAlways = false;
 
 [Setting category="General" name="HUD Window Locked?" description="When disabled: you can drag the window around. Combine with 'Show HUD Always' to allow positioning the window right now."]

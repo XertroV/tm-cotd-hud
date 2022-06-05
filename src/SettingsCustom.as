@@ -171,8 +171,8 @@ ADVANCED
 
 
 // [Setting category="Dev Features" name="Show HUD even if interface is hidden?" description=""]
-[Setting hidden]
-bool Setting_ShowHudEvenIfInterfaceHidden = false;
+[Setting category="General" name="Show HUD even if interface is hidden?"]
+bool Setting_ShowHudEvenIfInterfaceHidden = true;
 
 [Setting hidden]
 bool Setting_AdvCheckPriorCotd = false;
@@ -230,6 +230,8 @@ DEBUG
 
 [SettingsTab name="Debug"]
 void RenderSettingsDebug() {
+    auto gi = DataManager::gi;
+
     TextHeading("Debug Functions");
 
     if (UI::Button("Run ListPlayerInfos")) {
@@ -237,8 +239,29 @@ void RenderSettingsDebug() {
     }
     AddSimpleTooltip("Prints all players' names and userIds to the Openplanet log.");
 
+    if (UI::Button("Nod Explorer: Network")) {
+        @_DebugNod = gi.GetNetwork();
+        _DebugNodWindow.SetTitle("View Nod: Network");
+        _DebugNodWindow.Show();
+    }
+
+    if (UI::Button("Nod Explorer: Playground")) {
+        @_DebugNod = gi.GetCurrentPlayground();
+        _DebugNodWindow.SetTitle("View Nod: Playground");
+        _DebugNodWindow.Show();
+    }
+
+    if (UI::Button("Nod Explorer: InputPort")) {
+        @_DebugNod = gi.GetInputPort();
+        _DebugNodWindow.SetTitle("View Nod: InputPort");
+        _DebugNodWindow.Show();
+    }
+
     VPad();
 }
+
+CMwNod@ _DebugNod;
+WindowState@ _DebugNodWindow = WindowState("View Nod: ----", false);
 
 // #endif
 

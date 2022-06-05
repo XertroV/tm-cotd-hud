@@ -26,6 +26,58 @@ class GameInfo {
 
     /* some core objects that expose API methods for NadeoServices */
 
+    CGameManiaAppPlayground@ GetManiaAppPlayground() {
+        return GetNetwork().ClientManiaAppPlayground;
+    }
+
+    CGamePlaygroundClientScriptAPI@ GetPlaygroundClientScriptAPI() {
+        return GetNetwork().PlaygroundClientScriptAPI;
+    }
+
+    CSmArenaClient@ GetCurrentPlayground() {
+        return cast<CSmArenaClient>(app.CurrentPlayground);
+    }
+
+    MwFastBuffer<CGamePlaygroundUIConfig@> GetPlaygroundUIConfigs() {
+        auto pg = GetCurrentPlayground();
+        if (pg is null) return MwFastBuffer<CGamePlaygroundUIConfig@>();
+        return pg.UIConfigs;
+    }
+
+    int GetPlaygroundFstUISequence() {
+        auto cs = GetPlaygroundUIConfigs();
+        if (cs.Length == 0) { return 0; }
+        return cs[0].UISequence;
+    }
+
+    CInputPortDx8@ GetInputPort() {
+        return cast<CInputPortDx8@>(app.InputPort);
+    }
+
+    CTrackManiaMenus@ GetMenuManager() {
+        return cast<CTrackManiaMenus>(app.MenuManager);
+    }
+
+    CGameManiaAppTitle@ GetMenuCustom() {
+        return GetTmApp().MenuManager.MenuCustom_CurrentManiaApp;
+    }
+
+    CGameUILayer@ GetUILayer(uint i) {
+        return GetMenuCustom().UILayers[i];
+    }
+
+    // CGamePlaygroundUIConfig@ GetPlaygroundUIConfig() {
+    //     auto pg = GetCurrentPlayground();
+    //     if (pg is null) return null;
+    //     return pg.UI;
+    // }
+
+    // CGamePlaygroundUIConfig@ GetPlaygroundClientUIConfig() {
+    //     auto pg = GetCurrentPlayground();
+    //     if (pg is null) return null;
+    //     return pg.ClientUI;
+    // }
+
     CGameDataFileManagerScript@ GetCoreApiThingForMaps() {
         return GetTmApp().MenuManager.MenuCustom_CurrentManiaApp.DataFileMgr;
     }
@@ -38,26 +90,95 @@ class GameInfo {
         return GetTmApp().ManiaPlanetScriptAPI;
     }
 
+    /* UI Sequence
+        CGamePlaygroundUIConfig::EUISequence {
+            0=None, 1=Playing, 2=Intro, 3=Outro, 4=Podium, CustomMTClip, 6=EndRound,
+            7=PlayersPresentation, 8=UIInteraction, 9=RollingBackgroundIntro,
+            10=CustomMTClip_WithUIInteraction, 11=Finish
+
+            does not change in escape menu or when viewing scores via <tab>
+
+            On game start: 0
+            In Loading screen: 0 or 8?
+
+            Around msg: The match is over, thank you for playing. You can leave now.
+            before: 8, after: 4
+            nb: before might have had an end of game menu up
+
+            Around COTD end (but after elimination):
+            before: 1, after: 8
+
+            During COTD round-end: 8
+
+            sequences on server join:
+            start: 4 -> 8 -> 2 -> 1
+
+            local: 1 -> 9 -> 1
+        }
+
     /* menu / dialog stuff */
 
     void BindInput(int ActionIndex, CInputScriptPad@ Device) {
         auto mpsapi = GetManiaPlanetScriptApi();
         mpsapi.Dialog_BindInput(ActionIndex, Device);
     }
+    /* dialog bug notes
+        MPScriptApi.Dialog_IsFinished = true/false
+                   .ActiveContext_ClassicDialogDisplayed
+                   .isReady??
+        app.Operation_InProgress = true/false
+    */
 
-    void UnbindInput(CInputScriptPad@ pad) {
-        GetManiaPlanetScriptApi().Dialog_UnbindInputDevice(pad);
-    }
+    /* does not work or do anything */
+    // void UnbindInput(CInputScriptPad@ pad) {
+    //     GetManiaPlanetScriptApi().Dialog_UnbindInputDevice(pad);
+    // }
 
     /* Utility Functions */
+
+    bool IsLoadingScreen() {
+        auto pgCSApi = GetPlaygroundClientScriptAPI();
+        if (pgCSApi !is null && pgCSApi.IsLoadingScreen) {
+            return true;
+        }
+        auto pg = GetManiaAppPlayground();
+        if (pg !is null && pg.HoldLoadingScreen) {
+            return true;
+        }
+        return false;
+    }
 
     string PlayersId() {
         return GetNetwork().PlayerInfo.WebServicesUserId;
     }
 
+    bool InMainMenu() {
+        return UI::CurrentActionMap() == "MenuInputsMap" && PlaygroundIsNull();
+    }
+
     bool InGame() {
         return PlaygroundNotNull() && (string(GetServerInfo().CurGameModeStr).Length > 0);
     }
+
+    uint GameTimeMsLeft() {
+        if (GetCurrentPlayground() is null || GetManiaAppPlayground() is null) return 0;
+        int end = GetCurrentPlayground().Arena.Rules.RulesStateEndTime;
+        int now = GetManiaAppPlayground().Playground.GameTime;
+        return end - now;
+    }
+
+    /* context */
+
+    CGameManiaPlanetScriptAPI::EContext GetActiveContext() {
+        // https://next.openplanet.dev/Game/CGameManiaPlanetScriptAPI
+        return GetManiaPlanetScriptApi().ActiveContext;
+    }
+
+    bool ActiveContextIsMultiplayerInGame() {
+        return GetActiveContext() == CGameManiaPlanetScriptAPI::EContext::Multi;
+    }
+
+    /* COTD / Game mode stuff */
 
     bool IsCotdQuali() {
         auto server_info = GetServerInfo();
@@ -98,17 +219,4 @@ class GameInfo {
     CTrackManiaPlayerInfo@ NetPIToTrackmaniaPI(CGameNetPlayerInfo@ netpi) {
         return cast<CTrackManiaPlayerInfo@>(netpi);
     }
-}
-
-
-void ListPlayerInfos() {
-    debug(">> ListPlayerInfos");
-    auto gi = GameInfo();
-    auto pis = gi.getPlayerInfos();
-    for (uint i = 0; i < pis.Length; i++) {
-        CTrackManiaPlayerInfo@ pi = cast<CTrackManiaPlayerInfo@>(pis[i]);
-        debug("Player Info for: " + pi.Name);
-        debug("  pi.WebServicesUserId: " + pi.WebServicesUserId);
-    }
-    debug(">> Done ListPlayerInfos");
 }

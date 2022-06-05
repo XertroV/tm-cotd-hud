@@ -4,7 +4,8 @@ const string c_brightBlue = "\\$1bf";
 const string c_debug = c_brightBlue;
 const string c_mid_grey = "\\$777";
 const string c_dark_grey = "\\$333";
-
+const string c_orange_600 = "\\$f61";
+const string c_green_700 = "\\$3a3";
 
 const string c_timeOrange = "\\$d81";
 const string c_timeBlue = "\\$3ce";
@@ -181,7 +182,7 @@ vec3 hexTriToRgb(const string &in hexTri) {
         float r = HexCharToInt(hexTri[0]);
         float g = HexCharToInt(hexTri[1]);
         float b = HexCharToInt(hexTri[2]);
-        return vec3(r, g, b) / 16.;
+        return vec3(r, g, b) / 15.;
     } catch {
         throw("Exception while processing hexTri (" + hexTri + "): " + getExceptionInfo());
     }
@@ -425,9 +426,9 @@ string MakeColorsOkayDarkMode(const string &in raw) {
             _test = ret.SubStr(i, 4);
             if (IsCharHex(_test[1]) && IsCharHex(_test[2]) && IsCharHex(_test[3])) {
                 auto c = Color(vec3(
-                    float(HexCharToInt(_test[1])) / 16.,
-                    float(HexCharToInt(_test[2])) / 16.,
-                    float(HexCharToInt(_test[3])) / 16.
+                    float(HexCharToInt(_test[1])) / 15.,
+                    float(HexCharToInt(_test[2])) / 15.,
+                    float(HexCharToInt(_test[3])) / 15.
                 ));
                 c.AsHSL();
                 float l = c.v.z;  /* lightness part of HSL */
@@ -492,8 +493,8 @@ void TestHexTri() {
     auto ht = c.HexTri;
     assert(ht == "f80", 'ht /= "f80"; ht=' + ht + ' from ' + c.ToString());
     assert(rgbToHexTri(vec3(1, 1, 1)) == "fff", "hextri: fff");
-    assert(rgbToHexTri(vec3(1./16., 2/16., 3/16.)) == "123", "hextri: 123");
-    assert(rgbToHexTri(vec3(13., 5, 1) / 16.) == 'd51', 'hextri: d51');
+    assert(rgbToHexTri(vec3(1./15., 2/15., 3/15.)) == "123", "hextri: 123");
+    assert(rgbToHexTri(vec3(13., 5, 1) / 15.) == 'd51', 'hextri: d51');
 }
 
 void assert(bool condition, string msg) {

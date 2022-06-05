@@ -22,6 +22,8 @@ void Main() {
 #if DEV
     // TestTmIoGetMapCaching();
     // SetDevSettings();
+    // startnew(DebugTest_LoadingScreen);
+    startnew(DebugTest_CompareUIConfigs);
 #endif
 
 #if UNIT_TEST || DEV
@@ -36,12 +38,15 @@ void Update(float dt) {
 void Render() {
     CotdHud::Render();
     CotdExplorer::Render();
+    WDebugNod::Render();
+    WAllTimes::Render();
 }
 
 void RenderInterface() {
     CotdHud::RenderInterface();
     CotdExplorer::RenderInterface();
     RenderWindowUtilityColorGradients();
+    WAllTimes::RenderInterface();
 }
 
 void RenderMenu() {

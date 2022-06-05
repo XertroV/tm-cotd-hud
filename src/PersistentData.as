@@ -31,6 +31,7 @@ string MkPath(string fname) { return dataFolder + "/" + fname; };
     const string folder_Thumbnails = MkPath("thumbnails");
     const string folder_MapTimes = MkPath("map-times");
     const string folder_HistogramData = MkPath("histograms");
+    const string folder_LiveTimesCache = MkPath("live-times-cache");
 
     HistoryDb@ histDb;
     MapDb@ mapDb;
@@ -51,6 +52,7 @@ string MkPath(string fname) { return dataFolder + "/" + fname; };
         CheckAndCreateFolder(folder_Thumbnails);
         CheckAndCreateFolder(folder_MapTimes);
         CheckAndCreateFolder(folder_HistogramData);
+        CheckAndCreateFolder(folder_LiveTimesCache);
         // if (!IO::FileExists(filepath_Follows)) {
         //     // auto f = IO::File(filepath_Follows, IO::FileMode::Write);
         //     // // f.Open(IO::FileMode::Write);  /* Append, Read, None */

@@ -131,8 +131,8 @@ void DrawCenteredInTable(const string &in tableId, DrawUiElemsWRef@ f, ref@ r) {
 }
 
 
-bool BeginCenteredTable(const string &in id) {
-    if (UI::BeginTable(id, 3, TableFlagsStretch())) {
+bool BeginCenteredTable(const string &in id, uint columns = 1) {
+    if (UI::BeginTable(id, columns + 2, TableFlagsStretch())) {
         UI::TableSetupColumn("left", UI::TableColumnFlags::WidthStretch);
         UI::TableSetupColumn("content", UI::TableColumnFlags::WidthFixed);
         UI::TableSetupColumn("right", UI::TableColumnFlags::WidthStretch);
@@ -193,7 +193,7 @@ string[] cooldownColors = ExtendStringArrs(
     );
 
 string maniaColorForCooldown(int delta, int cooldownMs, bool escaped = false) {
-    uint ix = Math::Round(float((cooldownColors.Length - 1) * Math::Clamp(delta, 0, cooldownMs)) / float(cooldownMs));
+    uint ix = uint(Math::Round(float((cooldownColors.Length - 1) * Math::Clamp(delta, 0, cooldownMs)) / float(cooldownMs)));
     string ret = cooldownColors[ix];
     if (escaped) {
         ret = "\\" + ret;

@@ -28,7 +28,7 @@ namespace DataManager {
     DivRow@ playerDivRow = DivRow(0, 0, RowTy::Player);
 
     /* if we are showing a histogram, we'll need to track the 100 times above and below us */
-    uint[] cotd_TimesForHistogram = array<uint>(200, 0);
+    uint[] cotd_TimesForHistogram = array<uint>(10000, 0);
     Histogram::HistData@ cotd_HistogramData;
     int2 cotd_HistogramMinMaxRank = int2(0, 0);
 
@@ -58,6 +58,7 @@ namespace DataManager {
         startnew(LoopUpdateBetterChatFavs);
         startnew(LoopUpdateCotdStatus);
         startnew(LoopUpdateDivsInCotd);
+        startnew(CoroLoopSaveAllTimes);
 
 #if DEV
         startnew(LoopDevPrintState);
@@ -100,24 +101,17 @@ namespace DataManager {
     }
 
     void Update(float dt) {
-        // try {
-            isCotd.Set(gi.IsCotd());
+        isCotd.Set(gi.IsCotd());
 
-            if (isCotd.v) {
-                cotdLatest_MapId = gi.MapId();
-            }
+        if (isCotd.v) {
+            cotdLatest_MapId = gi.MapId();
+        }
 
-            // When we enter a COTD server
-            if (isCotd.ChangedToTrue()) {
-                cotdLatest_MapId = gi.MapId();
-                // todo did this fix the issue when joining a new COTD?
-                startnew(_FullUpdateCotdStatsSeries);
-                // startnew(SetCurrentCotdData);
-                // startnew(UpdateDivs);
-            }
-        // } catch {
-        //     warn("Exception in Update: " + getExceptionInfo());
-        // }
+        // When we enter a COTD server
+        if (isCotd.ChangedToTrue()) {
+            cotdLatest_MapId = gi.MapId();
+            startnew(_FullUpdateCotdStatsSeries);
+        }
     }
 
 
@@ -155,12 +149,12 @@ namespace DataManager {
 
             if (_favs !is null) {
                 auto favs = _favs.ReadString();
-                trace(tostring(favs));
-                trace(tostring(favs.Length));
-                bcFavorites = "test";
+                if (bcFavorites != favs) {
+                    logcall("LoopUpdateBetterChatFavs", "Favs set to: " + tostring(bcFavorites));
+                    print("\\$f61todo: \\$3a3better chat favs");
+                }
                 bcFavorites = favs;
             }
-            trace("[LoopUpdateBetterChatFavs] Favs set to: " + tostring(bcFavorites));
 
             sleep(60 * 1000);
         }
@@ -432,9 +426,6 @@ namespace DataManager {
 
         ApiUpdateCotdPlayerRank();
 
-        // fire off coro for updating histogram if we want that
-        startnew(CoroUpdateAllTimesAroundPlayer);
-
         if (!IsJsonNull(cotdLatest_PlayerRank) && cotdLatest_PlayerRank["records"].Length > 0) {
             uint pRank = cotdLatest_PlayerRank["records"][0]["rank"];
             playerDivRow.div = uint(Math::Ceil(pRank / 64.0));
@@ -450,59 +441,97 @@ namespace DataManager {
         playerDivRow.lastUpdateDone = Time::get_Now();
     }
 
-    class UpdateTimesForHist {
-        uint ix;
-        int rank;
-        UpdateTimesForHist(uint ix, int rank) {
-            this.ix = ix;
-            this.rank = rank < 1 ? 1 : rank;
+    class UpdateTimesForLiveCache {
+        uint offset, length, ts;
+        string mapUid;
+        UpdateTimesForLiveCache(uint len, uint offs, uint timeStamp) {
+            length = len;
+            offset = offs;
+            ts = timeStamp;
         }
     }
 
-    void CoroUpdateAllTimesAroundPlayer() {
-        if (!debounce.CanProceed("histogramTimes", 5000)) { return; }
+    void CoroLoopSaveAllTimes() {
+        logcall("CoroLoopSaveAllTimes", "Starting...");
+        while (true) {
+            if (!debounce.CanProceed("saveAllTimes", 7500)) {
+                sleep(500);
+            } else {
+                if (gi.IsCotdQuali() && !IsJsonNull(cotdLatest_PlayerRank)) {
+                    uint nPlayers = GetCotdTotalPlayers();
+                    logcall("CoroLoopSaveAllTimes", "Running now for " + nPlayers + " players.");
+                    uint chunkSize = 100;
+                    uint timeStamp = Time::Stamp;
+                    for (uint i = 1; i <= nPlayers; i += chunkSize) {
+                        startnew(_CoroCacheTimesLive, UpdateTimesForLiveCache(0, i - 1, timeStamp));
+                    }
+                }
+            }
+        }
+    }
+
+    void _CoroCacheTimesLive(ref@ _args) {
+        UpdateTimesForLiveCache@ args = cast<UpdateTimesForLiveCache@>(_args);
+        auto timesData = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, args.length, args.offset);
+        string toWrite = "";
+        if (timesData.GetType() == Json::Type::Array) {
+            for (uint i = 0; i < timesData.Length; i++) {
+                timesData[i].Remove('uid');
+                if (int(timesData[i]['time']) == int(timesData[i]['score'])) {
+                    timesData[i].Remove('time');
+                }
+                toWrite += "" + int(timesData[i]['rank']) + "," + int(timesData[i]['score']) + "," + string(timesData[i]['player']) + "\n";
+            }
+            UpdateCurrentCotdTimes(args, timesData);
+        }
+        // auto s = Json::Write(timesData);
+        IO::File td(PersistentData::folder_LiveTimesCache + "/cotdLive-" + cotdLatest_MapId + "-" + args.ts + ".json.txt", IO::FileMode::Append);
+        td.WriteLine(toWrite);
+        td.Close();
+    }
+
+    void UpdateCurrentCotdTimes(UpdateTimesForLiveCache@ args, Json::Value timesData) {
+        uint rank, score;
+        for (uint i = 0; i < timesData.Length; i++) {
+            rank = timesData[i]['rank'];
+            score = timesData[i]['score'];
+            /* don't bother with scores that are above 90s b/c they'll make
+               the histogram look crap. (since it's COTD).
+               also, we only make the cotd_TimesForHistogram of size 10k
+               so don't do ranks above that.
+               todo: support higher ranks
+            */
+            if (score < 90000 && rank < 10000) {
+                cotd_TimesForHistogram[int(rank)-1] = score;
+            }
+        }
+        RegenHistogramData();
+    }
+
+    void RegenHistogramData() {
         if (Setting_HudShowHistogram && !IsJsonNull(cotdLatest_PlayerRank)) {
             int pRank = 101;
             if (cotdLatest_PlayerRank["records"].Length > 0) {
                 // adjust player's rank down 50 so that we get (-150, +50) times
                 pRank = Math::Max(51, cotdLatest_PlayerRank["records"][0]["rank"]) - 50;
             }
-            if (pRank <= 100) {
-                pRank = 101;
+            if (pRank <= 150) {
+                pRank = 151;
             }
             if (pRank > 100 && pRank > int(GetCotdTotalPlayers()) - 99) {
                 pRank = GetCotdTotalPlayers() - 99;
             }
 
-            cotd_HistogramMinMaxRank = int2(pRank - 100, pRank + 99);
-            startnew(_CoroUpdateManyTimesFromRank, UpdateTimesForHist(0, pRank - 100));
-            startnew(_CoroUpdateManyTimesFromRank, UpdateTimesForHist(100, pRank));
+            assert(pRank >= 151, "pRank must be greater than 151 for things not to break.");
+            int minR = pRank - 150;
+            int maxR = pRank + 49;
+            cotd_HistogramMinMaxRank = int2(pRank - 150, pRank + 49);
+            uint[] hd = array<uint>(200, 0);
+            for (uint i = 0; i < 200 && minR + i < 10000; i++) {
+                hd[i] = cotd_TimesForHistogram[minR-1 + i];
+            }
+            @cotd_HistogramData = Histogram::RawDataToHistData(hd, Setting_HudHistogramBuckets);
         }
-    }
-
-    void _CoroUpdateManyTimesFromRank(ref@ _args) {
-        auto args = cast<UpdateTimesForHist@>(_args);
-        auto timesData = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, 100, args.rank - 1);
-        if (IsJsonNull(timesData)) {
-            trace("[_CoroUpdateManyTimesFromRank]: timesData was null!");
-            return;
-        }
-
-        uint ixUpper = Math::Min(100, timesData.Length);
-        // if (ixUpper > 100 + args.ix) { ixUpper = 100 + args.ix; }
-        uint rTime;
-        for (uint i = 0; i < ixUpper; i++) {
-            rTime = timesData[i]["score"];
-            /* filter out times that are more than 90s (since they're mostly noise WRT COTD) */
-            if (rTime > 90000) { continue; }
-            cotd_TimesForHistogram[args.ix + i] = rTime;
-            // trace("_CoroUpdateManyTimesFromRank: " + tostring(cotd_TimesForHistogram[args.ix + i]));
-        }
-        RegenHistogramData();
-    }
-
-    void RegenHistogramData() {
-        @cotd_HistogramData = Histogram::RawDataToHistData(cotd_TimesForHistogram, Setting_HudHistogramBuckets);
     }
 
     uint GetDivToUpdateFromQ() {
