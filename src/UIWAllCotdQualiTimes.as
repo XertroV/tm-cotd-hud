@@ -15,10 +15,14 @@ namespace WAllTimes {
     string[] cache_Times = array<string>();
     string[] cache_Deltas = array<string>();
     string[] cache_DivDeltas = array<string>();
+    string[] cache_PlayerDeltas = array<string>();
     string[] cache_Players = array<string>();
     bool[] cache_Special = array<bool>();
     uint nPlayers = 0;
     uint nDivs = 0;
+    string playerId;
+    bool playerFound = false;
+    uint playerRank = 0;
 
     void SetParams(const string &in _mapUid, int _cId) {
         mapUid = _mapUid;
@@ -28,18 +32,21 @@ namespace WAllTimes {
     }
 
     void PopulateCache() {
+        playerId = DataManager::gi.PlayersId();
         nPlayers = times.Length;
         nDivs = uint(Math::Ceil(nPlayers / 64)) + 1;
         cache_Ranks.Resize(nPlayers + nDivs);
         cache_Times.Resize(nPlayers + nDivs);
         cache_Deltas.Resize(nPlayers + nDivs);
         cache_DivDeltas.Resize(nPlayers + nDivs);
+        cache_PlayerDeltas.Resize(nPlayers + nDivs);
         cache_Players.Resize(nPlayers + nDivs);
         cache_Special.Resize(nPlayers + nDivs);
         uint bestTime = nPlayers > 0 ? times[0]['score'] : 0;
         string pid, name, _d;
         bool special;
-        uint time, nDivsDone = 0, i, bestInDiv, thisDiv;
+        uint time, nDivsDone = 0, i, bestInDiv, thisDiv, playerScore = 0;
+        playerFound = false;
         for (uint _i = 0; _i < nPlayers; _i++) {
             i = _i + nDivsDone;
             time = uint(times[_i]['score']);
@@ -50,6 +57,7 @@ namespace WAllTimes {
                 cache_Times[i] = c_brightBlue + '------------';
                 cache_Deltas[i] = c_brightBlue + '------------';
                 cache_DivDeltas[i] = c_brightBlue + '------------';
+                cache_PlayerDeltas[i] = c_brightBlue + '------------';
                 cache_Players[i] = c_brightBlue + _d;
                 cache_Special[i] = false;
                 nDivsDone++;
@@ -65,6 +73,29 @@ namespace WAllTimes {
             special = IsSpecialPlayerId(pid);
             cache_Players[i] = name;
             cache_Special[i] = special;
+            if (playerFound) {
+                cache_PlayerDeltas[i] = time == playerScore ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - playerScore));
+            }
+            if (pid == playerId) {
+                playerFound = true;
+                playerScore = time;
+                playerRank = _i + 1;
+                cache_PlayerDeltas[i] = '';
+            }
+        }
+
+        if (playerFound) {
+            nDivsDone = 0;
+            for (uint _i = 0; _i < playerRank - 1; _i++) {
+                time = uint(times[_i]['score']);
+                i = _i + nDivsDone;
+                if (i % 64 == 0) {
+                    thisDiv = uint(Math::Ceil(i / 64 + 1));
+                    nDivsDone++;
+                    i = _i + nDivsDone;
+                }
+                cache_PlayerDeltas[i] = c_timeBlue + '-' + Time::Format(Math::Abs(playerScore - time));
+            }
         }
     }
 
@@ -77,7 +108,7 @@ namespace WAllTimes {
         if (!w_AllCotdQualiTimes.IsVisible()) return;
 
         if (w_AllCotdQualiTimes.IsAppearing()) {
-            UI::SetNextWindowSize(450, 820, UI::Cond::Always);
+            UI::SetNextWindowSize(476, 820, UI::Cond::Always);
         }
 
         UI::Begin(w_AllCotdQualiTimes.title, w_AllCotdQualiTimes.visible.v);
@@ -101,13 +132,18 @@ namespace WAllTimes {
 
         VPad();
 #endif
+        int cols = 5;
+        if (playerFound) cols++;
+        bool drawPDelta = playerFound;
 
-        if (UI::BeginTable('qualiy-times', 5, TableFlagsStretch() | UI::TableFlags::ScrollY)) {
+        if (UI::BeginTable('qualiy-times', cols, TableFlagsStretch() | UI::TableFlags::ScrollY)) {
             UI::TableSetupScrollFreeze(0, 1);
             UI::TableSetupColumn("Rank", UI::TableColumnFlags::WidthFixed);
             UI::TableSetupColumn("Time", UI::TableColumnFlags::WidthFixed);
             UI::TableSetupColumn("Delta", UI::TableColumnFlags::WidthFixed);
             UI::TableSetupColumn("Div Δ", UI::TableColumnFlags::WidthFixed);
+            if (drawPDelta)
+                UI::TableSetupColumn("Self Δ", UI::TableColumnFlags::WidthFixed);
             UI::TableSetupColumn("Player", UI::TableColumnFlags::WidthStretch);
 
             UI::TableHeadersRow();
@@ -129,6 +165,10 @@ namespace WAllTimes {
                     UI::Text(cache_Deltas[i]);
                     UI::TableNextColumn();
                     UI::Text(cache_DivDeltas[i]);
+                    if (drawPDelta) {
+                        UI::TableNextColumn();
+                        UI::Text(cache_PlayerDeltas[i]);
+                    }
                     UI::TableNextColumn();
                     UI::Text(!cache_Special[i] ? cache_Players[i] : rainbowLoopColorCycle(cache_Players[i], true));
                 }
