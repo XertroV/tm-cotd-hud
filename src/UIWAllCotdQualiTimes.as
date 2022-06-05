@@ -34,7 +34,8 @@ namespace WAllTimes {
     void PopulateCache() {
         playerId = DataManager::gi.PlayersId();
         nPlayers = times.Length;
-        nDivs = uint(Math::Ceil(nPlayers / 64.)) + 1;
+        // nDivs = uint(Math::Ceil(float(nPlayers) / 64.));
+        nDivs = ((nPlayers - 1) >> 6) + 1;
         cache_Ranks.Resize(nPlayers + nDivs);
         cache_Times.Resize(nPlayers + nDivs);
         cache_Deltas.Resize(nPlayers + nDivs);
@@ -50,8 +51,8 @@ namespace WAllTimes {
         for (uint _i = 0; _i < nPlayers; _i++) {
             i = _i + nDivsDone;
             time = uint(times[_i]['score']);
-            if (i % 64 == 0) {
-                thisDiv = uint(Math::Ceil(i / 64 + 1));
+            if (_i % 64 == 0) {
+                thisDiv = uint(Math::Ceil(float(_i) / 64. + 1));
                 _d = "Div " + thisDiv;
                 cache_Ranks[i] = c_brightBlue + 'D ' + thisDiv;
                 cache_Times[i] = c_brightBlue + '------------';
@@ -89,8 +90,7 @@ namespace WAllTimes {
             for (uint _i = 0; _i < playerRank - 1; _i++) {
                 time = uint(times[_i]['score']);
                 i = _i + nDivsDone;
-                if (i % 64 == 0) {
-                    thisDiv = uint(Math::Ceil(i / 64 + 1));
+                if (_i % 64 == 0) {
                     nDivsDone++;
                     i = _i + nDivsDone;
                 }
