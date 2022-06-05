@@ -362,6 +362,7 @@ namespace CotdExplorer {
             explCup.AsNothing();
             explChallenge.AsNothing();
         }
+        // todo: these aren't implemented yet
         if (level <= 4) explQDiv.AsNothing();
         if (level <= 5) explMatch.AsNothing();
         resetLevel = 0;  /* always reset this to be 0 afterwards so unprepped calls to _Reset do something sensible. */
@@ -680,6 +681,7 @@ namespace CotdExplorer {
         if (PersistentData::MapTimesCached(mapUid, cId)) {
             startnew(_GenHistogramData);
         }
+        w_AllCotdQualiTimes.Hide();
     }
 
     void EnsurePlayerNames() {
@@ -963,7 +965,10 @@ namespace CotdExplorer {
 
             UI::TableNextColumn();
             if (UI::Button((w_AllCotdQualiTimes.IsVisible() ? "Hide" : "Show") + " All Times")) {
+                WAllTimes::SetParams(mapUid, cId);
                 w_AllCotdQualiTimes.Toggle();
+                /* update the cache in a few seconds to account for getting player names if we needed to. */
+                startnew(WAllTimes::CoroDelayedPopulateCache);
             }
 
             UI::EndTable();

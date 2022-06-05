@@ -510,22 +510,29 @@ namespace DataManager {
     }
 
     void CoroLoadInitHistogramData() {
+        logcall("CoroLoadInitHistogramData", "Init");
         // don't do this if we're in a cotd
         if (gi.IsCotdQuali()) return;
         // wait for cotd data to be available
-        while (cotdLatest_MapId == "" || GetChallengeId() == 0) yield();
+        while (cotdLatest_MapId == "" || GetChallengeId() == 0 || IsJsonNull(cotdLatest_PlayerRank)) sleep(50);
+        logcall("CoroLoadInitHistogramData", "Waiting for map times to be cached...");
+        while (PersistentData::mapDb is null) yield();
+        PersistentData::mapDb.QueueMapChallengeTimesGet(cotdLatest_MapId, GetChallengeId());
         // wait for histogram data to be available through persistent data
-        while (!PersistentData::MapTimesCached(cotdLatest_MapId, GetChallengeId())) sleep(500);
-        sleep(50);
+        /* this will not resolve if the challenge is in the future unless triggered some other way */
+        while (!PersistentData::MapTimesCached(cotdLatest_MapId, GetChallengeId())) sleep(1000);
+        sleep(10);
+        logcall("CoroLoadInitHistogramData", "Loading data...");
         auto times = PersistentData::GetCotdMapTimesAll(cotdLatest_MapId, GetChallengeId());
         for (uint i = 0; i < times.Length; i++) {
             cotd_TimesForHistogram[i] = times[i];
         }
+        logcall("CoroLoadInitHistogramData", "Data loaded. Regen Histogram.");
         RegenHistogramData();
     }
 
     void RegenHistogramData() {
-        if (Setting_HudShowHistogram && !IsJsonNull(cotdLatest_PlayerRank)) {
+        if (!IsJsonNull(cotdLatest_PlayerRank)) {
             int pRank = cotdLatest_PlayerRank["records"][0]["rank"];
             logcall("RegenHistogramData", "Regenerating, player rank: " + pRank);
             if (cotdLatest_PlayerRank["records"].Length > 0) {

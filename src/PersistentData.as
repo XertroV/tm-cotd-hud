@@ -159,6 +159,23 @@ string MkPath(string fname) { return dataFolder + "/" + fname; };
         return jb;
     }
 
+    /* expensive */
+    Json::Value[] GetCotdMapTimesAllJ(const string &in mapUid, int cId) {
+        auto jb = GetCotdMapTimes(mapUid, cId);
+        int nPlayers = jb.j['nPlayers'];
+        int chunkSize = jb.j['chunkSize'];
+        Json::Value[] rows = array<Json::Value>(nPlayers);
+        string[] keys = jb.j['ranges'].GetKeys();
+        for (uint i = 0; i < keys.Length; i++) {
+            auto times = jb.j['ranges'][keys[i]];
+            for (uint j = 0; j < times.Length; j++) {
+                int rank = times[j]['rank'];
+                rows[rank - 1] = times[j];
+            }
+        }
+        return rows;
+    }
+
     uint[] GetCotdMapTimesAll(const string &in mapUid, int cId) {
         auto jb = GetCotdMapTimes(mapUid, cId);
         int nPlayers = jb.j['nPlayers'];
@@ -527,7 +544,7 @@ class HistoryDb : JsonDb {
         auto sd = ChallengesSyncData();
         if (DbSync::IsUpkeep(sd)) {
             int td = Time::Stamp - ChallengesSdUpdatedAt();
-            if (td > 3600) {
+            if (td > 15*60) {
                 trace("[ChallengeSyncUpkeep] Checking for updated challenges. (td=" + td + ")");
                 auto latestC = api.GetChallenges(1)[0];
                 int newMaxId = latestC['id'];
@@ -576,6 +593,7 @@ class HistoryDb : JsonDb {
                 if (Time::Stamp > onlyAfter) {
                     sd = DbSync::Gen(DbSync::IN_PROG);
                     SetTotdMapsSyncData(sd);
+                    toSleepSecs = 1;
                 } else {
                     toSleepSecs = Math::Max(1, onlyAfter - Time::Stamp);
                 }
@@ -979,7 +997,7 @@ class MapDb : JsonDb {
     void QueueMapChallengeTimesGet(const string &in mapUid, int challengeId) {
         auto challenge = histDb.GetChallenge(challengeId);
         int cStart = Text::ParseInt(challenge['startDate']);
-        int dontDownloadBefore = cStart * 30 * 60;
+        int dontDownloadBefore = cStart + 30 * 60;
         if (dontDownloadBefore > Time::Stamp) { return; }
         if (!PersistentData::MapTimesCached(mapUid, challengeId)) {
             auto obj = Json::Object();
