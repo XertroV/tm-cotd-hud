@@ -26,6 +26,10 @@ class GameInfo {
 
     /* some core objects that expose API methods for NadeoServices */
 
+    CGameManiaTitleControlScriptAPI@ GetMainaTitleControlScriptAPI() {
+        return app.ManiaTitleControlScriptAPI;
+    }
+
     CGameManiaAppPlayground@ GetManiaAppPlayground() {
         return GetNetwork().ClientManiaAppPlayground;
     }

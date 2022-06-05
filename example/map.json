@@ -1,0 +1,21 @@
+{
+    "Id": "e598e297-f9db-4cbb-9a61-26ce6b6e20db",
+    "Uid": "sTvb8KzSHxJYRJmSHqckAFwW8Hi",
+    "Type": "TrackMania\\TM_Race",
+    "Name": "$s$oHalo",
+    "Style": "",
+    "TimeStamp": "1647120154",
+    "AuthorAccountId": "36a44731-1924-428b-afff-6ead4645ba41",
+    "AuthorWebServicesUserId": "36a44731-1924-428b-afff-6ead4645ba41",
+    "AuthorDisplayName": "AgentWhiskeyy",
+    "AuthorIsFirstPartyDisplayName": false,
+    "SubmitterWebServicesUserId": "b9490aa7-cfe8-43c6-a04e-fc4b44ee0ba6",
+    "SubmitterAccountId": "b9490aa7-cfe8-43c6-a04e-fc4b44ee0ba6",
+    "AuthorScore": 45432,
+    "GoldScore": 49000,
+    "SilverScore": 55000,
+    "BronzeScore": 69000,
+    "ThumbnailUrl": "https://prod.trackmania.core.nadeo.online/storageObjects/d3fb35ed-67f4-482d-aacf-0b64cc49c5af.jpg",
+    "FileUrl": "https://prod.trackmania.core.nadeo.online/storageObjects/6f063e08-a4ee-4838-bf8c-0afd83f51414",
+    "FileName": "Halo.Map.Gbx"
+}

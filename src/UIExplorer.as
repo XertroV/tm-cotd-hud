@@ -1,3 +1,5 @@
+Debouncer@ debounce = Debouncer();
+GameInfo gi = GameInfo();
 
 namespace CotdExplorer {
 #if RELEASE
@@ -593,6 +595,15 @@ namespace CotdExplorer {
             UI::Text(EscapeRawToOpenPlanet("Mapper: " + authorName));
             UI::Text("Author Time: " + authorScore);
             DrawMapRecordsOrLoading(map['Uid']);
+            UI::Dummy(vec2(0, 40));
+            UI::PushFont(headingFont);
+            if (MDisabledButton(!debounce.CouldProceed('play-map-btn', 2000), 'Play Map!', vec2(160, 70))) {
+                if (!debounce.CanProceed('play-map-btn', 2000)) {
+                    warn("debouncer said we could proceed but then said we can't proceed :(");
+                }
+                gi.GetMainaTitleControlScriptAPI().PlayMap(wstring(string(map['FileUrl'])), '', '');
+            };
+            UI::PopFont();
 
             UI::TableNextColumn(); /* mid */
             UI::Dummy(vec2(75, 0));

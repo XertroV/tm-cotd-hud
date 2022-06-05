@@ -14,4 +14,18 @@ class Debouncer {
             return true;
         }
     }
+
+    bool CouldProceed(const string &in callId, uint debounceMs) {
+        return TimeLeft(callId, debounceMs) == 0;
+    }
+
+    uint TimeLeft(const string &in callId, uint debounceMs) {
+        auto now = Time::Now;
+        uint lc = now;
+        if (lastCall.Get(callId, lc)) {
+            return uint(Math::Max(0, int(lc + debounceMs) - now));
+        } else {
+            return 0;
+        }
+    }
 }
