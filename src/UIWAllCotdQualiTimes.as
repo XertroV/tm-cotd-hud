@@ -94,7 +94,7 @@ namespace WAllTimes {
                     nDivsDone++;
                     i = _i + nDivsDone;
                 }
-                cache_PlayerDeltas[i] = c_timeBlue + '-' + Time::Format(Math::Abs(playerScore - time));
+                cache_PlayerDeltas[i] = playerScore == time ? '' : c_timeBlue + '-' + Time::Format(Math::Abs(playerScore - time));
             }
         }
     }
