@@ -17,15 +17,17 @@
     - [ ] Division browser
     - [ ] Search user in COTD
     - [ ] Search user all COTDs
+    - [ ] "Play this map" button
 - [ ] COTD Friends
   - [ ] Show who's playing this COTD and their times
   - [ ] BChat integration (`/track-cotd @XertroV`) (or `/add-cotd-friend`)
   - [ ] Highlight the player in historical/explorer UI
   - [ ] Browse or view players in COTD + one-click add-as-friend
 - [x] Cache Player ID data (like name)
-- [ ] Optimization: check current COTD data and don't re-request times unnecessarily -- should be cached once the COTD qualis are over.
+- [x] Optimization: check current COTD data and don't re-request times unnecessarily -- should be cached once the COTD qualis are over.
+- [ ] Optimization -- like above but for division cutoffs
 - [x] Migrate color gradient tool to standalone window via COTD explorer
 - [x] BetterChat integration for gradients `/rgb 28f f28 hey here's my msg` would apply a gradient from `$28f` to `$f28` over `hey here's my msg`.
-- [ ] color alias names for above `/rgb` command.
-- [ ] Debug page: nod viewer quick access
+- [ ] color alias names for above `/rgb` command. (some done)
+- [x] Debug page: nod viewer quick access (but does't work for values??)
 - [ ] About Page
