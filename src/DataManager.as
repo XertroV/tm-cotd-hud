@@ -5,7 +5,6 @@ namespace DataManager {
     const uint[] TOP_5 = {1, 2, 3, 4, 5};
 
     GameInfo@ gi = GameInfo();
-    TmIoApi@ tmIoApi = TmIoApi("cotd-hud (by @XertroV)");
     CotdApi@ api;
 
     Debouncer@ debounce = Debouncer();
@@ -533,15 +532,15 @@ namespace DataManager {
 
     void RegenHistogramData() {
         if (!IsJsonNull(cotdLatest_PlayerRank)) {
-            int pRank = cotdLatest_PlayerRank["records"][0]["rank"];
+            int pRank = 101;
+            if (cotdLatest_PlayerRank["records"].Length > 0)
+                pRank = cotdLatest_PlayerRank["records"][0]["rank"];
             logcall("RegenHistogramData", "Regenerating, player rank: " + pRank);
-            if (cotdLatest_PlayerRank["records"].Length > 0) {
-                // adjust player's rank down 50 so that we get (-150, +50) times
-                pRank = Math::Max(51, cotdLatest_PlayerRank["records"][0]["rank"]) - 50;
-            }
-            if (pRank <= 150) {
-                pRank = 151;
-            }
+            // adjust player's rank down 50 so that we get (-150, +50) times
+            pRank = Math::Max(51, pRank) - 50;
+            // if (pRank <= 150) {
+            //     pRank = 151;
+            // }
             if (pRank > 100 && pRank > int(GetCotdTotalPlayers()) - 99) {
                 pRank = GetCotdTotalPlayers() - 99;
             }

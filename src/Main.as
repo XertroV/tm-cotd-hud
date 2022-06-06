@@ -20,10 +20,9 @@ void Main() {
 #endif
 
 #if DEV
-    // TestTmIoGetMapCaching();
     // SetDevSettings();
     // startnew(DebugTest_LoadingScreen);
-    startnew(DebugTest_CompareUIConfigs);
+    // startnew(DebugTest_PrintPgUIConfigs);
 #endif
 
 #if UNIT_TEST || DEV
@@ -75,6 +74,8 @@ void OnMouseMove(int x, int y) {
 
 /* Plan:
 
+*Note: Outdated by a lot, but it's indicative.*
+
 UI Components:
 - (Use same backend data)
 - Div Summary During COTD (like COTDStats)
@@ -90,25 +91,10 @@ Data Mgmt:
 
 Watchers:
 - change of IsCotd -- joined COTD server
-- COTD map -- update when joining new COTD server; init from TMIO
+- COTD map -- update when joining new COTD server
 
 */
 
 CTrackMania@ GetTmApp() {
     return cast<CTrackMania>(GetApp());
-}
-
-/* debug / test stuff */
-
-void TestTmIoGetMapCaching() {
-    // TmIoApi@ tmIoApi = TmIoApi("cotd-hud cache testing (by @XertroV)");
-    // uint counter = 0;
-    // while (true) {
-    //     counter++;
-    //     trace("Should get _GetTotdMap cached");
-    //     auto totd = tmIoApi._GetTotdMap();
-    //     auto ix = totd["days"].Length - 1;
-    //     print(">> todays cotd data: " + Json::Write(totd["days"][ix]));
-    //     sleep(counter * counter * 1000);
-    // }
 }

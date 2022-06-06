@@ -24,13 +24,12 @@ class TmIoApi {
 #else
     string BASEURL = "https://trackmania.io/api";
 #endif
-    // Debouncer@ debounce = Debouncer();
-    // dictionary@ cache = dictionary();
 
     Json::Value res_getTotdMap = Json::Parse("null");
 
     TmIoApi(const string &in userAgent) {
         this.userAgent = userAgent;
+        throw("this works but is deprecated");
     }
 
     // string CachedOr(const string &in key, const string _default) {

@@ -1,5 +1,7 @@
 # COTD HUD
 
+I *think* the plugin should work if you just copy the whole repo folder into Openplanet/Plugins/cotd-hud-dev/. (I use `./build.sh` normally on WSL.)
+
 ## Feature Todo
 
 - [x] COTD Stats parity

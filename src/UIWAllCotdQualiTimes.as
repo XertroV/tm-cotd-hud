@@ -102,6 +102,11 @@ namespace WAllTimes {
     void CoroDelayedPopulateCache() {
         sleep(3000);
         PopulateCache();
+        /*
+        todo: check the last time players was updated,
+        and regen player names if it's more recent than
+        the last time we cached the list.
+        */
     }
 
     void MainWindow() {

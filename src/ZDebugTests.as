@@ -28,12 +28,12 @@ void DebugTest_LoadingScreen() {
     // result: seems to work
 }
 
-void DebugTest_CompareUIConfigs() {
+void DebugTest_PrintPgUIConfigs() {
     auto gi = GameInfo();
     while (true) {
         auto uis = gi.GetPlaygroundUIConfigs();
         for (uint i = 0; i < uis.Length; i++) {
-            // debug("uis["+i+"].UISequence: " + uis[i].UISequence);
+            debug("uis["+i+"].UISequence: " + uis[i].UISequence);
         }
         sleep(100);
     }
