@@ -564,8 +564,9 @@ namespace CotdExplorer {
         JsonBox@ day = CotdTreeYMD();
         string uid = day.j['mapUid'];
         string seasonUid = day.j['seasonUid'];
+        string endTs = day.j.Get('end', "1234");
         mapDb.QueueMapGet(uid);
-        mapDb.QueueMapRecordGet(seasonUid, uid);
+        mapDb.QueueMapRecordGet(seasonUid, uid, endTs);
     }
 
     void DrawTotdMapInfoTable(Json::Value map, const string &in totdDate) {
@@ -573,10 +574,12 @@ namespace CotdExplorer {
             TextBigStrong("\\$fa4" + "Map is not found or data corrupted.");
             return;
         }
+        string mapUid = map['Uid'];
         string tnUrl = map['ThumbnailUrl'];
         string authorName = map['AuthorDisplayName'];
         string authorId = map['AuthorWebServicesUserId'];
-        if (IsSpecialPlayerId(authorId)) authorName = rainbowLoopColorCycle(authorName);
+        string authorNameAndId = authorName + " " + authorId;
+        if (IsSpecialPlayerId(authorId)) authorName = rainbowLoopColorCycle(authorName, true);
         string authorScore = Time::Format(map['AuthorScore']);
         string mapName = map['Name'];
         mapName = EscapeRawToOpenPlanet(MakeColorsOkayDarkMode(mapName));
@@ -592,9 +595,12 @@ namespace CotdExplorer {
             UI::TableNextColumn(); /* left */
 
             UI::TableNextColumn(); /* map info */
-            UI::Text(EscapeRawToOpenPlanet("Mapper: " + authorName));
+            // UI::Text(EscapeRawToOpenPlanet("Mapper: " + authorName));
+            TextWithCooldown("Mapper: " + authorName, authorNameAndId, authorId, "\\$fff", "Click to copy author's Name and ID");
             UI::Text("Author Time: " + authorScore);
-            DrawMapRecordsOrLoading(map['Uid']);
+            DrawMapRecordsOrLoading(mapUid);
+            // UI::Text("Map Uid:");
+            TextWithCooldown("Uid: " + mapUid.SubStr(0, 14) + "...", mapUid, mapUid);
             UI::Dummy(vec2(0, 40));
             UI::PushFont(headingFont);
             if (MDisabledButton(!debounce.CouldProceed('play-map-btn', 2000), 'Play Map!', vec2(160, 70))) {
@@ -682,17 +688,18 @@ namespace CotdExplorer {
     }
 
     void OnSelectedCotdChallenge(int cotdNum, const string &in mapUid, int cId) {
-        explCup.AsJust(cotdNum);
+        explCup.AsJust(cotdNum); // selection params
         explChallenge.AsJust(cId);
-        startnew(EnsurePlayerNames);
-        histToShow = mapUid + "--" + cId;
+        lastCidDownload = -1; // reset download button
+        startnew(EnsurePlayerNames); // get player names if we have times
+        histToShow = mapUid + "--" + cId; // the histogram to show
         showHistogram = false;
-        histUpperRank = highRankFilter = 99999;
+        histUpperRank = highRankFilter = 99999; // rank filter defaults
         lowRankFilter = 0;
         if (PersistentData::MapTimesCached(mapUid, cId)) {
-            startnew(_GenHistogramData);
+            startnew(_GenHistogramData); // proactively generate histograms where data is available
         }
-        w_AllCotdQualiTimes.Hide();
+        w_AllCotdQualiTimes.Hide(); // hide all times window if it's still around from a previous COTD
     }
 
     void EnsurePlayerNames() {
@@ -1040,7 +1047,32 @@ namespace CotdExplorer {
 
     int copiedCooldownSince = 0;
     int copiedCooldownMs = 1250;
+    int cooldownDelta = 0;
     string lastCopiedPid;
+
+    bool ShowCooldown(const string &in key) {
+        cooldownDelta = Time::Now - copiedCooldownSince;
+        return lastCopiedPid == key && cooldownDelta < copiedCooldownMs;
+    }
+
+    string CooldownHLColor(const string &in key, const string &in defaultColor = "\\$fff", bool escape = true) {
+        return ShowCooldown(key)
+            ? maniaColorForCooldown(cooldownDelta, copiedCooldownMs, escape)
+            : defaultColor;
+    }
+
+    void TextWithCooldown(const string &in label, const string &in toCopy, const string &in key, const string &in defaultColor = "\\$fff", const string &in tooltipText = "Click to copy") {
+        string hl = CooldownHLColor(key, defaultColor, true);
+        UI::Text(hl + label);
+        if (UI::IsItemClicked()) {
+            trace("Copying to clipboard: " + toCopy);
+            IO::SetClipboard(toCopy);
+            lastCopiedPid = key;
+            copiedCooldownSince = Time::Now;
+        }
+        if (tooltipText.Length > 0)
+            AddSimpleTooltip(tooltipText);
+    }
 
     void _DrawCotdTimeTableRow(Json::Value time, int topScore) {
         int rank = time['rank'];
@@ -1056,11 +1088,7 @@ namespace CotdExplorer {
         UI::TableNextColumn();
         // todo player name
         bool nameExists = mapDb.playerNameDb.Exists(pid);
-        int cooldownDelta = Time::Now - copiedCooldownSince;
-        bool showCooldownColor = lastCopiedPid == pid && cooldownDelta < copiedCooldownMs;
-        string hl = showCooldownColor
-            ? maniaColorForCooldown(cooldownDelta, copiedCooldownMs, true)
-            : nameExists ? "" : "\\$a42";
+        string hl = CooldownHLColor(pid, nameExists ? "" : "\\$a42");
         string nameRaw = nameExists ? mapDb.playerNameDb.Get(pid) : "?? " + pid.Split('-')[0];
         string pName = IsSpecialPlayerId(pid)
             ? "\\$s" + rainbowLoopColorCycle(nameRaw, true)

@@ -142,7 +142,6 @@ class CotdApi {
         if (req2.HasFailed || req2.IsCanceled || !req2.HasSucceeded) {
             throw("[GetMapsInfo] req failed or canceled. errorType=" + req2.ErrorType + "; errorCode=" + req2.ErrorCode + "; errorDescription=" + req2.ErrorDescription);
         }
-        print("[GetMapsInfo] Request succeeded!!!");
         return req2.MapList;
     }
 

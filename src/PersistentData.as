@@ -202,6 +202,11 @@ string MkPath(string fname) { return dataFolder + "/" + fname; };
         return MAP_RECORDS_JBOX.Exists(uid) || IO::FileExists(MapRecordsPath(uid));
     }
 
+    bool MapRecordsShouldRegen(const string &in uid) {
+        if (!MapRecordsCached(uid)) return true;
+        return GetMapRecord(uid).j.Get('shouldRegen', true);
+    }
+
     dictionary@ MAP_RECORDS_JBOX = dictionary();
 
     JsonBox@ SaveMapRecord(const string &in mapUid, Json::Value apiResp) {
@@ -609,6 +614,25 @@ class HistoryDb : JsonDb {
             todo before 2029: check if we need to make a second call and merge results.
             */
         auto totdData = api.GetTotdByMonth(100);
+        auto ml = totdData['monthList'];
+        for (uint i = 0; i < ml.Length; i++) {
+            auto m = ml[i];
+            auto days = m['days'];
+            for (uint d = 0; d < days.Length; d++) {
+                auto day = days[d];
+                day['start'] = '' + int(day['startTimestamp']);
+                day['end'] = '' + int(day['endTimestamp']);
+                day.Remove('leaderboardGroup');
+                day.Remove('startTimestamp');
+                day.Remove('endTimestamp');
+                day.Remove('relativeStart');
+                day.Remove('relativeEnd');
+                days[d] = day;
+            }
+            m['days'] = days;
+            ml[i] = m;
+        }
+        totdData['monthList'] = ml;
         data.j['totd'] = totdData;
         if (persist) Persist();
     }
@@ -865,12 +889,16 @@ class MapDb : JsonDb {
             if (!recordsQDb.IsEmpty()) {
                 auto toGet = recordsQDb.GetQueueItemNow();
                 string mapUid = toGet['uid'];
-                if (!PersistentData::MapRecordsCached(mapUid) || toGet.Get('force', false)) {
+                bool shouldGet = PersistentData::MapRecordsShouldRegen(mapUid)
+                                 || toGet.Get('force', false);
+                if (shouldGet) {
                     string seasonUid = toGet['seasonUid'];
-                    logcall("_SyncLoopRecords", "Downloading " + seasonUid);
+                    logcall("_SyncLoopRecords", "Downloading " + seasonUid + "/" + mapUid);
                     auto resp = api.GetMapRecords(seasonUid, mapUid);
-                    logcall("_SyncLoopRecords", "\\$zResponse: " + Json::Write(resp));
+                    logcall("_SyncLoopRecords", "Got Response");
                     if (!IsJsonNull(resp['tops'])) {
+                        int endTs = Text::ParseInt(toGet['end']);
+                        resp['shouldRegen'] = endTs > Time::Stamp;
                         PersistentData::SaveMapRecord(mapUid, resp);
                     }
                 } else {
@@ -997,8 +1025,11 @@ class MapDb : JsonDb {
     void QueueMapChallengeTimesGet(const string &in mapUid, int challengeId) {
         auto challenge = histDb.GetChallenge(challengeId);
         int cStart = Text::ParseInt(challenge['startDate']);
-        int dontDownloadBefore = cStart + 30 * 60;
-        if (dontDownloadBefore > Time::Stamp) { return; }
+        int dontDownloadBefore = cStart + 20 * 60;
+        if (dontDownloadBefore > Time::Stamp) {
+            warn("Skipping QueueMapChallengeTimesGet for future COTD: " + mapUid + "/" + challengeId);
+            return;
+        }
         if (!PersistentData::MapTimesCached(mapUid, challengeId)) {
             auto obj = Json::Object();
             obj['id'] = mapUid + "|" + challengeId;
@@ -1008,14 +1039,16 @@ class MapDb : JsonDb {
         }
     }
 
-    void QueueMapRecordGet(const string &in seasonUid, const string &in mapUid, bool force = false) {
-        if (!PersistentData::MapRecordsCached(mapUid)) {
+    void QueueMapRecordGet(const string &in seasonUid, const string &in mapUid, const string &in endTs, bool force = false) {
+        if (PersistentData::MapRecordsShouldRegen(mapUid) || force) {
             auto obj = Json::Object();
             obj['id'] = mapUid;
             obj['uid'] = mapUid;
             obj['seasonUid'] = seasonUid;
+            obj['end'] = endTs;
             obj['force'] = force;
             recordsQDb.PutQueueEntry(obj);
+            logcall("QueueMapRecordGet", "Queued get req for TOTD records: " + mapUid);
         }
     }
 
