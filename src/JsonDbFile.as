@@ -8,6 +8,10 @@ class JsonBox {
         this.j = jsonVal;
     }
 
+    // JsonBox() {
+    //     this.j = Json::Value();
+    // }
+
     // Json::Value get_j() {
     //     if (expired) { throw("Expired reference!"); }
     //     return this.j;
@@ -172,6 +176,14 @@ class JsonQueueDb : JsonDb {
             if (IsJsonNull(data.j['queue'])) data.j['queue'] = Json::Object();
             Persist();
         }
+    }
+
+    int get_Length() {
+        return data.j['meta']['length'];
+    }
+
+    int get_CompletedHowMany() {
+        return Text::ParseInt(data.j['meta']['queueStart']);
     }
 
     void ValidateUpgradeQueue() {

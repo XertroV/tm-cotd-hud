@@ -21,16 +21,18 @@ class JsonDictDb {
     }
 
     void _InitialPopulation() {
-        IO::File file(csvPath, IO::FileMode::Read);
-        string[] line;
-        float lastBreak = Time::Now;
-        while (!file.EOF()) {
-            if(Time::Now - lastBreak < 4) {
-                lastBreak = Time::Now;
-                yield();
+        if (IO::FileExists(csvPath)) {
+            IO::File file(csvPath, IO::FileMode::Read);
+            string[] line;
+            float lastBreak = Time::Now;
+            while (!file.EOF()) {
+                if(Time::Now - lastBreak < 4) {
+                    lastBreak = Time::Now;
+                    yield();
+                }
+                line = file.ReadLine().Split(",");
+                d[line[0]] = line[1];
             }
-            line = file.ReadLine().Split(",");
-            d[line[0]] = line[1];
         }
     }
 

@@ -265,14 +265,11 @@ WindowState@ _DebugNodWindow = WindowState("View Nod: ----", false);
 
 // #endif
 
+
+
 [SettingsTab name="About"]
 void RenderSettingsAbout() {
-    TextHeading("COTD HUD + Explorer");
-
-    if (UI::Button("Run ListPlayerInfos")) {
-        ListPlayerInfos();
-    }
-    AddSimpleTooltip("Prints all players' names and userIds to the Openplanet log.");
-
+    TextHeading("About COTD HUD + Explorer");
     VPad();
+
 }

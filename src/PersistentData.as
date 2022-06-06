@@ -361,12 +361,25 @@ class HistoryDb : JsonDb {
         return data.j['challenges'].Get('maxId', 0);
     }
 
+    dictionary@ cachedChallenges = dictionary();
+
     Json::Value GetChallenge(int id) {
         string _cid = '' + id;
-        if (!data.j['challenges'].HasKey('items') || !data.j['challenges']['items'].HasKey(_cid)) {
+        if (cachedChallenges.Exists(_cid)) {
+            return cast<JsonBox@>(cachedChallenges[_cid]).j;
+        }
+        try {
+            auto c = data.j['challenges']['items'][_cid];
+            auto jb = JsonBox(c);
+            @cachedChallenges[_cid] = jb;
+            return c;
+        } catch {
+            warn("GetChallenge exception returning record: " + getExceptionInfo());
             return Json::Value();
         }
-        return data.j['challenges']['items'][_cid];
+        // if (IsJsonNull(j) || !j.HasKey('challenges') || !j['challenges'].HasKey('items') || !j['challenges']['items'].HasKey(_cid)) {
+        //     return Json::Value();
+        // }
     }
 
     // string[]@ ListTotdYears() {
@@ -396,11 +409,16 @@ class HistoryDb : JsonDb {
         logcall("_SyncLoopChallenges", "Starting");
         _SyncChallengesInit();
         logcall("_SyncLoopChallenges", "Init done. Looping...");
+        bool goAgain = false;
         while (true) {
-            _SyncChallengesProgress();
+            goAgain = _SyncChallengesProgress();
             _SyncChallengesWaiting();
             _SyncChallengesUpkeep();
-            sleep(5 * 1000);
+            if (goAgain) {
+                yield();
+            } else {
+                sleep(5 * 1000);
+            }
         }
     }
 
@@ -448,13 +466,18 @@ class HistoryDb : JsonDb {
         return Text::ParseInt(ChallengesSyncData()['state']['updatedAt']);
     }
 
+    int ChallengesSdMaxId() {
+        return ChallengesSyncData()['state'].Get('maxId', 0);
+    }
+
     void SetChallengesSyncData(Json::Value &in sd) {
         data.j['sync']['challenges'] = sd;
         Persist();
     }
 
-    void _SyncChallengesProgress() {
+    bool _SyncChallengesProgress() {
         auto sd = ChallengesSyncData();
+        auto okayToSkipSleep = false;
         if (!data.j.HasKey('challenges') || IsJsonNull(data.j['challenges'])) {
             data.j['challenges'] = Json::Object();
         }
@@ -486,7 +509,9 @@ class HistoryDb : JsonDb {
             if (newCs.Length > 0) {  // we'll get `[]` response when offset is too high.
                 auto chs = data.j['challenges'];
                 chs['maxId'] = newCs[0]['id'];  // first entry always has highest id
-                auto items = Json::Value(chs.Get('items', Json::Object()));
+                auto items = chs['items'];
+                if (IsJsonNull(items)) items = Json::Object();
+                print(Json::Write(items));
                 for (uint i = 0; i < newCs.Length; i++) {
                     auto c = newCs[i];
                     int _id = c['id'];
@@ -519,8 +544,10 @@ class HistoryDb : JsonDb {
                 sd = GenChallengesUpkeepSyncData();
             }
             // check exit condition? offset < 0?
+            okayToSkipSleep = offset > 0;
             SetChallengesSyncData(sd);
         }
+        return okayToSkipSleep;
     }
 
     void _SyncChallengesWaiting() {
@@ -661,6 +688,9 @@ class MapQueueDb : JsonQueueDb {
 }
 
 
+const Json::Value emptyObj = Json::Object();
+const Json::Value emptyArr = Json::Array();
+
 class CotdIndexDb : JsonDb {
     private HistoryDb@ histDb;
 
@@ -682,9 +712,14 @@ class CotdIndexDb : JsonDb {
     }
 
     void DoScan() {
+        int lastBreak = Time::Now;
         int maxId = GetMaxId();
         int cMaxId = histDb.GetChallengesMaxId();
         for (int i = maxId + 1; i <= cMaxId; i++) {
+            if (Time::Now - lastBreak > 5) {
+                yield();
+                lastBreak = Time::Now;
+            }
             Json::Value c = histDb.GetChallenge(i);
             AddChallenge(i, c);
         }
@@ -705,10 +740,15 @@ class CotdIndexDb : JsonDb {
             if (name.SubStr(0, 14) == "Cup of the Day") {
                 string date = name.SubStr(15, 10); // 2022-05-30
                 string[] ymd = date.Split('-');
+
                 auto ymdObj = data.j['ymdToCotdChallenges'];
-                auto year = Json::Value(ymdObj.Get(ymd[0], Json::Object()));
-                auto month = Json::Value(year.Get(ymd[1], Json::Object()));
-                auto day = Json::Value(month.Get(ymd[2], Json::Array()));
+                auto year = ymdObj[ymd[0]];
+                if (year.GetType() != Json::Type::Object) year = Json::Object();
+                auto month = year[ymd[1]];
+                if (month.GetType() != Json::Type::Object) month = Json::Object();
+                auto day = month[ymd[2]];
+                if (day.GetType() != Json::Type::Array) day = Json::Array();
+
                 day.Add(cId);
                 month[ymd[2]] = day;
                 year[ymd[1]] = month;
@@ -723,11 +763,15 @@ class CotdIndexDb : JsonDb {
     }
 
     int[] GetChallengesForDate(const string &in year, const string &in month, const string &in day) {
-        auto cs = data.j['ymdToCotdChallenges']
-            .Get(year, Json::Object())
-            .Get(month, Json::Object())
-            .Get(day, Json::Array());
-        int[] _cs = array<int>(cs.Length);
+        Json::Value cs;
+        int[] _cs;
+        try {
+            cs = data.j['ymdToCotdChallenges'][year][month][day];
+            _cs = array<int>(cs.Length);
+        } catch {
+            cs = Json::Array();
+            _cs = array<int>(0);
+        }
         for (uint i = 0; i < cs.Length; i++) {
             _cs[i] = cs[i];
         }
@@ -753,14 +797,16 @@ class CotdTimesReqData {
 class MapDb : JsonDb {
     GameInfo@ gi = GameInfo();
     CotdApi@ api;
-    private HistoryDb@ histDb;
-    private MapQueueDb@ queueDb;
-    private JsonQueueDb@ thumbQDb;
-    private JsonQueueDb@ timesQDb;
-    private JsonQueueDb@ recordsQDb;
-    private CotdIndexDb@ cotdIndexDb;
+    /* outside of MapDb: only do read stuff with these */
+    // todo, put behind getters.
+    HistoryDb@ histDb;
+    MapQueueDb@ queueDb;
+    JsonQueueDb@ thumbQDb;
+    JsonQueueDb@ timesQDb;
+    JsonQueueDb@ recordsQDb;
+    CotdIndexDb@ cotdIndexDb;
     JsonDictDb@ playerNameDb;
-    private JsonQueueDb@ playerNameQDb;
+    JsonQueueDb@ playerNameQDb;
     // private JsonQueueDb@ histGenQDb;
 
     MapDb(const string &in path) {
@@ -1024,11 +1070,13 @@ class MapDb : JsonDb {
 
     void QueueMapChallengeTimesGet(const string &in mapUid, int challengeId) {
         auto challenge = histDb.GetChallenge(challengeId);
-        int cStart = Text::ParseInt(challenge['startDate']);
-        int dontDownloadBefore = cStart + 20 * 60;
-        if (dontDownloadBefore > Time::Stamp) {
-            warn("Skipping QueueMapChallengeTimesGet for future COTD: " + mapUid + "/" + challengeId);
-            return;
+        if (challenge.GetType() == Json::Type::Object) {
+            int cStart = Text::ParseInt(challenge['startDate']);
+            int dontDownloadBefore = cStart + 20 * 60;
+            if (dontDownloadBefore > Time::Stamp) {
+                warn("Skipping QueueMapChallengeTimesGet for future COTD: " + mapUid + "/" + challengeId);
+                return;
+            }
         }
         if (!PersistentData::MapTimesCached(mapUid, challengeId)) {
             auto obj = Json::Object();

@@ -135,8 +135,8 @@ namespace CotdExplorer {
         if (UI::IsWindowAppearing()) {
             UI::SetWindowSize(vec2(730, 1100), UI::Cond::Always);
             _ResetExplorerCotdSelection();
-            _DevSetExplorerCotdSelection();
             startnew(LoadCotdTreeFromDb);
+            // startnew(_DevSetExplorerCotdSelection);
         }
 
         /* menu bar */
@@ -371,9 +371,12 @@ namespace CotdExplorer {
     }
 
     void _DevSetExplorerCotdSelection() {
+        while (cotdYMDMapTree is null) yield();
+        sleep(250);
+        warn("_DevSetExplorerCotdSelection");
         explYear.AsJust(2022);
-        explMonth.AsJust(4);
-        explDay.AsJust(29);
+        OnSelectedCotdMonth(4);
+        OnSelectedCotdDay(29);
         // OnSelectedCotdChallenge()
         // explCup.AsJust(2);
         // explQDiv.AsJust(1);
@@ -447,7 +450,7 @@ namespace CotdExplorer {
 
     void _RenderExplorerCotdMonthSelection() {
         TextHeading(_ExplorerCotdTitleStr() + " | Select Month");
-        auto md = cast<dictionary@>(cotdYMDMapTree["" + explYear.val]);
+        auto md = CotdTreeY();
         auto months = md.GetKeys();
         months.SortAsc();
         uint month;
@@ -562,25 +565,45 @@ namespace CotdExplorer {
             - save cache
         */
         JsonBox@ day = CotdTreeYMD();
+        if (day is null) return;
         string uid = day.j['mapUid'];
         string seasonUid = day.j['seasonUid'];
         string endTs = day.j.Get('end', "1234");
         mapDb.QueueMapGet(uid);
         mapDb.QueueMapRecordGet(seasonUid, uid, endTs);
+        challengeIdsForSelectedCotd = CotdChallengesForSelectedDate();
+    }
+
+    void DrawMapDownloadProgress() {
+        UI::TextWrapped("Map info progress | Done: " + mapDb.queueDb.CompletedHowMany + ", Queued: " + mapDb.queueDb.Length);
+        if (UI::Button("Check again if available...")) {
+            startnew(LoadCotdTreeFromDb);
+            startnew(EnsureMapDataForCurrDay);
+        }
+    }
+
+    void DrawChallengeDownloadProgress() {
+        auto maxId = histDb.ChallengesSdMaxId();
+        UI::TextWrapped("Challenge sync progress | ix: " + mapDb.cotdIndexDb.GetMaxId() + " / dl: " + histDb.GetChallengesMaxId() + " / total: " + maxId);
+        if (UI::Button("Check again if available...")) {
+            startnew(EnsureMapDataForCurrDay);
+        }
     }
 
     void DrawTotdMapInfoTable(Json::Value map, const string &in totdDate) {
         if (IsJsonNull(map)) {
-            TextBigStrong("\\$fa4" + "Map is not found or data corrupted.");
+            TextBigStrong("\\$fa4" + "Map is not found, it might be in the download queue.");
+            DrawMapDownloadProgress();
             return;
         }
         string mapUid = map['Uid'];
         string tnUrl = map['ThumbnailUrl'];
-        string authorName = map['AuthorDisplayName'];
         string authorId = map['AuthorWebServicesUserId'];
-        string authorNameAndId = authorName + " " + authorId;
-        if (IsSpecialPlayerId(authorId)) authorName = rainbowLoopColorCycle(authorName, true);
         string authorScore = Time::Format(map['AuthorScore']);
+        string authorName = map['AuthorDisplayName'];
+        string authorNameAndId = authorName + " " + authorId;
+        // apply special after setting authorNameAndId
+        if (IsSpecialPlayerId(authorId)) authorName = rainbowLoopColorCycle(authorName, true);
         string mapName = map['Name'];
         mapName = EscapeRawToOpenPlanet(MakeColorsOkayDarkMode(mapName));
         mapName += " \\$z(TOTD for " + totdDate + ")";
@@ -647,12 +670,16 @@ namespace CotdExplorer {
 
     const string[] COTD_BTNS = { "1st (COTD)\n7pm CEST/CET", "2nd (COTN)\n3am CEST/CET", "3rd (COTM)\n11am CEST/CET" };
 
+
+    int[] challengeIdsForSelectedCotd = {};
     void _RenderExplorerCotdCupSelection() {
-        auto cIds = CotdChallengesForSelectedDate();
+        // auto cIds = CotdChallengesForSelectedDate();
+        auto cIds = challengeIdsForSelectedCotd;
         JsonBox@ totdInfo = CotdTreeYMD();
         string mapUid = totdInfo.j['mapUid'];
         if (cIds.Length == 0) {
             UI::Text("\\$f81 Warning: cannot find challengeIds for COTDs on " + SelectedCotdDateStr() + "; nChallenges=" + cIds.Length);
+            DrawChallengeDownloadProgress();
         } else {
             TextHeading(_ExplorerCotdTitleStr() + " | Select Cup");
             string btnLab;
@@ -723,15 +750,29 @@ namespace CotdExplorer {
     }
 
     dictionary@ CotdTreeY() {
-        return cast<dictionary@>(cotdYMDMapTree["" + explYear.val]);
+        dictionary@ ret;
+        if (cotdYMDMapTree !is null && cotdYMDMapTree.Get("" + explYear.val, @ret)) {
+            return ret;
+        }
+        return dictionary();
     }
 
     dictionary@ CotdTreeYM() {
-        return cast<dictionary@>(CotdTreeY()[Text::Format("%02d", explMonth.val)]);
+        dictionary@ ret;
+        if (CotdTreeY().Get(Text::Format("%02d", explMonth.val), @ret)) {
+            return ret;
+        }
+        // return cast<dictionary@>(CotdTreeY()[Text::Format("%02d", explMonth.val)]);
+        return dictionary();
     }
 
+    JsonBox@ _EmptyJsonBox = JsonBox(Json::Object());
     JsonBox@ CotdTreeYMD() {
-        return cast<JsonBox@>(CotdTreeYM()[Text::Format("%02d", explDay.val)]);
+        JsonBox@ ret;
+        if (CotdTreeYM().Get(Text::Format("%02d", explDay.val), @ret)) {
+            return ret;
+        }
+        return null;
     }
 
     int[] CotdChallengesForSelectedDate() {
