@@ -56,6 +56,41 @@ void RenderSettingsQuickSettings() {
         );
 }
 
+/*
+
+   ########   ######      ########     ###    ########    ###
+   ##     ## ##    ##     ##     ##   ## ##      ##      ## ##
+   ##     ## ##           ##     ##  ##   ##     ##     ##   ##
+   ########  ##   ####    ##     ## ##     ##    ##    ##     ##
+   ##     ## ##    ##     ##     ## #########    ##    #########
+   ##     ## ##    ##     ##     ## ##     ##    ##    ##     ##
+   ########   ######      ########  ##     ##    ##    ##     ##
+
+BG DATA
+
+*/
+
+[Setting hidden]
+bool Setting_SyncAllowBgQualifierTimes = false;
+
+[SettingsTab name="Data & DBs"]
+void RenderSettingsDataSync() {
+    TextHeading("Data Synchronization");
+
+    Setting_SyncAllowBgQualifierTimes = UI::Checkbox(
+        "Allow Background Download of Qualifier Times for ALL COTDs?",
+        Setting_SyncAllowBgQualifierTimes);
+    AddSimpleTooltip("This will proactively download all COTD qualifier times in the background.\n"
+        + "It will consume about 400 KB per TOTD for ~2021 onwards. (at least 200 MB)\n"
+        + "This is required to show a complete list of any given player's qualifying times.");
+
+    TextHeading("Qualifier Replays");
+
+    // 1.5 - 15 MB per COTD
+    // allows animated playback
+    // must be recorded during COTD
+    // folder `live-times-cache`
+}
 
 /**
 
