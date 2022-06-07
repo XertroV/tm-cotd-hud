@@ -197,7 +197,7 @@ namespace CotdHud {
                 drawnOnePlusDivs = true;
 
                 /* should we draw the player row? */
-                if (Setting_HudShowPlayerDiv && !drawnPlayerDiv) {
+                if (Setting_HudShowPlayerDiv && !drawnPlayerDiv && playerDr.div > 0) {
                     if (playerDr.div <= dr.div) {
                         RenderDivRowFromDR(playerDr, true);
                         drawnPlayerDiv = true;

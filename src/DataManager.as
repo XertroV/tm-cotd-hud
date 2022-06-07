@@ -190,7 +190,29 @@ namespace DataManager {
 
     void UpdateDivs() {
         divs_lastUpdated = Time::get_Now();
-        startnew(ApiUpdateCotdDivRows);
+        // if the div is in the past, load from disk
+        if (_ViewPriorChallenge() || divs_lastUpdated > int(GetChallenge()['endDate'])) {
+            // load from disk
+            while (PersistentData::mapDb is null) yield();
+            while (cotd_TimesForHistogram[0] == 0) { sleep(100); }
+            sleep(100);  // wait for it to be populated
+            uint nPlayers = GetCotdTotalPlayers();
+            for (uint div = 1; div <= divRows.Length; div++) {
+                uint offset = div * 64 - 1;
+                if (offset > 9999 || offset > nPlayers + 64) continue;
+                offset = Math::Min(offset, nPlayers - 1);
+                uint cutoffTime = cotd_TimesForHistogram[offset];
+                auto row = divRows[div-1];
+                row.lastUpdateStart = Time::Now;
+                row.timeMs = cutoffTime;
+                row.lastUpdateDone = Time::Now;
+                logcall("UpdateDivs", row.ToString());
+            }
+            logcall("UpdateDivs", "loaded cutoffs from cotd_TimesForHistogram");
+            RenewActiveDivs();
+        } else {
+            startnew(ApiUpdateCotdDivRows);
+        }
         startnew(CoroUpdatePlayerDiv);
     }
 
@@ -435,7 +457,7 @@ namespace DataManager {
             playerDivRow.lastJson = cotdLatest_PlayerRank["records"][0];
         } else {
             playerDivRow.timeMs = MAX_DIV_TIME;
-            playerDivRow.div = 99;
+            playerDivRow.div = 0;
         }
 
         playerDivRow.lastUpdateDone = Time::get_Now();

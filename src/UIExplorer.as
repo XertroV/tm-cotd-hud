@@ -42,6 +42,8 @@ namespace CotdExplorer {
             yield();
         }
         startnew(ExplorerManager::ManageHistoricalTotdData);
+        startnew(SlowlyGetAllMapData);
+        _ResetExplorerCotdSelection();
     }
 
     void InitAndCalcUIElementSizes() {
@@ -134,7 +136,6 @@ namespace CotdExplorer {
 
         if (UI::IsWindowAppearing()) {
             UI::SetWindowSize(vec2(730, 1100), UI::Cond::Always);
-            _ResetExplorerCotdSelection();
             startnew(LoadCotdTreeFromDb);
             // startnew(_DevSetExplorerCotdSelection);
         }
@@ -171,6 +172,41 @@ namespace CotdExplorer {
         while (cotdYMDMapTree is null || cotdYMDMapTree.GetSize() == 0) {
             sleep(200);
             @cotdYMDMapTree = histDb.GetCotdYearMonthDayMapTree();
+        }
+    }
+
+#if RELEASE
+    const uint SlowlyGetAllMapData_InitSleep = 60 * 1000;
+    const uint SlowlyGetAllMapData_LoopSleep = 180 * 1000;
+#else
+    const uint SlowlyGetAllMapData_InitSleep = 30 * 1000;
+    const uint SlowlyGetAllMapData_LoopSleep = 60 * 1000;
+#endif
+    const uint SlowlyGetAllMapData_DoneSleep = 8 * 3600 * 1000;
+
+    void SlowlyGetAllMapData() {
+        // todo: refactor into a coro in mapDb that inits each start (no need for db) + detects when to skip to not waste time.
+        logcall("SlowlyGetAllMapData", "Starting...");
+        while (cotdYMDMapTree is null) yield();
+        while (true) {
+            sleep(SlowlyGetAllMapData_InitSleep);
+            if (cotdYMDMapTree is null) continue;
+            auto years = cotdYMDMapTree.GetKeys();
+            for (uint y = 0; y < years.Length; y++) {
+                dictionary@ year = cast<dictionary>(cotdYMDMapTree[years[y]]);
+                auto months = year.GetKeys();
+                for (uint m = 0; m < months.Length; m++) {
+                    if (HaveAllMapDataForYM(years[y], months[m])) {
+                        // if we have the data then skip the sleep.
+                        continue;
+                    }
+                    logcall("SlowlyGetAllMapData", "running for " + years[y] + "-" + months[m]);
+                    EnsureMapDataForYM(years[y], months[m]);
+                    sleep(SlowlyGetAllMapData_LoopSleep);
+                }
+            }
+            logcall("SlowlyGetAllMapData", "sleeping for " + int(SlowlyGetAllMapData_DoneSleep/1000) + " s");
+            sleep(SlowlyGetAllMapData_DoneSleep);
         }
     }
 
@@ -297,8 +333,20 @@ namespace CotdExplorer {
                 UI::EndMenu();
             }
 
+            if (UI::BeginMenu("Databases")) {
+                if (UI::MenuItem("Re-index COTD Qualifiers", '', false)) {
+                    startnew(DbMenuCotdIndexReset);
+                }
+                UI::EndMenu();
+            }
+
             UI::EndMenuBar();
         }
+    }
+
+    void DbMenuCotdIndexReset() {
+        mapDb.cotdIndexDb.ResetAndReIndex();
+        EnsureMapDataForCurrDay();
     }
 
     /* Explorer UI Idea: Buttons + Breadcrumbs */
@@ -547,31 +595,66 @@ namespace CotdExplorer {
     }
 
     void EnsureMapDataForCurrMonth() {
-        dictionary@ month = CotdTreeYM();
-        auto keys = month.GetKeys();
+        EnsureMapDataForYM('', '');
+        // dictionary@ month = CotdTreeYM();
+        // auto keys = month.GetKeys();
+        // for (uint i = 0; i < keys.Length; i++) {
+        //     auto day = cast<JsonBox@>(month[keys[i]]);
+        //     mapDb.QueueMapGet(day.j['mapUid']);
+        // }
+    }
+
+    void EnsureMapDataForYM(const string &in year, const string &in month) {
+        // auto mo = cast<dictionary>(cast<dictionary>(cotdYMDMapTree[year])[month]);
+        auto mo = CotdTreeYM(year, month);
+        auto keys = mo.GetKeys();
         for (uint i = 0; i < keys.Length; i++) {
-            auto day = cast<JsonBox@>(month[keys[i]]);
-            mapDb.QueueMapGet(day.j['mapUid']);
+            auto day = cast<JsonBox@>(mo[keys[i]]);
+            // mapDb.QueueMapGet(day.j['mapUid']);
+            EnsureMapDataForYMD(year, month, keys[i]);
         }
     }
 
+    bool HaveAllMapDataForYM(const string &in year, const string &in month) {
+        auto mo = CotdTreeYM(year, month);
+        auto keys = mo.GetKeys();
+        for (uint i = 0; i < keys.Length; i++) {
+            if (!HaveAllMapDataForYMD(year, month, keys[i])) return false;
+        }
+        return true;
+    }
+
     void EnsureMapDataForCurrDay() {
-        /* check cache for map data
-            if present: return
-            if not:
-            - get info from API
-            - download thumbnail to cache file
-            - populate cache
-            - save cache
-        */
-        JsonBox@ day = CotdTreeYMD();
+        EnsureMapDataForYMD('', '', '');
+        challengeIdsForSelectedCotd = CotdChallengesForSelectedDate();
+    }
+
+    void EnsureMapDataForYMD(const string &in _year, const string &in _month, const string &in _day) {
+        JsonBox@ day = CotdTreeYMD(_year, _month, _day);
         if (day is null) return;
         string uid = day.j['mapUid'];
+        if (uid.Length == 0) return;
         string seasonUid = day.j['seasonUid'];
+        if (seasonUid.Length == 0) return;
         string endTs = day.j.Get('end', "1234");
+        auto cIds = CotdChallengesForYMD(_year, _month, _day);
         mapDb.QueueMapGet(uid);
         mapDb.QueueMapRecordGet(seasonUid, uid, endTs);
-        challengeIdsForSelectedCotd = CotdChallengesForSelectedDate();
+        // for (uint i = 0; i < cIds.Length; i++) {
+
+        // }
+    }
+
+    bool HaveAllMapDataForYMD(const string &in _year, const string &in _month, const string &in _day) {
+        JsonBox@ day = CotdTreeYMD(_year, _month, _day);
+        if (day is null) return true;
+        string uid = day.j['mapUid'];
+        if (uid.Length == 0) return true;
+        /* add additional resources here if they're added above */
+        return true
+            && PersistentData::MapRecordsCached(uid)
+            && mapDb.MapIsCached(uid)
+            ;
     }
 
     void DrawMapDownloadProgress() {
@@ -693,9 +776,9 @@ namespace CotdExplorer {
                 for (int i = 0; i < Math::Min(cIds.Length, COTD_BTNS.Length); i++) {
                     auto c = histDb.GetChallenge(cIds[i]);
                     if (!IsJsonNull(c)) {
-                        if (900 + Text::ParseInt(c['startDate']) < Time::Stamp) {
+                        if (Text::ParseInt(c['endDate']) < Time::Stamp) {
                             btnLab = COTD_BTNS[i];
-                            int cotdNum = btnLab[0] - 48;  /* '1' = 49; 49 - 48 = 1. (ascii char value - 48 = int value); */
+                            int cotdNum = i+1; // btnLab[0] - 48;  /* '1' = 49; 49 - 48 = 1. (ascii char value - 48 = int value); */
                             UI::TableNextColumn();
                             if (UI::Button(btnLab, challengeBtnDims)) {
                                 OnSelectedCotdChallenge(cotdNum, mapUid, cIds[i]);
@@ -749,17 +832,19 @@ namespace CotdExplorer {
         }
     }
 
-    dictionary@ CotdTreeY() {
+    dictionary@ CotdTreeY(string yr = '') {
+        if (yr == '') yr = "" + explYear.val;
         dictionary@ ret;
-        if (cotdYMDMapTree !is null && cotdYMDMapTree.Get("" + explYear.val, @ret)) {
+        if (cotdYMDMapTree !is null && cotdYMDMapTree.Get(yr, @ret)) {
             return ret;
         }
         return dictionary();
     }
 
-    dictionary@ CotdTreeYM() {
+    dictionary@ CotdTreeYM(const string &in year = '', string month = '') {
+        if (month == '') month = Text::Format("%02d", explMonth.val);
         dictionary@ ret;
-        if (CotdTreeY().Get(Text::Format("%02d", explMonth.val), @ret)) {
+        if (CotdTreeY(year).Get(month, @ret)) {
             return ret;
         }
         // return cast<dictionary@>(CotdTreeY()[Text::Format("%02d", explMonth.val)]);
@@ -767,16 +852,22 @@ namespace CotdExplorer {
     }
 
     JsonBox@ _EmptyJsonBox = JsonBox(Json::Object());
-    JsonBox@ CotdTreeYMD() {
+    JsonBox@ CotdTreeYMD(const string &in year = '', const string &in month = '', string day = '') {
+        if (day == '') day = Text::Format("%02d", explDay.val);
         JsonBox@ ret;
-        if (CotdTreeYM().Get(Text::Format("%02d", explDay.val), @ret)) {
+        if (CotdTreeYM(year, month).Get(day, @ret)) {
             return ret;
         }
         return null;
     }
 
     int[] CotdChallengesForSelectedDate() {
-        return mapDb.GetChallengesForDate('' + explYear.val, Text::Format("%02d", explMonth.val), Text::Format("%02d", explDay.val));
+        return CotdChallengesForYMD('' + explYear.val, Text::Format("%02d", explMonth.val), Text::Format("%02d", explDay.val));
+        // return mapDb.GetChallengesForDate('' + explYear.val, Text::Format("%02d", explMonth.val), Text::Format("%02d", explDay.val));
+    }
+
+    int[] CotdChallengesForYMD(const string &in year, const string &in month, const string &in day) {
+        return mapDb.GetChallengesForDate(year, month, day);
     }
 
     /* returns false when showLoading=false and the image is loading */

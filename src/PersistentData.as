@@ -707,6 +707,12 @@ class CotdIndexDb : JsonDb {
         }
     }
 
+    void ResetAndReIndex() {
+        data.j['maxId'] = -1;
+        data.j['ymdToCotdChallenges'] = Json::Object();
+        logcall("CotdIndexDb.ResetAndReIndex", "Reset. Scanning now.");
+    }
+
     void SetHistDb(HistoryDb@ _db) {
         @histDb = _db;
     }
@@ -715,15 +721,17 @@ class CotdIndexDb : JsonDb {
         int lastBreak = Time::Now;
         int maxId = GetMaxId();
         int cMaxId = histDb.GetChallengesMaxId();
-        for (int i = maxId + 1; i <= cMaxId; i++) {
-            if (Time::Now - lastBreak > 5) {
-                yield();
-                lastBreak = Time::Now;
+        if (maxId < cMaxId) {
+            for (int i = maxId + 1; i <= cMaxId; i++) {
+                if (Time::Now - lastBreak > 5) {
+                    yield();
+                    lastBreak = Time::Now;
+                }
+                Json::Value c = histDb.GetChallenge(i);
+                AddChallenge(i, c);
             }
-            Json::Value c = histDb.GetChallenge(i);
-            AddChallenge(i, c);
+            Persist();
         }
-        Persist();
     }
 
     private void SetMaxId(int maxId) {
@@ -933,28 +941,33 @@ class MapDb : JsonDb {
         logcall("_SyncLoopRecords", "Starting");
         while (true) {
             if (!recordsQDb.IsEmpty()) {
-                auto toGet = recordsQDb.GetQueueItemNow();
-                string mapUid = toGet['uid'];
-                bool shouldGet = PersistentData::MapRecordsShouldRegen(mapUid)
-                                 || toGet.Get('force', false);
-                if (shouldGet) {
-                    string seasonUid = toGet['seasonUid'];
-                    logcall("_SyncLoopRecords", "Downloading " + seasonUid + "/" + mapUid);
-                    auto resp = api.GetMapRecords(seasonUid, mapUid);
-                    logcall("_SyncLoopRecords", "Got Response");
-                    if (!IsJsonNull(resp['tops'])) {
-                        int endTs = Text::ParseInt(toGet['end']);
-                        resp['shouldRegen'] = endTs > Time::Stamp;
-                        PersistentData::SaveMapRecord(mapUid, resp);
-                    }
-                } else {
-                    string id = toGet['id'];
-                    logcall("_SyncLoopRecords", "skipping " + id);
-                }
+                startnew(CoroutineFunc(_SyncNextRecord));
             } else {
-                sleep(250);
+                sleep(500);
             }
             yield();
+        }
+    }
+
+    void _SyncNextRecord() {
+        if (recordsQDb.IsEmpty()) return;
+        auto toGet = recordsQDb.GetQueueItemNow();
+        string mapUid = toGet['uid'];
+        bool shouldGet = PersistentData::MapRecordsShouldRegen(mapUid)
+                            || toGet.Get('force', false);
+        if (shouldGet) {
+            string seasonUid = toGet['seasonUid'];
+            logcall("_SyncLoopRecords", "Downloading " + seasonUid + "/" + mapUid);
+            auto resp = api.GetMapRecords(seasonUid, mapUid);
+            logcall("_SyncLoopRecords", "Got Response");
+            if (!IsJsonNull(resp['tops'])) {
+                int endTs = Text::ParseInt(toGet['end']);
+                resp['shouldRegen'] = endTs > Time::Stamp;
+                PersistentData::SaveMapRecord(mapUid, resp);
+            }
+        } else {
+            string id = toGet['id'];
+            logcall("_SyncLoopRecords", "skipping " + id);
         }
     }
 
@@ -1071,8 +1084,8 @@ class MapDb : JsonDb {
     void QueueMapChallengeTimesGet(const string &in mapUid, int challengeId) {
         auto challenge = histDb.GetChallenge(challengeId);
         if (challenge.GetType() == Json::Type::Object) {
-            int cStart = Text::ParseInt(challenge['startDate']);
-            int dontDownloadBefore = cStart + 20 * 60;
+            int cEnd = Text::ParseInt(challenge['endDate']);
+            int dontDownloadBefore = cEnd;
             if (dontDownloadBefore > Time::Stamp) {
                 warn("Skipping QueueMapChallengeTimesGet for future COTD: " + mapUid + "/" + challengeId);
                 return;
