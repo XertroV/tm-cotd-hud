@@ -32,6 +32,13 @@ bool MDisabledButton(bool disabled, const string &in text, const vec2 &in size =
     }
 }
 
+bool ButtonLink(const string &in label, const string &in href, const vec2 &in size = vec2 ( )) {
+    bool clicked = UI::Button(label, size);
+    if (clicked)
+        OpenBrowserURL(href);
+    return clicked;
+}
+
 /* padding */
 
 void VPad() { UI::Dummy(vec2(10, 2)); }

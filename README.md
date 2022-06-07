@@ -20,6 +20,8 @@ I *think* the plugin should work if you just copy the whole repo folder into Ope
     - [ ] Search user in a COTD quali list
     - [ ] Search user all COTDs
     - [x] "Play this map" button
+    - [ ] TMX link button
+    - [ ] TM.IO link button
     - [ ] List all TOTD maps
     - [ ] In list: easy favorite-ing + easy click to play
     - [ ] show your own times / records (not totd but global) -- useful for playing all TOTDs

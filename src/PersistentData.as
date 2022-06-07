@@ -992,10 +992,20 @@ class MapDb : JsonDb {
         uint chunkSize = 100;
         initData['chunkSize'] = chunkSize;
         initData['ranges'] = Json::Object();
-        uint nPlayers = api.GetPlayerRank(cId, mapUid, '')['cardinal'];
+        auto resp = api.GetPlayerRank(cId, mapUid, '');
+        uint nPlayers;
+        if (IsJsonNull(resp)) {
+            warn("Got null response for _GetOneCotdMapTimes; toGet=" + Json::Write(toGet));
+            // todo: nplayers estimate?
+            // nPlayers = getNPlayersFallback(cId, mapUid);
+            nPlayers = 0;
+            initData['error'] = 'null response for map|cId: ' + string(toGet['id']);
+        } else {
+            nPlayers = resp['cardinal'];
+        }
         initData['nPlayers'] = nPlayers;
         auto jb = PersistentData::SaveCotdMapTimes(mapUid, cId, initData);
-        for (uint rank = 1; rank < nPlayers; rank += chunkSize) {
+        for (uint rank = 1; rank <= nPlayers; rank += chunkSize) {
             startnew(
                 CoroutineFuncUserdata(_GetCotdMapTimesRange),
                 CotdTimesReqData(mapUid, cId, rank, chunkSize)
@@ -1004,6 +1014,44 @@ class MapDb : JsonDb {
             sleep(100);
         }
     }
+
+    /* 2021-09-08 returns null for api.GetPlayerRank and api.GetCotdTimes
+       This was written to try and get around the first null response.
+       */
+    // private uint getNPlayersFallback(int cId, const string &in mapUid) {
+    //     auto times = api.GetCotdTimes(cId, mapUid, 1, 0);
+    //     if (times.Length == 0) { return 0; }
+    //     // todo: update if COTDs go over 10k
+    //     int guess, upper = 10000, lower = 1;
+    //     while (true) {
+    //         guess = lower + (upper - lower) / 2;
+    //         if (guess == lower) {
+    //             warn("guess == lower -- should not happen??");
+    //             guess = lower + 1;
+    //         }
+    //         times = api.GetCotdTimes(cId, mapUid, 1, guess - 1);
+    //         if (times.Length == 0) {
+    //             // so guess is last empty or there are fewer
+    //             if (guess == lower + 1) {
+    //                 // then there are `lower` many players
+    //                 return uint(lower);
+    //             }
+    //             upper = guess - 1;
+    //         } else {
+    //             // there are at least `guess` many players
+    //             lower = guess;
+    //         }
+    //         if (lower == upper) {
+    //             if (upper == 10000) { /* don't do this more than once */
+    //                 upper *= 2;
+    //             } else {
+    //                 throw("binary search failed -- lower == upper. should never happen");
+    //             }
+    //         }
+    //     }
+    //     throw("should return before here");
+    //     return 0;
+    // }
 
     void _GetCotdMapTimesRange(ref@ _args) {
         auto args = cast<CotdTimesReqData@>(_args);

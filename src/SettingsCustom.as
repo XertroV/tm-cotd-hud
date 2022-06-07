@@ -265,11 +265,18 @@ WindowState@ _DebugNodWindow = WindowState("View Nod: ----", false);
 
 // #endif
 
-
+const string mkRainbowName(const string &in name) {
+    return rainbowLoopColorCycle(name, true);
+}
 
 [SettingsTab name="About"]
 void RenderSettingsAbout() {
     TextHeading("About COTD HUD + Explorer");
+    UI::Text("By " + mkRainbowName("XertroV"));
+    UI::Text("Inspired by COTD Stats by " + mkRainbowName("chipsTM"));
+    UI::Text("Thanks to " + mkRainbowName("Miss") + "\\$z for OpenPlanet \\$f39" + Icons::Heartbeat);
     VPad();
-
+    UI::Text(c_orange_600 + "todo");
+    VPad();
+    ButtonLink(Icons::Github + "\\$z GitHub Repo", "https://github.com/XertroV/tm-cotd-hud");
 }

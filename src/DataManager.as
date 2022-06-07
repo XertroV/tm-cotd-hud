@@ -258,7 +258,7 @@ namespace DataManager {
         return ret;
     }
 
-    int GetChallengeEndDate() {
+    uint GetChallengeEndDate() {
         // todo: update in a few years
         return IsJsonNull(cotdLatest_Status) ? 1999999999 : cotdLatest_Status["challenge"]['endDate'];
     }

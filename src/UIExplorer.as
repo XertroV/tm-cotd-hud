@@ -1138,7 +1138,12 @@ namespace CotdExplorer {
         float nPlayers = jb.j['nPlayers'];
         if (nPlayers == 0) {
             UI::TableNextColumn();
+            UI::Dummy(vec2(300, 1));
             UI::TextWrapped("\\$fa4" + "Warning: nPlayers == 0");
+            if (jb.j.HasKey('error')) {
+                string k = string(jb.j['error']);
+                TextWithCooldown("Error message: " + k, k, k, "\\$f41");
+            }
             return false;
         }
         int chunksDone = jb.j['ranges'].Length;
@@ -1195,7 +1200,7 @@ namespace CotdExplorer {
 
     void TextWithCooldown(const string &in label, const string &in toCopy, const string &in key, const string &in defaultColor = "\\$fff", const string &in tooltipText = "Click to copy") {
         string hl = CooldownHLColor(key, defaultColor, true);
-        UI::Text(hl + label);
+        UI::TextWrapped(hl + label);
         if (UI::IsItemClicked()) {
             trace("Copying to clipboard: " + toCopy);
             IO::SetClipboard(toCopy);

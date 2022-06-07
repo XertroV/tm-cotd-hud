@@ -49,13 +49,13 @@ void RenderInterface() {
 }
 
 void RenderMenu() {
-    CotdHud::RenderMenu();
     CotdExplorer::RenderMenu();
+    CotdHud::RenderMenu();
 }
 
 void RenderMainMenu() {
-    CotdHud::RenderMainMenu();
     CotdExplorer::RenderMainMenu();
+    CotdHud::RenderMainMenu();
 }
 
 // void RenderSettings() {}
