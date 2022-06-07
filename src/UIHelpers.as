@@ -46,7 +46,7 @@ void PaddedSep() {
 
 void TextBigStrong(const string &in t) {
     UI::PushFont(subheadingBolFont);
-    UI::Text(t);
+    UI::TextWrapped(t);
     UI::PopFont();
 }
 

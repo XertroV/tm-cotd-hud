@@ -528,7 +528,7 @@ namespace CotdExplorer {
         if (explYear.val == 2020) {
             VPad();
             VPad();
-            TextBigStrong("\\$f81" + "Notice: COTD stats are not available prior to 2020-11-02. (A new API was introduced at that point, which is what this plugin uses.)");
+            TextBigStrong("\\$f81" + "Notice: COTD stats are not available prior to 2020-11-02. (A new API/system was introduced at that point. This plugin uses that new API.)");
         }
     }
 

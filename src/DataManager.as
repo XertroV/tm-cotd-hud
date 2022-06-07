@@ -191,7 +191,7 @@ namespace DataManager {
     void UpdateDivs() {
         divs_lastUpdated = Time::get_Now();
         // if the div is in the past, load from disk
-        if (_ViewPriorChallenge() || divs_lastUpdated > int(GetChallenge()['endDate'])) {
+        if (_ViewPriorChallenge() || divs_lastUpdated > uint(GetChallenge()['endDate'])) {
             // load from disk
             while (PersistentData::mapDb is null) yield();
             while (cotd_TimesForHistogram[0] == 0) { sleep(100); }
