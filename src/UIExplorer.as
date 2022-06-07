@@ -689,8 +689,7 @@ namespace CotdExplorer {
         if (IsSpecialPlayerId(authorId)) authorName = rainbowLoopColorCycle(authorName, true);
         string mapName = map['Name'];
         mapName = EscapeRawToOpenPlanet(MakeColorsOkayDarkMode(mapName));
-        mapName += " \\$z(TOTD for " + totdDate + ")";
-        TextHeading(mapName);
+        TextHeading(mapName + " \\$z(TOTD for " + totdDate + ")");
         if (UI::BeginTable(UI_EXPLORER + '-mapInfo', 5, TableFlagsStretch())) {
             UI::TableSetupColumn("left", UI::TableColumnFlags::WidthStretch);
             UI::TableSetupColumn("mapinfo", UI::TableColumnFlags::WidthFixed);
@@ -702,6 +701,7 @@ namespace CotdExplorer {
 
             UI::TableNextColumn(); /* map info */
             // UI::Text(EscapeRawToOpenPlanet("Mapper: " + authorName));
+            UI::Text("Name: " + mapName);
             TextWithCooldown("Mapper: " + authorName, authorNameAndId, authorId, "\\$fff", "Click to copy author's Name and ID");
             UI::Text("Author Time: " + authorScore);
             DrawMapRecordsOrLoading(mapUid);
