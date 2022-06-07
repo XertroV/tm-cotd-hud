@@ -973,9 +973,11 @@ class MapDb : JsonDb {
 
     void _SyncLoopCotdMapTimes() {
         logcall("_SyncLoopCotdMapTimes", "Starting");
+        uint nReqs;
         while (true) {
             if (!timesQDb.IsEmpty()) {
-                _GetOneCotdMapTimes();
+                nReqs = _GetOneCotdMapTimes();
+                sleep(Math::Min(1000, nReqs * 1000) + nReqs * 100);  // sleep at least second because the requests are async and take about a second round time in Aus
                 yield();
             } else {
                 sleep(250);
@@ -983,11 +985,12 @@ class MapDb : JsonDb {
         }
     }
 
-    void _GetOneCotdMapTimes() {
+    uint _GetOneCotdMapTimes() {
+        uint nReqs = 0;
         auto toGet = timesQDb.GetQueueItemNow();
         string mapUid = toGet['uid'];
         int cId = Text::ParseInt(toGet['challengeId']);
-        if (PersistentData::MapTimesCached(mapUid, cId)) return;
+        if (PersistentData::MapTimesCached(mapUid, cId)) return 0;
         auto initData = Json::Object();
         uint chunkSize = 100;
         initData['chunkSize'] = chunkSize;
@@ -1010,9 +1013,11 @@ class MapDb : JsonDb {
                 CoroutineFuncUserdata(_GetCotdMapTimesRange),
                 CotdTimesReqData(mapUid, cId, rank, chunkSize)
             );
+            nReqs++;
             // sleep a bit to be nice to the api
             sleep(100);
         }
+        return nReqs;
     }
 
     /* 2021-09-08 returns null for api.GetPlayerRank and api.GetCotdTimes
