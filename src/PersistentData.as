@@ -974,10 +974,13 @@ class MapDb : JsonDb {
     void _SyncLoopCotdMapTimes() {
         logcall("_SyncLoopCotdMapTimes", "Starting");
         uint nReqs;
+        uint sleepFor;
         while (true) {
             if (!timesQDb.IsEmpty()) {
                 nReqs = _GetOneCotdMapTimes();
-                sleep(Math::Min(1000, nReqs * 1000) + nReqs * 100);  // sleep at least second because the requests are async and take about a second round time in Aus
+                sleepFor = 1000 * Math::Max(1, nReqs) + nReqs * 100;
+                logcall("_SyncLoopCotdMapTimes", "sleeping for ms: " + sleepFor);
+                sleep(sleepFor);  // sleep at least sleepFor ms because the requests are async and take about a second round time in Aus
                 yield();
             } else {
                 sleep(250);
@@ -990,7 +993,8 @@ class MapDb : JsonDb {
         auto toGet = timesQDb.GetQueueItemNow();
         string mapUid = toGet['uid'];
         int cId = Text::ParseInt(toGet['challengeId']);
-        if (PersistentData::MapTimesCached(mapUid, cId)) return 0;
+        bool force = toGet['force'];
+        if (!force && PersistentData::MapTimesCached(mapUid, cId)) return 0;
         auto initData = Json::Object();
         uint chunkSize = 100;
         initData['chunkSize'] = chunkSize;
@@ -1134,7 +1138,7 @@ class MapDb : JsonDb {
         }
     }
 
-    void QueueMapChallengeTimesGet(const string &in mapUid, int challengeId) {
+    void QueueMapChallengeTimesGet(const string &in mapUid, int challengeId, bool force = false) {
         auto challenge = histDb.GetChallenge(challengeId);
         if (challenge.GetType() == Json::Type::Object) {
             int cEnd = Text::ParseInt(challenge['endDate']);
@@ -1144,12 +1148,16 @@ class MapDb : JsonDb {
                 return;
             }
         }
-        if (!PersistentData::MapTimesCached(mapUid, challengeId)) {
+        if (force || !PersistentData::MapTimesCached(mapUid, challengeId)) {
             auto obj = Json::Object();
             obj['id'] = mapUid + "|" + challengeId;
             obj['uid'] = mapUid;
             obj['challengeId'] = '' + challengeId;
+            obj['force'] = force;
             timesQDb.PutQueueEntry(obj);
+            logcall("QueueMapChallengeTimesGet", "queued " + challengeId);
+        } else {
+            trace("QueueMapChallengeTimesGet skipping cached challenge " + challengeId);
         }
     }
 

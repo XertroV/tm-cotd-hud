@@ -618,8 +618,13 @@ namespace CotdExplorer {
     bool HaveAllMapDataForYM(const string &in year, const string &in month) {
         auto mo = CotdTreeYM(year, month);
         auto keys = mo.GetKeys();
+        uint lastBreak = Time::Now;
         for (uint i = 0; i < keys.Length; i++) {
             if (!HaveAllMapDataForYMD(year, month, keys[i])) return false;
+            if (Time::Now - lastBreak > 10) {
+                yield();
+                lastBreak = Time::Now;
+            }
         }
         return true;
     }
@@ -1133,6 +1138,7 @@ namespace CotdExplorer {
         return dlDone;
     }
 
+    uint pressedForceDownload = 0;
     bool _DrawCotdTimesDownloadStatus(const string &in mapUid, int cId) {
         auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
         float nPlayers = jb.j['nPlayers'];
@@ -1143,6 +1149,11 @@ namespace CotdExplorer {
             if (jb.j.HasKey('error')) {
                 string k = string(jb.j['error']);
                 TextWithCooldown("Error message: " + k, k, k, "\\$f41");
+            } else {
+                if (MDisabledButton(Time::Now < pressedForceDownload + 2000, "Force Retry Download")) {
+                    pressedForceDownload = Time::Now;
+                    mapDb.QueueMapChallengeTimesGet(mapUid, cId, true);
+                }
             }
             return false;
         }

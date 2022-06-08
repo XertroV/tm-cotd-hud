@@ -7,6 +7,7 @@ I *think* the plugin should work if you just copy the whole repo folder into Ope
 - [x] COTD Stats parity
 - [x] Histogram for live COTD
 - [x] BetterChat integration for COTD stats (`/{tell-}cotd`)
+- [ ] First-install wizard (configure basic settings and optional stuff)
 - [ ] COTD Historical Explorer
     - [x] Sync system/workflow for downloading data from APIs
     - [x] Sync TOTD historical index data | date -> mapUid
@@ -18,6 +19,7 @@ I *think* the plugin should work if you just copy the whole repo folder into Ope
     - [x] Draw Histogram (qualis)
     - [ ] Division browser
     - [ ] Search user in a COTD quali list
+    - [ ] Other quali list filters
     - [ ] Search user all COTDs
     - [x] "Play this map" button
     - [ ] TMX link button
@@ -26,6 +28,8 @@ I *think* the plugin should work if you just copy the whole repo folder into Ope
     - [ ] In list: easy favorite-ing + easy click to play
     - [ ] show your own times / records (not totd but global) -- useful for playing all TOTDs
     - [ ] match results (KO rounds)
+    - [ ] animated histogram replays
+    - [ ] replay download settings
 - [ ] COTD Friends
   - [ ] Show who's playing this COTD and their times
   - [ ] BChat integration (`/track-cotd @XertroV`) (or `/add-cotd-friend`)
@@ -33,10 +37,12 @@ I *think* the plugin should work if you just copy the whole repo folder into Ope
   - [ ] Browse or view players in COTD + one-click add-as-friend
 - [x] Cache Player ID data (like name)
 - [x] Optimization: check current COTD data and don't re-request times unnecessarily -- should be cached once the COTD qualis are over.
-- [ ] Optimization -- like above but for division cutoffs
+- [x] Optimization -- like above but for division cutoffs
 - [x] Migrate color gradient tool to standalone window via COTD explorer
 - [x] BetterChat integration for gradients `/rgb 28f f28 hey here's my msg` would apply a gradient from `$28f` to `$f28` over `hey here's my msg`.
 - [ ] color alias names for above `/rgb` command. (some done)
 - [x] Debug page: nod viewer quick access (but does't work for values??)
 - [ ] About Page
 - [ ] fix LAB color gradients to take shortest path to avoid going the 'long way round'
+- [ ] bug clear divisions on new cotd
+- [ ] restart on new COTD (halts and doesnt' update)
