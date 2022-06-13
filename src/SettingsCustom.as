@@ -292,95 +292,90 @@ void RenderSettingsDebug() {
         _DebugNodWindow.Show();
     }
 
-    if (UI::Button("Load Replay (TEST)")) {
-        startnew(TestLoadReplay);
-    }
+    // if (UI::Button("Load Replay (TEST)")) {
+    //     startnew(TestLoadReplay);
+    // }
 
-    if (UI::Button("Test save replay")) {
-        startnew(TestSaveReplay);
-    }
-
-
-    if (UI::Button("Replay_RefreshFromDisk")) {
-        startnew(TestSaveReplay);
-    }
+    // if (UI::Button("Test save replay")) {
+    //     startnew(TestSaveReplay);
+    // }
 
     VPad();
 }
 
-void TestSaveReplay() {
-    auto network = GetTmApp().Network;
-    auto pg = network.PlaygroundClientScriptAPI;
-    pg.SaveReplay('test-' + Time::Stamp);
-    auto pg2 = network.ClientManiaAppPlayground;
-    auto b = MwFastBuffer<wstring>();
-    pg2.SendCustomEvent(wstring("playmap-endracemenu-save-replay"), b);
-    pg2.SendCustomEvent(wstring("playmap-endracemenu-save-replay"), b);
-}
+// void TestSaveReplay() {
+//     auto network = GetTmApp().Network;
+//     auto pg = network.PlaygroundClientScriptAPI;
+//     pg.SaveReplay('test-' + Time::Stamp);
+//     auto pg2 = network.ClientManiaAppPlayground;
+//     auto b = MwFastBuffer<wstring>();
+//     pg2.SendCustomEvent(wstring("playmap-endracemenu-save-replay"), b);
+//     pg2.SendCustomEvent(wstring("playmap-endracemenu-save-replay"), b);
+// }
 
-void TestRefreshReplays() {
-    CSmArenaRulesMode@ pgs = cast<CSmArenaRulesMode@>(GetTmApp().PlaygroundScript);
-    auto dfm = pgs.DataFileMgr;
-    dfm.Replay_RefreshFromDisk();
-}
+// void TestRefreshReplays() {
+//     CSmArenaRulesMode@ pgs = cast<CSmArenaRulesMode@>(GetTmApp().PlaygroundScript);
+//     auto dfm = pgs.DataFileMgr;
+//     dfm.Replay_RefreshFromDisk();
+// }
 
-string[] _TestLoadReplays = {
-    // odarath
-    "test-1654825414",
-    "test-1654825344",
-    "test-1654824065",
-    "test-1654823979",
-    "test-1654823870",
-    "test-1654823287",
-    "My Replays/$s$06fOdarath_XertroV_10-06-2022_12-12-28(00'47''268)",
-    // sketch 01
-    "test-1654822510",
-    "test-1654822504",
-    "test-1654822480",
-    "test-1654822472",
-    "test-1654822418",
-    "test-1654822415"
-};
+// string[] _TestLoadReplays = {
+//     // odarath
+//     "test-1654825414",
+//     "test-1654825344",
+//     "test-1654824065",
+//     "test-1654823979",
+//     "test-1654823870",
+//     "test-1654823287",
+//     "My Replays/$s$06fOdarath_XertroV_10-06-2022_12-12-28(00'47''268)",
+//     // sketch 01
+//     "test-1654822510",
+//     "test-1654822504",
+//     "test-1654822480",
+//     "test-1654822472",
+//     "test-1654822418",
+//     "test-1654822415"
+// };
 
-string[] _TestLoadReplaysViaMenu = {
-    "My Replays/$s$06fOdarath_XertroV_11_47_49",
-    "My Replays/$s$06fOdarath_XertroV_11_41_52",
-    "My Replays/$s$06fOdarath_XertroV_11_41_51",
-    "My Replays/$s$06fOdarath_XertroV_11_21_01",
-    "My Replays/$s$06fOdarath_XertroV_11_21_00",
-    "My Replays/$s$06fOdarath_XertroV_11_19_32",
-    "My Replays/$s$06fOdarath_XertroV_11_17_41",
-    "My Replays/$s$06fOdarath_XertroV_11_07_59",
-    // "Autosaves/XertroV_$s$06fOdarath_PersonalBest_TimeAttack",
-    "My Replays/$s$06fOdarath_XertroV_10-06-2022_12-12-28(00'47''268)"
-};
+// string[] _TestLoadReplaysViaMenu = {
+//     "My Replays/$s$06fOdarath_XertroV_11_47_49",
+//     "My Replays/$s$06fOdarath_XertroV_11_41_52",
+//     "My Replays/$s$06fOdarath_XertroV_11_41_51",
+//     "My Replays/$s$06fOdarath_XertroV_11_21_01",
+//     "My Replays/$s$06fOdarath_XertroV_11_21_00",
+//     "My Replays/$s$06fOdarath_XertroV_11_19_32",
+//     "My Replays/$s$06fOdarath_XertroV_11_17_41",
+//     "My Replays/$s$06fOdarath_XertroV_11_07_59",
+//     // "Autosaves/XertroV_$s$06fOdarath_PersonalBest_TimeAttack",
+//     "My Replays/$s$06fOdarath_XertroV_10-06-2022_12-12-28(00'47''268)"
+// };
 
-void TestLoadReplay() {
-    print("TestLoadReplay");
-    CSmArenaRulesMode@ pgs = cast<CSmArenaRulesMode@>(GetTmApp().PlaygroundScript);
-    auto dfm = pgs.DataFileMgr;
-    // auto ghostMgr = pgs.GhostMgr;
-    string replayName;
-    for (uint i = 0; i <= 7; i++) {
-        replayName = _TestLoadReplays[i];
-        // replayName = _TestLoadReplaysViaMenu[i];
-        auto res = dfm.Replay_Load(replayName);
-        // auto res = dfm.Replay_Load("Autosaves/XertroV_$o$nSTRETCH $FFcft dom_PersonalBest_TimeAttack");
-        while (res.IsProcessing) yield();
-        if (res.HasSucceeded) {
-            auto ghosts = res.Ghosts;
-            print("Loaded " + replayName + ".Replay with " + ghosts.Length + " ghosts.");
-            for (uint i = 0; i < ghosts.Length; i++) {
-                auto ghost = ghosts[i];
-                if (ghost.Result.Time > 0xefffffff) continue;
-                auto c = pgs.Ghost_Add(ghost, true);
-                print("added ghost instance: " + Text::Format("%08x", c.Value) + ", " + c.GetName() + ", " + ghost.Nickname + ", " + ghost.Result.Time + ", visible:" + pgs.Ghost_IsVisible(c) + ", over:" + pgs.Ghost_IsReplayOver(c));
-            }
-        } else {
-            warn("replay load failure -- c:" + res.ErrorCode + ", t:" + res.ErrorType + ", d:" + res.ErrorDescription);
-        }
-    }
-}
+// void TestLoadReplay() {
+//     print("TestLoadReplay");
+//     CSmArenaRulesMode@ pgs = cast<CSmArenaRulesMode@>(GetTmApp().PlaygroundScript);
+//     auto dfm = pgs.DataFileMgr;
+//     // auto ghostMgr = pgs.GhostMgr;
+//     string replayName;
+//     for (uint i = 0; i <= 7; i++) {
+//         replayName = _TestLoadReplays[i];
+//         // replayName = _TestLoadReplaysViaMenu[i];
+//         auto res = dfm.Replay_Load(replayName);
+//         // auto res = dfm.Replay_Load("Autosaves/XertroV_$o$nSTRETCH $FFcft dom_PersonalBest_TimeAttack");
+//         while (res.IsProcessing) yield();
+//         if (res.HasSucceeded) {
+//             auto ghosts = res.Ghosts;
+//             print("Loaded " + replayName + ".Replay with " + ghosts.Length + " ghosts.");
+//             for (uint i = 0; i < ghosts.Length; i++) {
+//                 auto ghost = ghosts[i];
+//                 if (ghost.Result.Time > 0xefffffff) continue;
+//                 auto c = pgs.Ghost_Add(ghost, true);
+//                 print("added ghost instance: " + Text::Format("%08x", c.Value) + ", " + c.GetName() + ", " + ghost.Nickname + ", " + ghost.Result.Time + ", visible:" + pgs.Ghost_IsVisible(c) + ", over:" + pgs.Ghost_IsReplayOver(c));
+//             }
+//         } else {
+//             warn("replay load failure -- c:" + res.ErrorCode + ", t:" + res.ErrorType + ", d:" + res.ErrorDescription);
+//         }
+//     }
+// }
 
 /*
 network.ClientManiaAppPlayground.UILayers[20] (20 in single player, 16 on totd)
