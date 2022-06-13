@@ -340,13 +340,22 @@ namespace CotdExplorer {
                 UI::EndMenu();
             }
 
+            _RenderSyncMenu();
+
             UI::EndMenuBar();
         }
     }
 
     void DbMenuCotdIndexReset() {
         mapDb.cotdIndexDb.ResetAndReIndex();
-        EnsureMapDataForCurrDay();
+        if (explDay.isSome) {
+            EnsureMapDataForCurrDay();
+        }
+    }
+
+    void _RenderSyncMenu() {
+        /* menu for showing status of sync */
+        // todo("_RenderSyncMenu");
     }
 
     /* Explorer UI Idea: Buttons + Breadcrumbs */
@@ -678,7 +687,7 @@ namespace CotdExplorer {
         }
     }
 
-    void DrawTotdMapInfoTable(Json::Value map, const string &in totdDate) {
+    void DrawTotdMapInfoTable(Json::Value map, const string &in seasonId, const string &in totdDate) {
         if (IsJsonNull(map)) {
             TextBigStrong("\\$fa4" + "Map is not found, it might be in the download queue.");
             DrawMapDownloadProgress();
@@ -693,6 +702,7 @@ namespace CotdExplorer {
         // apply special after setting authorNameAndId
         if (IsSpecialPlayerId(authorId)) authorName = rainbowLoopColorCycle(authorName, true);
         string mapName = map['Name'];
+        string origMapName = mapName;
         mapName = EscapeRawToOpenPlanet(MakeColorsOkayDarkMode(mapName));
         TextHeading(mapName + " \\$z(TOTD for " + totdDate + ")");
         if (UI::BeginTable(UI_EXPLORER + '-mapInfo', 5, TableFlagsStretch())) {
@@ -722,6 +732,11 @@ namespace CotdExplorer {
             };
             UI::PopFont();
 
+            // TMX: /api/maps/get_map_info/uid/{id}
+            ButtonLink("TMX", "https://trackmania.exchange/mapsearch2?trackname=" + origMapName);
+            UI::SameLine();
+            ButtonLink("TM.IO", "https://trackmania.io/#/totd/leaderboard/" + seasonId + "/" + mapUid);
+
             UI::TableNextColumn(); /* mid */
             UI::Dummy(vec2(75, 0));
 
@@ -745,7 +760,7 @@ namespace CotdExplorer {
 
     void _RenderExplorerTotd() {
         auto mapInfo = CotdTreeYMD();
-        DrawTotdMapInfoTable(mapDb.GetMap(mapInfo.j['mapUid']), SelectedCotdDateStr());
+        DrawTotdMapInfoTable(mapDb.GetMap(mapInfo.j['mapUid']), mapInfo.j['seasonUid'], SelectedCotdDateStr());
         PaddedSep();
         /* either select cup or draw cup info */
         if (explCup.isNone) {
@@ -765,6 +780,7 @@ namespace CotdExplorer {
         auto cIds = challengeIdsForSelectedCotd;
         JsonBox@ totdInfo = CotdTreeYMD();
         string mapUid = totdInfo.j['mapUid'];
+        bool _disabled = false;
         if (cIds.Length == 0) {
             UI::Text("\\$f81 Warning: cannot find challengeIds for COTDs on " + SelectedCotdDateStr() + "; nChallenges=" + cIds.Length);
             DrawChallengeDownloadProgress();
@@ -781,13 +797,12 @@ namespace CotdExplorer {
                 for (int i = 0; i < Math::Min(cIds.Length, COTD_BTNS.Length); i++) {
                     auto c = histDb.GetChallenge(cIds[i]);
                     if (!IsJsonNull(c)) {
-                        if (Text::ParseInt(c['endDate']) < Time::Stamp) {
-                            btnLab = COTD_BTNS[i];
-                            int cotdNum = i+1; // btnLab[0] - 48;  /* '1' = 49; 49 - 48 = 1. (ascii char value - 48 = int value); */
-                            UI::TableNextColumn();
-                            if (UI::Button(btnLab, challengeBtnDims)) {
-                                OnSelectedCotdChallenge(cotdNum, mapUid, cIds[i]);
-                            }
+                        _disabled = Text::ParseInt(c['endDate']) >= Time::Stamp;
+                        btnLab = COTD_BTNS[i];
+                        int cotdNum = i+1; // btnLab[0] - 48;  /* '1' = 49; 49 - 48 = 1. (ascii char value - 48 = int value); */
+                        UI::TableNextColumn();
+                        if (MDisabledButton(_disabled, btnLab, challengeBtnDims)) {
+                            OnSelectedCotdChallenge(cotdNum, mapUid, cIds[i]);
                         }
                     } else {
                         UI::TableNextColumn();
@@ -825,12 +840,14 @@ namespace CotdExplorer {
             auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
             int nPlayers = jb.j['nPlayers'];
             int chunkSize = jb.j['chunkSize'];
-            string[] playerIds = array<string>(nPlayers);
+            string[] playerIds = array<string>(nPlayers + chunkSize);  // add some excap in size of array; empty values will be skipped
             string[] keys = jb.j['ranges'].GetKeys();
+            string pid;
             for (uint i = 0; i < keys.Length; i++) {
                 auto times = jb.j['ranges'][keys[i]];
                 for (uint j = 0; j < times.Length; j++) {
-                    playerIds[i * chunkSize + j] = times[j]['player'];
+                    pid = times[j]['player'];
+                    playerIds[i * chunkSize + j] = pid;
                 }
             }
             mapDb.QueuePlayerNamesGet(playerIds);

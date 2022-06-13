@@ -133,6 +133,10 @@ class CotdApi {
         return GetTmApp().ManiaPlanetScriptAPI.MasterServer_MSUsers[0].Id;
     }
 
+    CSmArenaRulesMode@ GetPlaygroundScript() {
+        return cast<CSmArenaRulesMode@>(GetTmApp().PlaygroundScript);
+    }
+
     MwFastBuffer<CNadeoServicesMap@> GetMapsInfo(const string[] &in uids) {
         auto coreApi = GetCoreApiThingForMaps();
         MwFastBuffer<wstring> mapIds = MwFastBuffer<wstring>();

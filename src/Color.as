@@ -7,6 +7,7 @@ const string c_dark_grey = "\\$333";
 const string c_orange_600 = "\\$f61";
 const string c_green_700 = "\\$3a3";
 const string c_fuchsia = "\\$f19";
+const string c_purple = "\\$a4f";
 
 const string c_timeOrange = "\\$d81";
 const string c_timeBlue = "\\$3ce";

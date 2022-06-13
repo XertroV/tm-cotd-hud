@@ -52,6 +52,7 @@ namespace DataManager {
         // print("Sz len: " + Json::Write(api.GetTotdByMonth(100)).Length);
 
         InitDivRows();
+        _ResetCotdStats();
 
         startnew(Initialize);
         startnew(LoopUpdateBetterChatFavs);
@@ -110,6 +111,7 @@ namespace DataManager {
         // When we enter a COTD server
         if (isCotd.ChangedToTrue()) {
             cotdLatest_MapId = gi.MapId();
+            _ResetCotdStats();
             startnew(_FullUpdateCotdStatsSeries);
         }
     }
@@ -133,6 +135,24 @@ namespace DataManager {
             // do these in series b/c we don't care how long it takes.
             startnew(_FullUpdateCotdStatsSeries);
             sleep(3600 * 1000 /* 1hr */);
+        }
+    }
+
+    void _ResetCotdStats() {
+        divs_lastUpdated = 0;
+        cotdLatest_Status = JSON_NULL;
+        cotdLatest_PlayerRank = JSON_NULL;
+        startnew(SetCurrentCotdData);
+        playerDivRow.timeMs = MAX_DIV_TIME;
+        playerDivRow.div = 0;
+        for (uint i = 0; i < divRows.Length; i++) {
+            if (divRows[i] is null) continue;
+            divRows[i].lastUpdateStart = Time::Now;
+            divRows[i].timeMs = MAX_DIV_TIME;
+            divRows[i].lastUpdateDone = Time::Now;
+        }
+        for (uint i = 0; i < cotd_TimesForHistogram.Length; i++) {
+            cotd_TimesForHistogram[i] = 0;
         }
     }
 
@@ -206,8 +226,9 @@ namespace DataManager {
                 row.lastUpdateStart = Time::Now;
                 row.timeMs = cutoffTime;
                 row.lastUpdateDone = Time::Now;
-                logcall("UpdateDivs", row.ToString());
+                // logcall("UpdateDivs", row.ToString());
             }
+            logcall("UpdateDivs -- div1: ", divRows[0].ToString());
             logcall("UpdateDivs", "loaded cutoffs from cotd_TimesForHistogram");
             RenewActiveDivs();
         } else {
@@ -294,7 +315,7 @@ namespace DataManager {
             yield();
         }
         /* if we updated in last 1500ms wait for obj to be not null and return */
-        if (!debounce.CanProceed('getCotdPlayerRank', 1500)) {
+        if (!IsJsonNull(cotdLatest_PlayerRank) && !debounce.CanProceed('getCotdPlayerRank', 1500)) {
             while (IsJsonNull(cotdLatest_PlayerRank)) { yield(); }
             return;
         }
@@ -577,7 +598,7 @@ namespace DataManager {
             int minR = pRank - 100;
             int maxR = pRank + 99;
             cotd_HistogramMinMaxRank = int2(minR, maxR);
-            trace("RegenHistogramData: min: " + minR + "max: " + maxR);
+            trace("RegenHistogramData: min: " + minR + " max: " + maxR);
             uint[] hd = array<uint>(200);
             for (uint i = 0; i < 200 && minR + i < 10000; i++) {
                 hd[i] = cotd_TimesForHistogram[minR-1 + i];

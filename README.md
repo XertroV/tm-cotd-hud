@@ -21,6 +21,7 @@ I *think* the plugin should work if you just copy the whole repo folder into Ope
     - [ ] Search user in a COTD quali list
     - [ ] Other quali list filters
     - [ ] Search user all COTDs
+    - [ ] (optional, default:off) sync all cotd quali times in bg
     - [x] "Play this map" button
     - [ ] TMX link button
     - [ ] TM.IO link button
@@ -43,6 +44,34 @@ I *think* the plugin should work if you just copy the whole repo folder into Ope
 - [ ] color alias names for above `/rgb` command. (some done)
 - [x] Debug page: nod viewer quick access (but does't work for values??)
 - [ ] About Page
-- [ ] fix LAB color gradients to take shortest path to avoid going the 'long way round'
-- [ ] bug clear divisions on new cotd
-- [ ] restart on new COTD (halts and doesnt' update)
+- [ ] fix: LAB color gradients to take shortest path to avoid going the 'long way round'
+- [ ] bug: clear divisions on new cotd
+- [ ] bug fix: restart on new COTD (halts and doesn't update)
+- [ ] add total players to betterchat commands
+
+
+### first release
+
+- [ ] ensure downloading COTD snapshot rankings is behind an option
+- [ ] wizard v0 -- mostly to warn about alpha grade software. if anything breaks at the start of COTD use Developer > Reload Plugin > COTD HUD
+
+### benchmarks
+
+#### openplanet v1.23.7
+
+- historical db
+    - worst persist: 196ms, 97ms (initial sync)
+    - load time: 70ms
+- player name db
+    - load time 156ms (32k rows)
+
+#### openplanet v1.23.8
+
+- historical db
+    - worst persist: 219ms, 117ms, 94ms (initial sync)
+    - worst persist: 280ms, 193ms, 144ms (initial sync; repeated) -- final persists only 112ms tho
+    - load time: 45ms, 40ms, 35ms sometimes
+    - typical persist: 106ms mb, 113, 170
+- player name db
+    - load time 164ms (32k rows)
+    - improved algorithm (avoids `.Split`): 75-80ms

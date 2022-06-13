@@ -6,6 +6,8 @@ void Main() {
         yield();
     }
 
+    // auto c = Challenge::FromRowString("");
+
     startnew(PersistentData::Main);
 
     startnew(DataManager::Main);

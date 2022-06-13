@@ -4,7 +4,7 @@ class JsonBox {
     Json::Value j;
     private bool expired = false;
 
-    JsonBox(Json::Value jsonVal) {
+    JsonBox(Json::Value &in jsonVal) {
         this.j = jsonVal;
     }
 
@@ -89,7 +89,10 @@ class JsonDb {
 
     void LoadFromDisk() {
         GetLock();
+        uint start = Time::Now;
+        // FromFile is the majority of the time spent in LoadFromDisk
         auto v = Json::FromFile(path);
+        // trace_benchmark('JsonDb.LoadFromDisk (Just Json::FromFile) ' + path, Time::Now - start);
         if (IsJsonNull(v)) {
             /* a default of sorts */
             @_data = JsonBox(Json::Object());
@@ -124,11 +127,14 @@ class JsonDb {
                 loadedTime = Text::ParseInt(v['time']);
             } catch {}
         }
+        uint end = Time::Now;
+        trace_benchmark('JsonDb.LoadFromDisk ' + path, end - start);
         Unlock();
     }
 
     void Persist() {
         GetLock();
+        uint start = Time::Now;
         Json::Value db = Json::Object();
         db['version'] = 1;
         db['time'] = "" + Time::Stamp;  /* as string to avoid losing precision */
@@ -139,10 +145,12 @@ class JsonDb {
         // IO::File file(path, IO::FileMode::Write);
         // file.Write(sz);
         Json::ToFile(path, db);
+        uint end = Time::Now;
         Unlock();
         if (!IO::FileExists(path)) {
             throw("Attempted to persist JsonDb and the file does not exist!!!!");
         }
+        trace_benchmark('JsonDb.Persist ' + path, end - start);
     }
 }
 

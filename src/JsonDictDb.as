@@ -6,6 +6,8 @@ class JsonDictDb {
     /* acts like a dictionary.
        stores entries in in-memory dictionary.
        backed by a csv file that is persisted.
+
+       WARNING: won't support lines over 128 charts atm due to initialpopulation
     */
 
     private dictionary@ d = dictionary();
@@ -22,17 +24,28 @@ class JsonDictDb {
 
     void _InitialPopulation() {
         if (IO::FileExists(csvPath)) {
+            uint start = Time::Now;
             IO::File file(csvPath, IO::FileMode::Read);
-            string[] line;
+            // string[] line;
+            string pid, pname;
             float lastBreak = Time::Now;
+            uint consumed = 0;
+            uint fileSize = file.Size();
             while (!file.EOF()) {
-                if(Time::Now - lastBreak < 4) {
-                    lastBreak = Time::Now;
-                    yield();
-                }
-                line = file.ReadLine().Split(",");
-                d[line[0]] = line[1];
+                // if(Time::Now - lastBreak < 4) {
+                //     lastBreak = Time::Now;
+                //     yield();
+                // }
+                // line = file.ReadLine().Split(","); -- this doubled the loading time...
+                auto b = file.Read(36);
+                pid = b.ReadString(36);
+                file.Read(1); // should be ,
+                pname = file.ReadLine();
+                d[pid] = pname;
+                // trace("player name: " + Get(pid));
             }
+            uint end = Time::Now;
+            trace_benchmark('DictDb._InitialPopulation ' + csvPath, end - start);
         }
     }
 

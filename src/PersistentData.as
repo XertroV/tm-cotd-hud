@@ -711,6 +711,7 @@ class CotdIndexDb : JsonDb {
         data.j['maxId'] = -1;
         data.j['ymdToCotdChallenges'] = Json::Object();
         logcall("CotdIndexDb.ResetAndReIndex", "Reset. Scanning now.");
+        Persist();
     }
 
     void SetHistDb(HistoryDb@ _db) {
@@ -748,6 +749,9 @@ class CotdIndexDb : JsonDb {
             if (name.SubStr(0, 14) == "Cup of the Day") {
                 string date = name.SubStr(15, 10); // 2022-05-30
                 string[] ymd = date.Split('-');
+                assert(ymd.Length == 3, "ymd has 3 elements");
+                assert(ymd[0].Length == 4, "ymd[0] is of length 4");
+                // print("ymd[0]:" + ymd[0]);
 
                 auto ymdObj = data.j['ymdToCotdChallenges'];
                 auto year = ymdObj[ymd[0]];

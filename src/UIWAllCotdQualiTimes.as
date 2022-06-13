@@ -35,7 +35,7 @@ namespace WAllTimes {
         playerId = DataManager::gi.PlayersId();
         nPlayers = times.Length;
         // nDivs = uint(Math::Ceil(float(nPlayers) / 64.));
-        nDivs = ((nPlayers - 1) >> 6) + 1;
+        nDivs = ((nPlayers - 1) >> 6) + 1; // faster and more elegant
         cache_Ranks.Resize(nPlayers + nDivs);
         cache_Times.Resize(nPlayers + nDivs);
         cache_Deltas.Resize(nPlayers + nDivs);
@@ -48,7 +48,12 @@ namespace WAllTimes {
         bool special;
         uint time, nDivsDone = 0, i, bestInDiv, thisDiv, playerScore = 0;
         playerFound = false;
+        uint lastBreak = 0;
         for (uint _i = 0; _i < nPlayers; _i++) {
+            if (Time::Now - lastBreak > 8) {
+                yield();
+                lastBreak = Time::Now;
+            }
             i = _i + nDivsDone;
             time = uint(times[_i]['score']);
             if (_i % 64 == 0) {
