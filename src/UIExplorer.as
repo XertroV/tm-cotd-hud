@@ -493,16 +493,35 @@ namespace CotdExplorer {
                 UI::TableNextColumn();
                 string yr = yrs[i];
                 if (UI::Button(yr, calendarMonthBtnDims)) {
-                    explYear.AsJust(Text::ParseInt(yr));
+                    OnSelectedYear(Text::ParseInt(yr));
                 }
                 if ((i + 1) % 3 == 0) {
-                    UI::TableNextColumn();
-                    UI::TableNextColumn(); /* new row */
+                    UI::TableNextRow();
+                    UI::TableNextColumn(); /* skip first col of new row */
                 }
             }
+
+            /* at end of years -- button to jump to today */
+            UI::TableNextColumn();
+            UI::Dummy(vec2(2, 20));
+            UI::TableNextRow();
+            UI::TableNextColumn();
+            UI::TableNextColumn();
+            UI::TableNextColumn();
+            if (UI::Button("Today's\nTrack", calendarMonthBtnDims)) {
+                auto ymd = histDb.GetMostRecentTotdDate();
+                OnSelectedYear(Text::ParseInt(ymd[0]));
+                OnSelectedCotdMonth(Text::ParseInt(ymd[1]));
+                OnSelectedCotdDay(Text::ParseInt(ymd[2]));
+            }
+
             UI::EndTable();
         }
 
+    }
+
+    void OnSelectedYear(int year) {
+        explYear.AsJust(year);
     }
 
     void _RenderExplorerCotdMonthSelection() {

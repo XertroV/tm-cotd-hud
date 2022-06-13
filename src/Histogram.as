@@ -23,7 +23,7 @@ namespace Histogram {
     const vec4 _WHITE = vec4(1, 1, 1, 1);
     const vec4 _BLACK = vec4(0, 0, 0, 1);
 
-    Resources::Font@ labelFont = Resources::GetFont("DroidSans.ttf", 20, -1, -1, true, true);;
+    nvg::Font labelFont = nvg::LoadFont("DroidSans.ttf");
 
     void Draw(
             vec2 uvPos, vec2 uvSize,
@@ -100,7 +100,9 @@ namespace Histogram {
             float height = size.y * float(data[b]) / float(maxCount);
             uint xScore = uint(b * bucketWidth + hData.minXVal);
             uint bucketCount = hData.ys[b];
-            DrawBar(pos.x + barWidth * b, pos.y + size.y - height, barWidth, height, xScore, bucketCount, getDiv(xScore), barColorF(xScore, bucketWidth / 2));
+            float yTop = pos.y + size.y - height;
+            vec2 yTopYSize = vec2(pos.y, size.y);
+            DrawBar(pos.x + barWidth * b, yTop, barWidth, height, xScore, bucketCount, getDiv(xScore), barColorF(xScore, bucketWidth / 2), yTopYSize);
         }
 
         /* draw X min/max labels */
@@ -112,9 +114,9 @@ namespace Histogram {
         _DebugPrintVariables(hData, barWidth, maxCount, bucketIxOfMax);
     }
 
-    void DrawBar(float x, float y, float w, float h, uint xScore, uint bucketCount, uint div, vec4 col) {
+    void DrawBar(float x, float y, float w, float h, uint xScore, uint bucketCount, uint div, vec4 col, vec2 yTopYSize) {
         // x = Math::Ceil(x);
-        bool mib = IsMouseInBox(x,y,w,h);
+        bool mib = IsMouseInBox(x,yTopYSize.x,w,yTopYSize.y);
         if (mib) {
             DrawHoverForBar(x + w/2, y + h, xScore, bucketCount, div);
         }
@@ -149,10 +151,13 @@ namespace Histogram {
     const float _TB_WIDTH = 500;
 
     void DrawLabelBelow(string &in l, vec2 pos, float dhMult = 1.0, vec4 bgColor = BG_COL) {
+        nvg::FontFace(labelFont);
+        nvg::FontSize(20);
+
         /* set up */
         auto dh = Draw::GetHeight() * 0.01 * dhMult;
-        auto lSize = Draw::MeasureString(l , labelFont, 20, _TB_WIDTH) * 1.3;
-        auto lPos = pos - vec2(1.05 * lSize.x / 2, lSize.y * 0.115 - dh);  /* 0.115 = (1-1/1.3)/2
+        auto lSize = nvg::TextBounds(l) * vec2(1.1, 1.3); // , labelFont, 20, _TB_WIDTH) * 1.3;
+        auto lPos = pos - vec2(lSize.x / 2, lSize.y * 0.04 - dh);  /* 0.115 = (1-1/1.3)/2
 
         /* bg rect */
         nvg::FillColor(bgColor);
@@ -163,8 +168,6 @@ namespace Histogram {
 
         /* label */
         nvg::FillColor(_WHITE);
-        nvg::FontFace(labelFont);
-        nvg::FontSize(20);
         nvg::TextAlign(nvg::Align::Center | nvg::Align::Middle);
         nvg::TextBox(pos.x - lSize.x / 2., pos.y + dh + lSize.y / 2., lSize.x, l);
 

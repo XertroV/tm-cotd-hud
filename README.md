@@ -75,3 +75,10 @@ I *think* the plugin should work if you just copy the whole repo folder into Ope
 - player name db
     - load time 164ms (32k rows)
     - improved algorithm (avoids `.Split`): 75-80ms
+
+## openplanet docs stuff
+
+- no description on nvg::TextBounds -- should probably say what it returns or something.
+  - and set nvg::FontFace and nvg::FontSize first.
+
+- nvg::LoadFont params

@@ -94,8 +94,12 @@ string MkPath(string fname) { return dataFolder + "/" + fname; };
 
     dictionary@ _textureCache = dictionary();
 
-    Resources::Texture@ _ReadFileTex(IO::File f) {
-        return Resources::GetTexture(f.Read(f.Size()));
+    Resources::Texture@ _ReadFileTex(const string &in filePath) {
+        logcall("_ReadFileTex", "Loading texture from disk: " + filePath);
+        IO::File f(filePath, IO::FileMode::Read);
+        auto ret = UI::LoadTexture(f.Read(f.Size()));
+        f.Close();
+        return ret;
     }
 
     Resources::Texture@ GetThumbTex(const string &in tnFile) {
@@ -104,13 +108,7 @@ string MkPath(string fname) { return dataFolder + "/" + fname; };
         if (_textureCache.Exists(fname)) {
             @t = cast<Resources::Texture@>(_textureCache[fname]);
         } else {
-            // string p = mainFolderName + "/" + PM + "/thumbnails/" + fname;
-            string p = ThumbnailPath(fname);
-            logcall("GetThumbTex", "Loading texture from disk: " + p);
-            IO::File file(p, IO::FileMode::Read);
-            @t = Resources::GetTexture(file.Read(file.Size()));
-            // this does not work:
-            // auto t = Resources::GetTexture(p);
+            @t = _ReadFileTex(ThumbnailPath(fname));
             @_textureCache[fname] = t;
         }
         if (t is null) {
@@ -317,6 +315,39 @@ class HistoryDb : JsonDb {
     //     d['__keys'] = array<int>();
     //     return d;
     // }
+
+
+    const array<string>@ GetMostRecentTotdDate() {
+        int monthIx = -1; // we ++ this at the start of the loop
+        // array<string> ymd = {};
+        string ymd = "";
+        while (ymd.Length == 0) {
+            monthIx++;
+            Json::Value thisMonth;
+            try {
+                thisMonth = data.j['totd']['monthList'][monthIx];
+            } catch {
+                warn("GetMostRecentTotdDate couldn't get totd month. " + getExceptionInfo());
+                return array<string>();
+            }
+            // get last day in this month with a mapUid
+            int lastMapIx = -1;
+            for (uint i = 0; i < thisMonth['days'].Length; i++) {
+                auto day = thisMonth['days'][i];
+                if (string(day["mapUid"]).Length > 10) {
+                    lastMapIx = int(i);
+                }
+                // don't break -- go through all days in the month from first to last
+            }
+            if (lastMapIx > 0) {
+                auto day = thisMonth['days'][lastMapIx];
+                ymd = Text::Format("%04d", int(thisMonth['year']))
+                    + Text::Format("-%02d", int(thisMonth['month']))
+                    + Text::Format("-%02d", int(day['monthDay']));
+            }
+        }
+        return ymd.Split("-");
+    }
 
     dictionary@ GetCotdYearMonthDayMapTree() {
         auto d = dictionary();

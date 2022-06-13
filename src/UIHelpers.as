@@ -1,9 +1,8 @@
-
-Resources::Font@ bigHeadingFont = Resources::GetFont("DroidSans.ttf", 26, -1, -1, true, true);;
-Resources::Font@ headingFont = Resources::GetFont("DroidSans.ttf", 20, -1, -1, true, true);;
-Resources::Font@ subheadingFont = Resources::GetFont("DroidSans.ttf", 18, -1, -1, true, true);;
-Resources::Font@ subheadingBolFont = Resources::GetFont("DroidSans-Bold.ttf", 18, -1, -1, true, true);;
-Resources::Font@ stdBold = Resources::GetFont("DroidSans-Bold.ttf", 16, -1, -1, true, true);;
+UI::Font@ bigHeadingFont = UI::LoadFont("DroidSans.ttf", 26, -1, -1, true, true);
+UI::Font@ headingFont = UI::LoadFont("DroidSans.ttf", 20, -1, -1, true, true);
+UI::Font@ subheadingFont = UI::LoadFont("DroidSans.ttf", 18, -1, -1, true, true);
+UI::Font@ subheadingBolFont = UI::LoadFont("DroidSans-Bold.ttf", 18, -1, -1, true, true);
+UI::Font@ stdBold = UI::LoadFont("DroidSans-Bold.ttf", 16, -1, -1, true, true);
 
 /* tooltips */
 
