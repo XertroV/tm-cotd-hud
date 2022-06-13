@@ -89,7 +89,10 @@ namespace BcCommands {
             }
 
             msg += "$fff > ";
-            msg += "$fad" + "Last div ($9e2" + DataManager::GetCotdTotalDivs() + "$fad): $cef" + DataManager::GetCotdLastDivPop() + "$fad players.";
+            msg += "$fad" + "Last div ($6f3" + DataManager::GetCotdTotalDivs() + "$fad): $cef" + DataManager::GetCotdLastDivPop() + "$fad ppl";
+
+            msg += "$fff > ";
+            msg += "$fad" + "N=" + c1.ManiaColor + DataManager::GetCotdTotalPlayers();
 
             // @c1 = Color(vec3(0.906, 0.906, 0.043));  // #e7e70b
             // @c2 = Color(vec3(0.082, 0.961, 0.208));  // #15f535

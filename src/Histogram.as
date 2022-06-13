@@ -102,7 +102,7 @@ namespace Histogram {
             uint bucketCount = hData.ys[b];
             float yTop = pos.y + size.y - height;
             vec2 yTopYSize = vec2(pos.y, size.y);
-            DrawBar(pos.x + barWidth * b, yTop, barWidth, height, xScore, bucketCount, getDiv(xScore), barColorF(xScore, bucketWidth / 2), yTopYSize);
+            DrawBar(pos.x + barWidth * b, yTop, barWidth, height, xScore, bucketCount, getDiv(xScore), barColorF(xScore, bucketWidth / 2), yTopYSize, bucketWidth);
         }
 
         /* draw X min/max labels */
@@ -114,11 +114,11 @@ namespace Histogram {
         _DebugPrintVariables(hData, barWidth, maxCount, bucketIxOfMax);
     }
 
-    void DrawBar(float x, float y, float w, float h, uint xScore, uint bucketCount, uint div, vec4 col, vec2 yTopYSize) {
+    void DrawBar(float x, float y, float w, float h, uint xScore, uint bucketCount, uint div, vec4 col, vec2 yTopYSize, float bucketWidth) {
         // x = Math::Ceil(x);
-        bool mib = IsMouseInBox(x,yTopYSize.x,w,yTopYSize.y);
+        bool mib = IsMouseInBox(x, yTopYSize.x, w, yTopYSize.y);
         if (mib) {
-            DrawHoverForBar(x + w/2, y + h, xScore, bucketCount, div);
+            DrawHoverForBar(x + w/2, y + h, xScore, bucketCount, div, bucketWidth);
         }
         vec4 _col = mib ? vec4(.9, .8, .1, 1.0) : col;
         nvg::BeginPath();
@@ -138,8 +138,8 @@ namespace Histogram {
         nvg::ClosePath();
     }
 
-    void DrawHoverForBar(float x, float y, uint score, uint bucketCount, uint div) {
-        DrawLabelBelow(Time::Format(score) + " / " + bucketCount + " Players / Div " + div, vec2(x, y), 3.0, vec4(.1, .1, .1, .9));
+    void DrawHoverForBar(float x, float y, uint score, uint bucketCount, uint div, float bucketWidth) {
+        DrawLabelBelow(Time::Format(score) + " ± " + Text::Format("%.2f", bucketWidth/2000.) + " / " + bucketCount + " Players / Div " + div, vec2(x, y), 3.0, vec4(.1, .1, .1, .9));
     }
 
     bool IsMouseInBox(float x, float y, float w, float h) {
@@ -156,7 +156,7 @@ namespace Histogram {
 
         /* set up */
         auto dh = Draw::GetHeight() * 0.01 * dhMult;
-        auto lSize = nvg::TextBounds(l) * vec2(1.1, 1.3); // , labelFont, 20, _TB_WIDTH) * 1.3;
+        auto lSize = nvg::TextBounds(l) * vec2(1.0, 1.3) + vec2(5.0, 0.0); // , labelFont, 20, _TB_WIDTH) * 1.3;
         auto lPos = pos - vec2(lSize.x / 2, lSize.y * 0.04 - dh);  /* 0.115 = (1-1/1.3)/2
 
         /* bg rect */
