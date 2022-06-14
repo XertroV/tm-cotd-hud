@@ -113,6 +113,8 @@ namespace DataManager {
             cotdLatest_MapId = gi.MapId();
             _ResetCotdStats();
             startnew(_FullUpdateCotdStatsSeries);
+            // todo: try starting a 30s coro or something that will retrigger stuff
+            // todo alt: is the 1hr sleep thing an issue?
         }
     }
 

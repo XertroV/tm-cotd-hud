@@ -88,10 +88,10 @@ namespace BcCommands {
                 msg += "$fad" + "D" + (playerDiv + 1) + ": " + "$cef" + DataManager::divRows[playerDiv].FmtTime();
             }
 
-            msg += "$fff > ";
+            msg += "$fff | ";
             msg += "$fad" + "Last div ($6f3" + DataManager::GetCotdTotalDivs() + "$fad): $cef" + DataManager::GetCotdLastDivPop() + "$fad ppl";
 
-            msg += "$fff > ";
+            msg += "$fff | ";
             msg += "$fad" + "N=" + c1.ManiaColor + DataManager::GetCotdTotalPlayers();
 
             // @c1 = Color(vec3(0.906, 0.906, 0.043));  // #e7e70b

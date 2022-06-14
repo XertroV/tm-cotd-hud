@@ -413,6 +413,10 @@ class HistoryDb : JsonDb {
         // }
     }
 
+    void ResetChallengesCache() {
+        @cachedChallenges = dictionary();
+    }
+
     // string[]@ ListTotdYears() {
     //     auto yrs = {};
     //     auto totdML = data.j['totd']['monthList'];
@@ -739,6 +743,7 @@ class CotdIndexDb : JsonDb {
     }
 
     void ResetAndReIndex() {
+        histDb.ResetChallengesCache();  // hopefully this fixes issue with not detecting challenges right for new COTDs
         data.j['maxId'] = -1;
         data.j['ymdToCotdChallenges'] = Json::Object();
         logcall("CotdIndexDb.ResetAndReIndex", "Reset. Scanning now.");
@@ -767,7 +772,7 @@ class CotdIndexDb : JsonDb {
     }
 
     private void SetMaxId(int maxId) {
-        data.j['maxId'] = maxId;
+        data.j['maxId'] = Math::Max(maxId, int(data.j['maxId']));
     }
 
     void AddChallenge(int id, Json::Value c) {
@@ -796,6 +801,8 @@ class CotdIndexDb : JsonDb {
                 month[ymd[2]] = day;
                 year[ymd[1]] = month;
                 data.j['ymdToCotdChallenges'][ymd[0]] = year;
+            } else {
+                trace("[AddChallenge] skipping challenge with name: " + name);
             }
         }
         SetMaxId(id);
