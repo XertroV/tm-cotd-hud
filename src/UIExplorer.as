@@ -58,9 +58,7 @@ namespace CotdExplorer {
         calendarDayBtnDims = vec2(1920, 1080) * vec2(0.04, 0.05);
         calendarMonthBtnDims = vec2(1920, 1080) * vec2(0.0472, 0.05);
         challengeBtnDims = vec2(1920, 1080) * vec2(.056, .05);
-#if DEV
-        windowActive.v = true;
-#endif
+        windowActive.v = IfDev();
     }
 
     void OnMouseMove(int x, int y) {
@@ -110,7 +108,7 @@ namespace CotdExplorer {
     void _CheckOtherRenderReasons() {}
 
     void RenderMenu() {
-        if (UI::MenuItem(c_menuIconColor + icon + "\\$z COTD Explorer", "", IsVisible())) {
+        if (UI::MenuItem(c_menuIconColor + icon + "\\$z " + ExplorerWindowTitle, "", IsVisible())) {
             ToggleWindow();
         }
     }
