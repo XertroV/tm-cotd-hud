@@ -7,7 +7,7 @@ namespace WAllTimes {
         MainWindow();
     }
 
-    string filterName = '';
+    string filterName = 'doesnt work yet';
     string mapUid;  /* do not set directly */
     int cId;  /* do not set directly */
     Json::Value[] times;

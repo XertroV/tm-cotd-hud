@@ -11,7 +11,7 @@ source ./vendor/_colors.bash
 _build_mode=${1:-dev}
 
 case $_build_mode in
-  dev|release)
+  dev|release|prerelease|unittest)
     ;;
   *)
     _colortext16 red "⚠ Error: build mode of '$_build_mode' is not a valid option.\n\tOptions: dev, release.";
@@ -33,6 +33,12 @@ for pluginSrc in ${pluginSources[@]}; do
       # we will replicate this in the info.toml file later
       export PLUGIN_PRETTY_NAME="${PLUGIN_PRETTY_NAME:-} (Dev)"
       ;;
+    prerelease)
+      export PLUGIN_PRETTY_NAME="${PLUGIN_PRETTY_NAME:-} (Prerelease)"
+      ;;
+    unittest)
+      export PLUGIN_PRETTY_NAME="${PLUGIN_PRETTY_NAME:-} (UnitTest)"
+      ;;
     *)
       ;;
   esac
@@ -52,7 +58,7 @@ for pluginSrc in ${pluginSources[@]}; do
   PLUGIN_DEV_LOC=$PLUGINS_DIR/$PLUGIN_NAME
   PLUGIN_RELEASE_LOC=$PLUGINS_DIR/$RELEASE_NAME
 
-  7z a ./$BUILD_NAME ./$pluginSrc/* ./LICENSE ./README.md
+  7z a ./$BUILD_NAME ./$pluginSrc/* ./LICENSE ./README.md ./info.toml
 
   cp -v $BUILD_NAME $RELEASE_NAME
 
@@ -60,29 +66,42 @@ for pluginSrc in ${pluginSources[@]}; do
 
   # this case should set both _copy_exit_code and _build_dest
 
+  # common for non-release builds
   case $_build_mode in
-    dev)
+    dev|prerelease|unittest)
       # in case it doesn't exist
       _build_dest=$PLUGIN_DEV_LOC
       mkdir -p $_build_dest/
       rm -vr $_build_dest/*
       cp -LR -v ./$pluginSrc/* $_build_dest/
-      cp -v ./info.toml $_build_dest/
-      # cp -a -v ./utils $_build_dest/
+      cp -LR -v ./info.toml $_build_dest/
       _copy_exit_code="$?"
+      ;;
+  esac
+
+  case $_build_mode in
+    dev)
       sed -i 's/^\(name[ \t="]*\)\(.*\)"/\1\2 (Dev)"/' $_build_dest/info.toml
-      export PLUGIN_PRETTY_NAME="${PLUGIN_PRETTY_NAME} \(Dev\)"
-      # diff $pluginSrc/info.toml $_build_dest/info.toml
-      # cat $_build_dest/info.toml
+      sed -i 's/^#__DEFINES__/defines = ["DEV"]/' $_build_dest/info.toml
+      ;;
+    prerelease)
+      sed -i 's/^\(name[ \t="]*\)\(.*\)"/\1\2 (Prerelease)"/' $_build_dest/info.toml
+      sed -i 's/^#__DEFINES__/defines = ["RELEASE"]/' $_build_dest/info.toml
+      ;;
+    unittest)
+      sed -i 's/^\(name[ \t="]*\)\(.*\)"/\1\2 (UnitTest)"/' $_build_dest/info.toml
+      sed -i 's/^#__DEFINES__/defines = ["UNIT_TEST"]/' $_build_dest/info.toml
       ;;
     release)
       _build_dest=$PLUGIN_RELEASE_LOC
       cp -v $RELEASE_NAME $_build_dest
+      # todo: how do we do the release __defines thing?
       _copy_exit_code="$?"
       ;;
     *)
       _colortext16 red "\n⚠ Error: unknown build mode: $_build_mode"
   esac
+
 
   echo ""
   if [[ "$_copy_exit_code" != "0" ]]; then

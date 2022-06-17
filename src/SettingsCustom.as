@@ -296,22 +296,28 @@ void RenderSettingsDebug() {
     //     startnew(TestLoadReplay);
     // }
 
-    // if (UI::Button("Test save replay")) {
-    //     startnew(TestSaveReplay);
-    // }
+    if (UI::Button("Test save replay")) {
+        startnew(TestSaveReplay);
+    }
 
     VPad();
 }
 
-// void TestSaveReplay() {
-//     auto network = GetTmApp().Network;
-//     auto pg = network.PlaygroundClientScriptAPI;
-//     pg.SaveReplay('test-' + Time::Stamp);
-//     auto pg2 = network.ClientManiaAppPlayground;
-//     auto b = MwFastBuffer<wstring>();
-//     pg2.SendCustomEvent(wstring("playmap-endracemenu-save-replay"), b);
-//     pg2.SendCustomEvent(wstring("playmap-endracemenu-save-replay"), b);
-// }
+void TestSaveReplay() {
+    // auto network = GetTmApp().Network;
+    // auto pg = network.PlaygroundClientScriptAPI;
+    // pg.SaveReplay('test-' + Time::Stamp);
+    // auto pg2 = network.ClientManiaAppPlayground;
+    // auto b = MwFastBuffer<wstring>();
+    // pg2.SendCustomEvent(wstring("playmap-endracemenu-save-replay"), b);
+    // pg2.SendCustomEvent(wstring("playmap-endracemenu-save-replay"), b);
+    auto scoreMgr = gi.GetScoreMgr();
+    MwFastBuffer<CGamePlayer@> currPlayers = gi.GetCurrentPlayground().Players;
+    auto g = scoreMgr.Playground_GetPlayerGhost(gi.GetControlledPlayer().ScriptAPI);
+    if (g is null) {
+        debug("GetPlayerGhost returned null. :(");
+    }
+}
 
 // void TestRefreshReplays() {
 //     CSmArenaRulesMode@ pgs = cast<CSmArenaRulesMode@>(GetTmApp().PlaygroundScript);

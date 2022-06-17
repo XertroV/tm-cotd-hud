@@ -1,4 +1,3 @@
-#if DEPENDENCY_BETTERCHAT
 
 namespace BcCommands {
     /* by COTD HUD on OpenPlanet */
@@ -6,6 +5,7 @@ namespace BcCommands {
     /* by COTD HUD */
     const string byLineB = "$c7fb$b8fy$a8f $89fC$69fO$3afT$3afD$5bd $5caH$4d8U$0f5D";
 
+#if DEPENDENCY_BETTERCHAT
     void _SendMsg(const string &in text) {
         BetterChat::SendChatMessage(text);
     }
@@ -61,7 +61,7 @@ namespace BcCommands {
                 playerDiv = 2;
             }
 
-            msg += "$fff | $f21" + "CUTOFFS:";
+            msg += "$fff | $f42" + "CUTOFFS:";
 
             if (playerDiv > 2) {
                 msg += "$fff > ";
@@ -209,6 +209,5 @@ namespace BcCommands {
         BetterChat::RegisterCommand("list-colors", @ListColorsCommand());
         print(c_green + "[RegisterBcCommands] Done.");
     }
-}
-
 #endif
+}

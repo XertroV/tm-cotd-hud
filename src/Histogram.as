@@ -14,7 +14,7 @@ namespace Histogram {
     }
 
     uint nopDiv(uint xScore) {
-        return 1;
+        return 0;
     }
 
     /* Main drawing */
@@ -139,7 +139,7 @@ namespace Histogram {
     }
 
     void DrawHoverForBar(float x, float y, uint score, uint bucketCount, uint div, float bucketWidth) {
-        DrawLabelBelow(Time::Format(score) + " ± " + Text::Format("%.2f", bucketWidth/2000.) + " / " + bucketCount + " Players / Div " + div, vec2(x, y), 3.0, vec4(.1, .1, .1, .9));
+        DrawLabelBelow(Time::Format(score) + " ± " + Text::Format("%.2f", bucketWidth/2000.) + " / " + bucketCount + " / D-" + div, vec2(x, y), 3.0, vec4(.1, .1, .1, .9));
     }
 
     bool IsMouseInBox(float x, float y, float w, float h) {

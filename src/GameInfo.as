@@ -34,12 +34,33 @@ class GameInfo {
         return GetNetwork().ClientManiaAppPlayground;
     }
 
+    CGameScoreAndLeaderBoardManagerScript@ GetScoreMgr() {
+        return GetManiaAppPlayground().ScoreMgr;
+    }
+
     CGamePlaygroundClientScriptAPI@ GetPlaygroundClientScriptAPI() {
         return GetNetwork().PlaygroundClientScriptAPI;
     }
 
     CSmArenaClient@ GetCurrentPlayground() {
         return cast<CSmArenaClient>(app.CurrentPlayground);
+    }
+
+    MwFastBuffer<CSmPlayer@> GetCurrPgPlayers() {
+        auto ps = GetCurrentPlayground().Players;
+        auto ret = MwFastBuffer<CSmPlayer@>();
+        for (uint i = 0; i < ps.Length; i++) {
+            ret.Add(cast<CSmPlayer>(ps[i]));
+        }
+        return ret;
+    }
+
+    MwFastBuffer<CGameTerminal@> GetCurrPgGameTerminals() {
+        return GetCurrentPlayground().GameTerminals;
+    }
+
+    CSmPlayer@ GetControlledPlayer() {
+        return cast<CSmPlayer>(GetCurrPgGameTerminals()[0].ControlledPlayer);
     }
 
     MwFastBuffer<CGamePlaygroundUIConfig@> GetPlaygroundUIConfigs() {
@@ -125,6 +146,11 @@ class GameInfo {
     void BindInput(int ActionIndex, CInputScriptPad@ Device) {
         auto mpsapi = GetManiaPlanetScriptApi();
         mpsapi.Dialog_BindInput(ActionIndex, Device);
+    }
+
+    // Press a button to unbind it.
+    void UnbindInput(CInputScriptPad@ Device) {
+        GetManiaPlanetScriptApi().Dialog_BindInput(-1, Device);
     }
 
     void UnbindInputDevice(CInputScriptPad@ Device) {

@@ -113,6 +113,7 @@ namespace DataManager {
             cotdLatest_MapId = gi.MapId();
             _ResetCotdStats();
             startnew(_FullUpdateCotdStatsSeries);
+            startnew(_FullUpdateStatsOn);
             // todo: try starting a 30s coro or something that will retrigger stuff
             // todo alt: is the 1hr sleep thing an issue?
         }
@@ -165,6 +166,13 @@ namespace DataManager {
         UpdateDivs();
     }
 
+    void _FullUpdateStatsOn() {
+        sleep(60 * 1000);
+        _FullUpdateCotdStatsSeries();
+        sleep(60 * 1000);
+        _FullUpdateCotdStatsSeries();
+    }
+
     void LoopUpdateBetterChatFavs() {
         while (true) {
             auto @_favs = GetOtherPluginSettingVar("BetterChat", "Setting_Favorites");
@@ -194,10 +202,11 @@ namespace DataManager {
                 || (now - divs_lastUpdated) > loopUpdatePeriodMs  // or if we've waited long enough
                 ;
 
-            shouldUpdate = shouldUpdate
-                && isCotd.v  // must be COTD
-                && gi.IsCotdQuali()
-                ;
+            // must be COTD
+            shouldUpdate = shouldUpdate && gi.IsCotdQuali();
+
+            if (debounce.CanProceed('log shouldUpdate cotdDivs', loopUpdatePeriodMs) || shouldUpdate)
+                logcall("LoopUpdateDivsInCotd", 'shouldUpdate:' + shouldUpdate);
 
             /* Update divs */
             if (shouldUpdate) {
@@ -223,7 +232,9 @@ namespace DataManager {
                 uint offset = div * 64 - 1;
                 if (offset > 9999 || offset > nPlayers + 64) continue;
                 offset = Math::Min(offset, nPlayers - 1);
-                uint cutoffTime = cotd_TimesForHistogram[offset];
+                uint cutoffTime = MAX_DIV_TIME;
+                if (offset < cotd_TimesForHistogram.Length)
+                    cutoffTime = cotd_TimesForHistogram[offset];
                 auto row = divRows[div-1];
                 row.lastUpdateStart = Time::Now;
                 row.timeMs = cutoffTime;
@@ -317,13 +328,15 @@ namespace DataManager {
             yield();
         }
         /* if we updated in last 1500ms wait for obj to be not null and return */
-        if (!IsJsonNull(cotdLatest_PlayerRank) && !debounce.CanProceed('getCotdPlayerRank', 1500)) {
+        if (!debounce.CanProceed('getCotdPlayerRank', 1500)) {
             while (IsJsonNull(cotdLatest_PlayerRank)) { yield(); }
+            logcall("ApiUpdateCotdPlayerRank", "debounced and waited for cotdLatest_PlayerRank to be non-null");
             return;
         }
 
         cotdLatest_PlayerRank = api.GetPlayerRank(GetChallengeId(), cotdLatest_MapId, gi.PlayersId());
-        trace("[ApiUpdateCotdPlayerRank] from api got: " + Json::Write(cotdLatest_PlayerRank));
+        // trace("[ApiUpdateCotdPlayerRank] from api got: " + Json::Write(cotdLatest_PlayerRank));
+        logcall("ApiUpdateCotdPlayerRank", "Done! " + Json::Write(cotdLatest_PlayerRank));
     }
 
     uint GetCotdPlayerRank() {

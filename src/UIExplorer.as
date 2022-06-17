@@ -229,11 +229,12 @@ namespace CotdExplorer {
 
     void ExplorerBreadcrumbs() {
         UI::PushStyleColor(UI::Col::ChildBg, vec4(.1, .5, 1., .02));
-        if (UI::BeginChild( "-breadcrumbsOuter", vec2(0, 40))) {
-            UI::Dummy(vec2(1, 0));
-            DrawAsRow(_ExplorerBreadcrumbs, UI_EXPLORER + "-breadcrumbs", 7);
-            UI::EndChild();
-        }
+        // if (UI::BeginChild( "-breadcrumbsOuter", vec2(0, 40))) {
+        UI::BeginChild( "-breadcrumbsOuter", vec2(0, 40));
+        UI::Dummy(vec2(1, 0));
+        DrawAsRow(_ExplorerBreadcrumbs, UI_EXPLORER + "-breadcrumbs", 7);
+        UI::EndChild();
+        // }
         UI::PopStyleColor();
     }
 
@@ -801,10 +802,14 @@ namespace CotdExplorer {
         string mapUid = totdInfo.j['mapUid'];
         bool _disabled = false;
         if (cIds.Length == 0) {
-            UI::Text("\\$f81 Warning: cannot find challengeIds for COTDs on " + SelectedCotdDateStr() + "; nChallenges=" + cIds.Length);
+            UI::TextWrapped("\\$f81 Warning: cannot find challengeIds for COTDs on " + SelectedCotdDateStr() + "; nChallenges=" + cIds.Length);
             DrawChallengeDownloadProgress();
         } else {
             TextHeading(_ExplorerCotdTitleStr() + " | Select Cup");
+            if (cIds.Length < 3) {
+                // todo: remove this when no more COTD quali visibility/indexing bugs.
+                UI::TextWrapped(c_orange_600 + "If a COTD is missing, try Databases > Re-index COTD Qualifiers. If that fails, reload the plugin via Developer > Reload Plugin > COTD HUD.");
+            }
             string btnLab;
             UI::PushStyleVar(UI::StyleVar::ButtonTextAlign, vec2(.5, .5));
             if (UI::BeginTable(UI_EXPLORER + "-tableChooseCId", 5, TableFlagsStretch())) {
@@ -817,8 +822,8 @@ namespace CotdExplorer {
                     auto c = histDb.GetChallenge(cIds[i]);
                     if (!IsJsonNull(c)) {
                         _disabled = Text::ParseInt(c['endDate']) >= Time::Stamp;
-                        btnLab = COTD_BTNS[i];
-                        int cotdNum = i+1; // btnLab[0] - 48;  /* '1' = 49; 49 - 48 = 1. (ascii char value - 48 = int value); */
+                        int cotdNum = Text::ParseInt(string(c['name']).SubStr(27, 1)); // should be the number in "#2" or w/e after COTD
+                        btnLab = COTD_BTNS[cotdNum - 1];
                         UI::TableNextColumn();
                         if (MDisabledButton(_disabled, btnLab, challengeBtnDims)) {
                             OnSelectedCotdChallenge(cotdNum, mapUid, cIds[i]);

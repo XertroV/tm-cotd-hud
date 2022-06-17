@@ -2,19 +2,18 @@
 namespace PersistentData {
     const string mainFolderName = "cotd-hud";
     /* a path modifier for when we are doing dev etc to avoid clobbering DBs */
-#if RELEASE
-    const string PM = "main";
-#elif DEV
+#if DEV
     const string PM = "dev";
 #elif UNIT_TEST
     const string PM = "unit_test";
 #else
-    const int blah = throw("No runtime environment specified (RELEASE / DEV / UNIT_TEST)");
+    const string PM = "main";
+    // const int blah = throw("No runtime environment specified (RELEASE / DEV / UNIT_TEST)");
 #endif
 
     /* set our data folder to include the path mod (PM) set above */
     const string dataFolder = IO::FromDataFolder(mainFolderName + "/" + PM);
-string MkPath(string fname) { return dataFolder + "/" + fname; };
+    string MkPath(string fname) { return dataFolder + "/" + fname; };
 
     const string filepath_Follows = MkPath("follows.json");
     const string filepath_HistoricalCotd = MkPath("historical-cotd.json");

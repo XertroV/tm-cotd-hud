@@ -7,7 +7,8 @@ version  = "0.0.1"
 [script]
 dependencies = [ "NadeoServices" ]
 imports = [ "Permissions.as", "Time.as" ]
-defines = [ "DEV" ]
+#__DEFINES__
+# defines = [ "DEV" ]
 # defines = [ "DEV", "UNIT_TEST" ]
 # defines = [ "UNIT_TEST" ]
 # defines = [ "RELEASE" ]

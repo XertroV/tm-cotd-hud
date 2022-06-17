@@ -1,6 +1,6 @@
 const Json::Value JSON_NULL = Json::Parse("null");
 
-bool IsJsonNull(Json::Value j) {
+bool IsJsonNull(const Json::Value &in j) {
     /* Sometimes a json value will have a .GetType() of 0 which
      * isn't a valid Json::Type.
      * Json::Type ranges [1, 6] with Null being 6.
