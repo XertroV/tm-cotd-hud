@@ -1,6 +1,10 @@
 # COTD HUD
 
-I *think* the plugin should work if you just copy the whole repo folder into Openplanet/Plugins/cotd-hud-dev/. (I use `./build.sh` normally on WSL.)
+Shows division info + times histogram during qualifier, and allows browsing of past COTDs along with full results, graphs, and some utilities.
+
+This is a beta release. This might break.
+
+This plugin will use a lot of disk space, relatively speaking. Especially over time. Much of this (260 MB) is *all* of the TOTD thumbnails, which are downloading automatically in the background over a few hours.
 
 ## Feature Todo
 
@@ -24,13 +28,13 @@ I *think* the plugin should work if you just copy the whole repo folder into Ope
     - [ ] (optional, default:off) sync all cotd quali times in bg
     - [x] "Play this map" button
     - [ ] TMX link button
-    - [ ] TM.IO link button
+    - [x] TM.IO link button
     - [ ] List all TOTD maps
     - [ ] In list: easy favorite-ing + easy click to play
     - [ ] show your own times / records (not totd but global) -- useful for playing all TOTDs
     - [ ] match results (KO rounds)
     - [ ] animated histogram replays
-    - [ ] replay download settings
+    - [x] replay/snapshot download settings
 - [ ] COTD Friends
   - [ ] Show who's playing this COTD and their times
   - [ ] BChat integration (`/track-cotd @XertroV`) (or `/add-cotd-friend`)
@@ -45,15 +49,14 @@ I *think* the plugin should work if you just copy the whole repo folder into Ope
 - [x] Debug page: nod viewer quick access (but does't work for values??)
 - [ ] About Page
 - [ ] fix: LAB color gradients to take shortest path to avoid going the 'long way round'
-- [ ] bug: clear divisions on new cotd
-- [ ] bug fix: restart on new COTD (halts and doesn't update)
-- [ ] add total players to betterchat commands
+- [x] bug: clear divisions on new cotd
+- [x] bug fix: restart on new COTD (halts and doesn't update)
 
 
 ### first release
 
-- [ ] ensure downloading COTD snapshot rankings is behind an option
-- [ ] wizard v0 -- mostly to warn about alpha grade software. if anything breaks at the start of COTD use Developer > Reload Plugin > COTD HUD
+- [x] ensure downloading COTD snapshot rankings is behind an option
+- [ ] wizard v0 -- mostly to warn about alpha grade software. if anything breaks at the start of COTD use Developer > Reload Plugin > COTD HUD (**TODO before v0.1.0**)
 
 ### benchmarks
 
@@ -76,9 +79,9 @@ I *think* the plugin should work if you just copy the whole repo folder into Ope
     - load time 164ms (32k rows)
     - improved algorithm (avoids `.Split`): 75-80ms
 
-## openplanet docs stuff
+<!-- ## openplanet docs stuff
 
 - no description on nvg::TextBounds -- should probably say what it returns or something.
   - and set nvg::FontFace and nvg::FontSize first.
 
-- nvg::LoadFont params
+- nvg::LoadFont params -->
