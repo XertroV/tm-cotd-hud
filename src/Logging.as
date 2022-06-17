@@ -3,11 +3,19 @@ void debug(const string &in text) {
 }
 
 void log_dev(const string &in text) {
+#if DEV
     print(c_green + text);
+#endif
 }
 
 void logcall(const string &in caller, const string &in text) {
     trace(c_mid_grey + "[" + c_debug + caller + c_mid_grey + "] " + text);
+}
+
+void dev_logcall(const string &in caller, const string &in text) {
+#if DEV
+    logcall(caller, text);
+#endif
 }
 
 void todo(const string &in text) {
@@ -15,7 +23,7 @@ void todo(const string &in text) {
 }
 
 void trace_benchmark(const string &in action, uint deltaMs) {
-#if DEV || UNIT_TEST
     trace(c_mid_grey + "[" + c_purple + action + c_mid_grey + "] took " + c_purple + deltaMs + " ms");
+#if DEV || UNIT_TEST
 #endif
 }

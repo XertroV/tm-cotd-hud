@@ -501,10 +501,4 @@ void TestHexTri() {
     assert(rgbToHexTri(vec3(13., 5, 1) / 15.) == 'd51', 'hextri: d51');
 }
 
-void assert(bool condition, string msg) {
-    if (!condition) {
-        throw("Assertion failed: " + msg);
-    }
-}
-
 #endif

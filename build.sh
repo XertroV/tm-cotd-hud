@@ -58,11 +58,13 @@ for pluginSrc in ${pluginSources[@]}; do
   PLUGIN_DEV_LOC=$PLUGINS_DIR/$PLUGIN_NAME
   PLUGIN_RELEASE_LOC=$PLUGINS_DIR/$RELEASE_NAME
 
-  7z a ./$BUILD_NAME ./$pluginSrc/* ./LICENSE ./README.md ./info.toml
+  function buildPlugin {
+    7z a ./$BUILD_NAME ./$pluginSrc/* ./LICENSE ./README.md
 
-  cp -v $BUILD_NAME $RELEASE_NAME
+    cp -v $BUILD_NAME $RELEASE_NAME
 
-  _colortext16 green "\n✅ Built plugin as ${BUILD_NAME} and copied to ./${RELEASE_NAME}.\n"
+    _colortext16 green "\n✅ Built plugin as ${BUILD_NAME} and copied to ./${RELEASE_NAME}.\n"
+  }
 
   # this case should set both _copy_exit_code and _build_dest
 
@@ -93,6 +95,10 @@ for pluginSrc in ${pluginSources[@]}; do
       sed -i 's/^#__DEFINES__/defines = ["UNIT_TEST"]/' $_build_dest/info.toml
       ;;
     release)
+      cp ./info.toml ./$pluginSrc/info.toml
+      sed -i 's/^#__DEFINES__/defines = ["RELEASE"]/' ./$pluginSrc/info.toml
+      buildPlugin
+      rm ./$pluginSrc/info.toml
       _build_dest=$PLUGIN_RELEASE_LOC
       cp -v $RELEASE_NAME $_build_dest
       # todo: how do we do the release __defines thing?
@@ -113,15 +119,15 @@ for pluginSrc in ${pluginSources[@]}; do
   fi
 
 
-  # cleanup
-  case $_build_mode in
-    dev)
-      # remove the build artifact b/c they'll just take up space
-      (rm $BUILD_NAME && _colortext16 green "✅ Removed ${BUILD_NAME}") || _colortext16 red "Failed to remove ${BUILD_NAME}."
-      ;;
-    *)
-      ;;
-  esac
+  # # cleanup
+  # case $_build_mode in
+  #   dev)
+  #     # remove the build artifact b/c they'll just take up space
+  #     (rm $BUILD_NAME && _colortext16 green "✅ Removed ${BUILD_NAME}") || _colortext16 red "Failed to remove ${BUILD_NAME}."
+  #     ;;
+  #   *)
+  #     ;;
+  # esac
 
 done
 

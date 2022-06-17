@@ -73,9 +73,15 @@ BG DATA
 [Setting hidden]
 bool Setting_SyncAllowBgQualifierTimes = false;
 
+[Setting hidden]
+bool Setting_AllowSaveQualiSnapshots = IfDev();
+
 [SettingsTab name="Data & DBs"]
 void RenderSettingsDataSync() {
     TextHeading("Data Synchronization");
+
+    UI::BeginDisabled();
+    UI::Text("NOT IMPLEMENTED YET // TODO");
 
     Setting_SyncAllowBgQualifierTimes = UI::Checkbox(
         "Allow Background Download of Qualifier Times for ALL COTDs?",
@@ -84,12 +90,25 @@ void RenderSettingsDataSync() {
         + "It will consume about 400 KB per TOTD for ~2021 onwards. (at least 200 MB)\n"
         + "This is required to show a complete list of any given player's qualifying times.");
 
+    UI::EndDisabled();
+
     TextHeading("Qualifier Replays");
 
     // 1.5 - 15 MB per COTD
     // allows animated playback
     // must be recorded during COTD
     // folder `live-times-cache`
+
+    Setting_AllowSaveQualiSnapshots = UI::Checkbox(
+        "Save Snapshots of Qualifier Rankings?",
+        Setting_AllowSaveQualiSnapshots);
+    AddSimpleTooltip("This will save the full rankings during qualifiers every 8 seconds.\n"
+        + "It will consume about 15 MB per COTD (and 1.5 MB for COTN / COTM).\n\n"
+        + "This is required to show animated qualifier histograms and detect when someone\n"
+        + "has rejoined a COTD qualifier and gets a worse time than they previously had.\n"
+        + "\\$fe9  Note: these features are not implemented yet."
+        );
+
 }
 
 /**

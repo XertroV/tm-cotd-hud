@@ -83,7 +83,7 @@ class JsonDb {
 
     /* broken b/c of how json stuff is handled? */
     JsonBox@ get_data() {
-        AwaitUnlock();
+        // AwaitUnlock(); /* disable this b/c it can trigger in UI code */
         return _data;
     }
 

@@ -619,6 +619,7 @@ namespace CotdExplorer {
         /* when the day is selected we should fire off a
            coroutine to ensure we have the map data.
         */
+        logcall("OnSelectedCotdDay", "Day: " + day);
         explDay.AsJust(day);
         startnew(EnsureMapDataForCurrDay);
     }
@@ -791,6 +792,14 @@ namespace CotdExplorer {
         }
     }
 
+    bool ExpectMultipleCups(int year, int month, int day) {
+        return (year > 2021)
+            || (year == 2021 && (
+                    month > 8
+                    || (month == 8 && day > 9))
+            );
+    }
+
     const string[] COTD_BTNS = { "1st (COTD)\n7pm CEST/CET", "2nd (COTN)\n3am CEST/CET", "3rd (COTM)\n11am CEST/CET" };
 
 
@@ -806,7 +815,7 @@ namespace CotdExplorer {
             DrawChallengeDownloadProgress();
         } else {
             TextHeading(_ExplorerCotdTitleStr() + " | Select Cup");
-            if (cIds.Length < 3) {
+            if (cIds.Length < 3 && ExpectMultipleCups(explYear.val, explMonth.val, explDay.val)) {
                 // todo: remove this when no more COTD quali visibility/indexing bugs.
                 UI::TextWrapped(c_orange_600 + "If a COTD is missing, try Databases > Re-index COTD Qualifiers. If that fails, reload the plugin via Developer > Reload Plugin > COTD HUD.");
             }
@@ -822,7 +831,14 @@ namespace CotdExplorer {
                     auto c = histDb.GetChallenge(cIds[i]);
                     if (!IsJsonNull(c)) {
                         _disabled = Text::ParseInt(c['endDate']) >= Time::Stamp;
-                        int cotdNum = Text::ParseInt(string(c['name']).SubStr(27, 1)); // should be the number in "#2" or w/e after COTD
+                        string cName = string(c['name']);
+                        bool isSingleton = cName.SubStr(26, 1) != "#";
+                        int cotdNum = 1;
+                        if (!isSingleton)
+                            cotdNum = Text::ParseInt(cName.SubStr(27, 1)); // should be the number in "#2" or w/e after COTD
+                        if (cotdNum <= 0 || cotdNum > 3) {
+                            warn("_RenderExplorerCotdCupSelection | invalid cotdNum: " + cotdNum + " for COTD with name: " + cName);
+                        }
                         btnLab = COTD_BTNS[cotdNum - 1];
                         UI::TableNextColumn();
                         if (MDisabledButton(_disabled, btnLab, challengeBtnDims)) {

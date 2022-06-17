@@ -166,11 +166,23 @@ namespace DataManager {
         UpdateDivs();
     }
 
+    // this function exists to fix an issue where the HUD won't update
+    // when the player is in a TOTD server before COTD starts.
     void _FullUpdateStatsOn() {
+        int started = Time::Now;
+        sleep(10 * 1000);
+        while (GetCotdTotalPlayers() == 0 && (Time::Now - started < 180 * 1000)) {
+            sleep(3 * 1000);
+            ApiUpdateCotdStatus();
+            ApiUpdateCotdPlayerRank();
+        }
+        _FullUpdateCotdStatsSeries();
+        /* the below works but is slow.
         sleep(60 * 1000);
         _FullUpdateCotdStatsSeries();
         sleep(60 * 1000);
         _FullUpdateCotdStatsSeries();
+        */
     }
 
     void LoopUpdateBetterChatFavs() {
@@ -206,7 +218,7 @@ namespace DataManager {
             shouldUpdate = shouldUpdate && gi.IsCotdQuali();
 
             if (debounce.CanProceed('log shouldUpdate cotdDivs', loopUpdatePeriodMs) || shouldUpdate)
-                logcall("LoopUpdateDivsInCotd", 'shouldUpdate:' + shouldUpdate);
+                dev_logcall("LoopUpdateDivsInCotd", 'shouldUpdate:' + shouldUpdate);
 
             /* Update divs */
             if (shouldUpdate) {
@@ -436,11 +448,6 @@ namespace DataManager {
         }
     }
 
-    bool IsDivVisible(uint div) {
-        // todo
-        return true;
-    }
-
     void CoroUpdateDivFromQ() {
         auto _div = GetDivToUpdateFromQ();
         if (_div == 0 || _div >= divRows.Length) {
@@ -520,8 +527,8 @@ namespace DataManager {
             if (!debounce.CanProceed("saveAllTimes", 7500)) {
                 sleep(500);
             } else {
-                if (gi.IsCotdQuali() && !IsJsonNull(cotdLatest_PlayerRank)) {
-                    uint nPlayers = GetCotdTotalPlayers();
+                uint nPlayers = GetCotdTotalPlayers();
+                if (gi.IsCotdQuali() && nPlayers > 0 && Setting_AllowSaveQualiSnapshots) {
                     logcall("CoroLoopSaveAllTimes", "Running now for " + nPlayers + " players.");
                     uint chunkSize = 100;
                     uint timeStamp = Time::Stamp;
