@@ -1,6 +1,9 @@
 Debouncer@ debounce = Debouncer();
 GameInfo gi = GameInfo();
 
+// todo TOTD times arbitrary ranges:
+// https://live-services.trackmania.nadeo.live/api/token/leaderboard/group/<seasonUid>/map/<mapUid>/top?offset=300&length=15&onlyWorld=true
+
 namespace CotdExplorer {
 #if RELEASE
     const string ExplorerWindowTitle = "COTD Explorer";

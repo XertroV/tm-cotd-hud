@@ -172,13 +172,14 @@ namespace DataManager {
         int started = Time::Now;
         sleep(10 * 1000);
         while (GetCotdTotalPlayers() == 0 && (Time::Now - started < 180 * 1000)) {
-            sleep(3 * 1000);
             ApiUpdateCotdStatus();
             ApiUpdateCotdPlayerRank();
+            sleep(2 * 1000);
         }
         _FullUpdateCotdStatsSeries();
+        sleep(15 * 1000);
+        _FullUpdateCotdStatsSeries();
         /* the below works but is slow.
-        sleep(60 * 1000);
         _FullUpdateCotdStatsSeries();
         sleep(60 * 1000);
         _FullUpdateCotdStatsSeries();
@@ -204,7 +205,7 @@ namespace DataManager {
 
     void LoopUpdateDivsInCotd() {
         uint loopSleepMs = 100;
-        uint loopUpdatePeriodMs = 5 * 1000;
+        uint loopUpdatePeriodMs = 120 * 1000;
 
         while (true) {
             auto now = Time::get_Now();

@@ -40,6 +40,10 @@ class CotdApi {
         return CallCompApiPath("/api/daily-cup/current");
     }
 
+    Json::Value GetCotdMatchStatus() {
+        return CallCompApiPath("/api/cup-of-the-day/current");
+    }
+
     /** example return value
       * [{"time":48679,"uid":"jAtn7LQt2MTG5xv4BeiQwZAX1K","player":"a4cd0259-4ad1-48d9-bf0a-3fee92008686","score":48679,"rank":64}]
       */
