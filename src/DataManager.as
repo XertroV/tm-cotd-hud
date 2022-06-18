@@ -529,12 +529,14 @@ namespace DataManager {
                 sleep(500);
             } else {
                 uint nPlayers = GetCotdTotalPlayers();
-                if (gi.IsCotdQuali() && nPlayers > 0 && Setting_AllowSaveQualiSnapshots) {
+                if (gi.IsCotdQuali() && nPlayers > 0) {
                     logcall("CoroLoopSaveAllTimes", "Running now for " + nPlayers + " players.");
                     uint chunkSize = 100;
                     uint timeStamp = Time::Stamp;
                     for (uint i = 1; i <= nPlayers; i += chunkSize) {
-                        startnew(_CoroCacheTimesLive, UpdateTimesForLiveCache(0, i - 1, timeStamp));
+                        if (Setting_AllowSaveQualiSnapshots || divRows[i-1].visible) {
+                            startnew(_CoroCacheTimesLive, UpdateTimesForLiveCache(0, i - 1, timeStamp));
+                        }
                     }
                 }
             }
@@ -555,10 +557,11 @@ namespace DataManager {
             }
             UpdateCurrentCotdTimes(args, timesData);
         }
-        // auto s = Json::Write(timesData);
-        IO::File td(PersistentData::folder_LiveTimesCache + "/cotdLive-" + cotdLatest_MapId + "-" + args.ts + ".csv", IO::FileMode::Append);
-        td.WriteLine(toWrite);
-        td.Close();
+        if (Setting_AllowSaveQualiSnapshots) {
+            IO::File td(PersistentData::folder_LiveTimesCache + "/cotdLive-" + cotdLatest_MapId + "-" + args.ts + ".csv", IO::FileMode::Append);
+            td.WriteLine(toWrite);
+            td.Close();
+        }
     }
 
     void UpdateCurrentCotdTimes(UpdateTimesForLiveCache@ args, Json::Value timesData) {
