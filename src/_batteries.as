@@ -12,3 +12,9 @@ bool IfDev() {
     return false;
 #endif
 }
+
+const string GetYMD(uint year, uint month, uint day) {
+    return Text::Format("%04d", int(year))
+        + Text::Format("-%02d", int(month))
+        + Text::Format("-%02d", int(day));
+}

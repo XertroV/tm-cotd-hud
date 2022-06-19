@@ -581,9 +581,9 @@ namespace CotdExplorer {
         auto days = dd.GetKeys();
         days.SortAsc();
         string day;
-        JsonBox@ map1 = cast<JsonBox@>(dd[days[0]]);
-        JsonBox@ map;
-        uint dayOffset = map1.j["day"];  /* .monthDay is the calendar day number (1-31); .day is 0-6 */
+        TrackOfTheDayEntry@ map1 = cast<TrackOfTheDayEntry@>(dd[days[0]]);
+        TrackOfTheDayEntry@ map;
+        uint dayOffset = map1.day;  /* .monthDay is the calendar day number (1-31); .day is 0-6 */
         if (UI::BeginTable(UI_EXPLORER + "-ymd-table", 9, TableFlagsStretch())) {
             UI::TableSetupColumn("left", UI::TableColumnFlags::WidthStretch);
             for (uint i = 0; i < 7; i++) UI::TableSetupColumn("" + i, UI::TableColumnFlags::WidthFixed);
@@ -598,9 +598,9 @@ namespace CotdExplorer {
             for (uint i = 0; i < days.Length; i++) {
                 day = days[i];
                 UI::TableNextColumn();
-                @map = cast<JsonBox@>(dd[day]);
-                if (map is null || IsJsonNull(map.j['mapUid'])) continue;
-                string mapUid = map.j['mapUid'];
+                @map = cast<TrackOfTheDayEntry@>(dd[day]);
+                if (map is null || IsJsonNull(map.mapUid)) continue;
+                string mapUid = map.mapUid;
                 bool _disabled = mapUid.Length < 10;
                 if (MDisabledButton(_disabled, day, calendarDayBtnDims)) {
                     OnSelectedCotdDay(Text::ParseInt(day));
@@ -666,25 +666,22 @@ namespace CotdExplorer {
     }
 
     void EnsureMapDataForYMD(const string &in _year, const string &in _month, const string &in _day) {
-        JsonBox@ day = CotdTreeYMD(_year, _month, _day);
+        TrackOfTheDayEntry@ day = CotdTreeYMD(_year, _month, _day);
         if (day is null) return;
-        string uid = day.j['mapUid'];
+        string uid = day.mapUid;
         if (uid.Length == 0) return;
-        string seasonUid = day.j['seasonUid'];
+        string seasonUid = day.seasonUid;
         if (seasonUid.Length == 0) return;
-        string endTs = day.j.Get('end', "1234");
+        string endTs = '' + day.endTimestamp;
         auto cIds = CotdChallengesForYMD(_year, _month, _day);
         mapDb.QueueMapGet(uid);
         mapDb.QueueMapRecordGet(seasonUid, uid, endTs);
-        // for (uint i = 0; i < cIds.Length; i++) {
-
-        // }
     }
 
     bool HaveAllMapDataForYMD(const string &in _year, const string &in _month, const string &in _day) {
-        JsonBox@ day = CotdTreeYMD(_year, _month, _day);
+        TrackOfTheDayEntry@ day = CotdTreeYMD(_year, _month, _day);
         if (day is null) return true;
-        string uid = day.j['mapUid'];
+        string uid = day.mapUid;
         if (uid.Length == 0) return true;
         /* add additional resources here if they're added above */
         return true
@@ -782,7 +779,7 @@ namespace CotdExplorer {
 
     void _RenderExplorerTotd() {
         auto mapInfo = CotdTreeYMD();
-        DrawTotdMapInfoTable(mapDb.GetMap(mapInfo.j['mapUid']), mapInfo.j['seasonUid'], SelectedCotdDateStr());
+        DrawTotdMapInfoTable(mapDb.GetMap(mapInfo.mapUid), mapInfo.seasonUid, SelectedCotdDateStr());
         PaddedSep();
         /* either select cup or draw cup info */
         if (explCup.isNone) {
@@ -808,8 +805,8 @@ namespace CotdExplorer {
     void _RenderExplorerCotdCupSelection() {
         // auto cIds = CotdChallengesForSelectedDate();
         auto cIds = challengeIdsForSelectedCotd;
-        JsonBox@ totdInfo = CotdTreeYMD();
-        string mapUid = totdInfo.j['mapUid'];
+        TrackOfTheDayEntry@ totdInfo = CotdTreeYMD();
+        string mapUid = totdInfo.mapUid;
         bool _disabled = false;
         if (cIds.Length == 0) {
             UI::TextWrapped("\\$f81 Warning: cannot find challengeIds for COTDs on " + SelectedCotdDateStr() + "; nChallenges=" + cIds.Length);
@@ -875,8 +872,8 @@ namespace CotdExplorer {
 
     void EnsurePlayerNames() {
         int cId = explChallenge.val;
-        JsonBox@ totdInfo = CotdTreeYMD();
-        string mapUid = totdInfo.j['mapUid'];
+        TrackOfTheDayEntry@ totdInfo = CotdTreeYMD();
+        string mapUid = totdInfo.mapUid;
         if (PersistentData::MapTimesCached(mapUid, cId)) {
             auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
             int nPlayers = jb.j['nPlayers'];
@@ -914,10 +911,9 @@ namespace CotdExplorer {
         return dictionary();
     }
 
-    JsonBox@ _EmptyJsonBox = JsonBox(Json::Object());
-    JsonBox@ CotdTreeYMD(const string &in year = '', const string &in month = '', string day = '') {
+    TrackOfTheDayEntry@ CotdTreeYMD(const string &in year = '', const string &in month = '', string day = '') {
         if (day == '') day = Text::Format("%02d", explDay.val);
-        JsonBox@ ret;
+        TrackOfTheDayEntry@ ret;
         if (CotdTreeYM(year, month).Get(day, @ret)) {
             return ret;
         }
@@ -957,8 +953,8 @@ namespace CotdExplorer {
         int cId = explChallenge.val;
         TextHeading(_ExplorerCotdTitleStr());
         auto mapInfo = CotdTreeYMD();
-        string mapUid = mapInfo.j['mapUid'];
-        string seasonUid = mapInfo.j['seasonUid'];
+        string mapUid = mapInfo.mapUid;
+        string seasonUid = mapInfo.seasonUid;
         // auto map = mapDb.GetMap(mapUid);
 
         if (UI::BeginTable(UI_EXPLORER + "-cotdOuter", 4, TableFlagsStretch())) {
@@ -1124,8 +1120,8 @@ namespace CotdExplorer {
 
     bool _CotdQualiTimesTable(int cId) {
         auto mapInfo = CotdTreeYMD();
-        string mapUid = mapInfo.j['mapUid'];
-        // string seasonUid = mapInfo.j['seasonUid'];
+        string mapUid = mapInfo.mapUid;
+        // string seasonUid = mapInfo.seasonUid;
         bool gotTimes = PersistentData::MapTimesCached(mapUid, cId);
         bool canDownload = !(gotTimes || lastCidDownload == cId);
         bool dlDone = false;

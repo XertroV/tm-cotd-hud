@@ -140,11 +140,14 @@ class JsonDb {
         db['time'] = "" + Time::Stamp;  /* as string to avoid losing precision */
         db['data'] = _data.j;
         db['dbId'] = dbId;
-        // string sz = Json::Write(db);
-        // yield();
-        // IO::File file(path, IO::FileMode::Write);
-        // file.Write(sz);
-        Json::ToFile(path, db);
+        string sz = Json::Write(db);
+        if (Time::Now - start > 10) {
+            trace_benchmark('JsonDb.Persist (Json::Write) ' + path, Time::Now - start);
+            yield();
+        }
+        IO::File file(path, IO::FileMode::Write);
+        file.Write(sz);
+        // Json::ToFile(path, db);
         uint end = Time::Now;
         Unlock();
         if (!IO::FileExists(path)) {

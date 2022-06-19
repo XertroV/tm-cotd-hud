@@ -1,10 +1,9 @@
 class CotdApi {
     string compUrl;
     string liveSvcUrl;
-    string coreUrl;
-    CTrackMania@ app; // = GetTmApp();
-    CTrackManiaNetwork@ network; // = cast<CTrackManiaNetwork>(app.Network);
-    CTrackManiaNetworkServerInfo@ server_info; // = cast<CTrackManiaNetworkServerInfo>(network.ServerInfo);
+    // CTrackMania@ app; // = GetTmApp();
+    // CTrackManiaNetwork@ network; // = cast<CTrackManiaNetwork>(app.Network);
+    // CTrackManiaNetworkServerInfo@ server_info; // = cast<CTrackManiaNetworkServerInfo>(network.ServerInfo);
 
     CotdApi() {
         NadeoServices::AddAudience("NadeoClubServices");
@@ -13,17 +12,20 @@ class CotdApi {
 
         compUrl = NadeoServices::BaseURLCompetition();
         liveSvcUrl = NadeoServices::BaseURL();
-        coreUrl = "https://prod.trackmania.core.nadeo.online";  // Not provided by NadeoServices plugin?
 
-        @app = GetTmApp();
-        @network = cast<CTrackManiaNetwork>(app.Network);
-        @server_info = cast<CTrackManiaNetworkServerInfo>(network.ServerInfo);
+        // @app = GetTmApp();
+        // @network = cast<CTrackManiaNetwork>(app.Network);
+        // @server_info = cast<CTrackManiaNetworkServerInfo>(network.ServerInfo);
     }
 
     void AssertGoodPath(string &in path) {
         if (path.Length <= 0 || !path.StartsWith("/")) {
             throw("API Paths should start with '/'!");
         }
+    }
+
+    const string LengthAndOffset(uint length, uint offset) {
+        return "length=" + length + "&offset=" + offset;
     }
 
     /* COMPETITION API CALLS */
@@ -44,6 +46,27 @@ class CotdApi {
         return CallCompApiPath("/api/cup-of-the-day/current");
     }
 
+    /** example ret:
+      * [ ... { "id": 2927, "liveId": "LID-COMP-ygkws5r54danxnh", "creator": "afe7e1c1-7086-48f7-bde9-a7e320647510", "name": "Cup of the Day 2022-06-16 #1", "participantType": "PLAYER", ... } ... ]
+      */
+    Json::Value GetCompetitions(uint length, uint offset) {
+        return CallCompApiPath("/api/competitions?" + LengthAndOffset(length, offset));
+    }
+
+    /** example ret:
+      * [{"id": 7317,"position": 0,"name": "Cup of the Day 2022-06-16 #1 - Round","leaderboardComputeType": "CUP_OF_THE_DAY","nbMatches": 46, ..}]
+      */
+    Json::Value GetCompRounds(uint compId, uint length = 100) {
+        return CallCompApiPath("/api/competitions/" + compId + "/rounds?" + LengthAndOffset(length, 0));
+    }
+
+    /** example ret:
+      * {"matches": [{"id": 31364, "name": "Cup of the Day 2022-06-16 #1 - Match 1", "clubMatchLiveId": "LID-MTCH-2b1jd1z2brshtt4", "position": 0, "isCompleted": true, "tags": [], "deletedOn": null }, ...]}
+      */
+    Json::Value GetCompRoundMatches(uint roundId, uint length = 100, uint offset = 0) {
+        return CallCompApiPath("/api/rounds/" + roundId + "/matches?" + LengthAndOffset(length, offset));
+    }
+
     /** example return value
       * [{"time":48679,"uid":"jAtn7LQt2MTG5xv4BeiQwZAX1K","player":"a4cd0259-4ad1-48d9-bf0a-3fee92008686","score":48679,"rank":64}]
       */
@@ -60,7 +83,7 @@ class CotdApi {
         if (length > 100) {
             throw("GetCotdTimes parameter length cannot be >100");
         }
-        return CallCompApiPath("/api/challenges/" + challengeid + "/records/maps/" + mapid + "?length=" + length + "&offset=" + offset);
+        return CallCompApiPath("/api/challenges/" + challengeid + "/records/maps/" + mapid + "?" + LengthAndOffset(length, offset));
     }
 
     /** example ret val

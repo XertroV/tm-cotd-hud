@@ -270,10 +270,17 @@ namespace DbSync {
     }
 }
 
-/* Pattern improvement: MapDb > HistoryDb wrt architecture via JsonQueueDb */
+/* NOTE: There was a pattern improvement: MapDb > HistoryDb wrt architecture via JsonQueueDb.
+    HistoryDb will be refactored over time.
+ */
+
+// not sure why this doesn't work:
+// external shared class DictOfTrackOfTheDayEntry_WriteLog;
 
 class HistoryDb : JsonDb {
     CotdApi@ api;
+    DictOfTrackOfTheDayEntry_WriteLog@ totdDb;
+    DictOfChallenge_WriteLog@ challengesDb;
 
     /*
     # a class to help manage the state etc of the history DB
@@ -304,6 +311,8 @@ class HistoryDb : JsonDb {
     HistoryDb(const string &in path) {
         super(path, 'historyDb-totdsAndChallenges');
         @api = CotdApi();
+        @totdDb = DictOfTrackOfTheDayEntry_WriteLog(path.Replace("/historical-cotd.json", ""), "historical-totd.txt");
+        @challengesDb = DictOfChallenge_WriteLog(path.Replace("/historical-cotd.json", ""), "historical-challenges.txt");
         startnew(CoroutineFunc(SyncLoops));
     }
 
@@ -315,74 +324,41 @@ class HistoryDb : JsonDb {
     //     return d;
     // }
 
-
     const array<string>@ GetMostRecentTotdDate() {
-        int monthIx = -1; // we ++ this at the start of the loop
-        // array<string> ymd = {};
-        string ymd = "";
-        while (ymd.Length == 0) {
-            monthIx++;
-            Json::Value thisMonth;
-            try {
-                thisMonth = data.j['totd']['monthList'][monthIx];
-            } catch {
-                warn("GetMostRecentTotdDate couldn't get totd month. " + getExceptionInfo());
-                return array<string>();
-            }
-            // get last day in this month with a mapUid
-            int lastMapIx = -1;
-            for (uint i = 0; i < thisMonth['days'].Length; i++) {
-                auto day = thisMonth['days'][i];
-                if (string(day["mapUid"]).Length > 10) {
-                    lastMapIx = int(i);
-                }
-                // don't break -- go through all days in the month from first to last
-            }
-            if (lastMapIx > 0) {
-                auto day = thisMonth['days'][lastMapIx];
-                ymd = Text::Format("%04d", int(thisMonth['year']))
-                    + Text::Format("-%02d", int(thisMonth['month']))
-                    + Text::Format("-%02d", int(day['monthDay']));
-            }
+        auto keys = totdDb.GetKeys();
+        keys.SortDesc();
+        for (uint i = 0; i < keys.Length; i++) {
+            auto totd = totdDb.Get(keys[i]);
+            if (totd.mapUid.Length > 0)
+                return keys[i].Split("-");
         }
-        return ymd.Split("-");
+        // logcall("GetMostRecentTotdDate", c_warn + "using deprecated format!");
+        // return GetMostRecentTotdDateOld();
+        return {};
     }
 
     dictionary@ GetCotdYearMonthDayMapTree() {
         auto d = dictionary();
-        if (IsJsonNull(data.j['totd']) || IsJsonNull(data.j['totd']['monthList'])) return d;
-
-        auto totdML = data.j['totd']['monthList'];
-        int year, month, monthDay;
-        string sYear, sMonth, sDay;
-        array<int>@ keys;
-        for (uint i = 0; i < totdML.Length; i++) {
-            auto monthObj = totdML[i];
-            // prep
-            year = monthObj['year'];
-            sYear = "" + year;
-            month = monthObj['month'];
-            sMonth = Text::Format("%02d", month);
-
-            // defaults
-            if (!d.Exists(sYear)) {
-                @d[sYear] = dictionary();
+        auto keys = totdDb.GetKeys();
+        keys.SortDesc();
+        for (uint i = 0; i < keys.Length; i++) {
+            string k = keys[i];
+            auto totd = totdDb.Get(k);
+            if (totd.mapUid.Length == 0) continue;
+            auto ymd = k.Split("-");
+            if (ymd.Length != 3) {
+                warn("ymd.split had a length of " + ymd.Length);
+                continue;
             }
-            dictionary@ yd = cast<dictionary@>(d[sYear]);
-            if (!yd.Exists(sMonth)) {
-                @yd[sMonth] = dictionary();
+            if (!d.Exists(ymd[0])) {
+                @d[ymd[0]] = dictionary();
             }
-            dictionary@ md = cast<dictionary@>(yd[sMonth]);
-
-            // process maps
-            auto days = monthObj['days'];
-            for (uint j = 0; j < days.Length; j++) {
-                Json::Value map = days[j];
-                monthDay = map['monthDay'];
-                sDay = Text::Format("%02d", monthDay);
-                // md[sDay] should never exist.    // !md.Exists(sDay))
-                @md[sDay] = JsonBox(map);
+            dictionary@ md = cast<dictionary@>(d[ymd[0]]);
+            if (!md.Exists(ymd[1])) {
+                @md[ymd[1]] = dictionary();
             }
+            dictionary@ dd = cast<dictionary@>(md[ymd[1]]);
+            @dd[ymd[2]] = totdDb.Get(k);
         }
         return d;
     }
@@ -407,26 +383,11 @@ class HistoryDb : JsonDb {
             warn("GetChallenge exception returning record: " + getExceptionInfo());
             return Json::Value();
         }
-        // if (IsJsonNull(j) || !j.HasKey('challenges') || !j['challenges'].HasKey('items') || !j['challenges']['items'].HasKey(_cid)) {
-        //     return Json::Value();
-        // }
     }
 
     void ResetChallengesCache() {
         @cachedChallenges = dictionary();
     }
-
-    // string[]@ ListTotdYears() {
-    //     auto yrs = {};
-    //     auto totdML = data.j['totd']['monthList'];
-    //     int year, month;
-    //     for (uint i = 0; i < totdML.Length; i++) {
-    //         year = totdML[i]['year'];
-    //         if (yrs.Find(year) < 0) {
-    //             yrs.InsertAt(yrs.Length, year);
-    //         }
-    //     }
-    // }
 
     /* SYNC LOGIC */
 
@@ -545,11 +506,13 @@ class HistoryDb : JsonDb {
                 chs['maxId'] = newCs[0]['id'];  // first entry always has highest id
                 auto items = chs['items'];
                 if (IsJsonNull(items)) items = Json::Object();
-                print(Json::Write(items));
                 for (uint i = 0; i < newCs.Length; i++) {
                     auto c = newCs[i];
                     int _id = c['id'];
                     string id = "" + _id;
+                    if (!challengesDb.Exists(id)) {
+                        challengesDb.Set(id, Challenge(c));
+                    }
                     if (IsJsonNull(items[id])) {
                         int startDate = c['startDate'];
                         int endDate = c['endDate'];
@@ -612,7 +575,14 @@ class HistoryDb : JsonDb {
             int td = Time::Stamp - ChallengesSdUpdatedAt();
             if (td > 15*60) {
                 trace("[ChallengeSyncUpkeep] Checking for updated challenges. (td=" + td + ")");
-                auto latestC = api.GetChallenges(1)[0];
+                auto latestCs = api.GetChallenges(1);
+                if (latestCs.GetType() != Json::Type::Array) {
+                    // something went wrong, sleep and try again.
+                    sleep(3 * 1000);
+                    SetChallengesSyncData(sd);
+                    return;
+                }
+                auto latestC = latestCs[0];
                 int newMaxId = latestC['id'];
                 int oldMaxId = sd['state']['maxId'];
                 trace("[ChallengeSyncUpkeep] challenge latest IDs >> old: " + oldMaxId + ", new: " + newMaxId);
@@ -644,9 +614,8 @@ class HistoryDb : JsonDb {
             sd = TotdMapsSyncData();
             trace("[TotdMapsSync] Loop Start. SD: " + Json::Write(sd));
             if (DbSync::IsInProg(sd)) {
-                _SyncTotdMapsUpdateFromApi(false);
+                uint nextReqTs = _SyncTotdMapsUpdateFromApi(false);
                 sd = DbSync::Gen(DbSync::UPKEEP);
-                int nextReqTs = data.j['totd']['nextRequestTimestamp'];
                 sd['state']['updateAfter'] = "" + nextReqTs;
                 trace("[TotdMapsSync] Done InProg. SD: " + Json::Write(sd));
                 SetTotdMapsSyncData(sd);
@@ -669,33 +638,38 @@ class HistoryDb : JsonDb {
         }
     }
 
-    void _SyncTotdMapsUpdateFromApi(bool persist = true) {
+    uint _SyncTotdMapsUpdateFromApi(bool persist = true) {
         /* we can do all this in one api call for the
             next ~6 yrs 5 months (as of May 2022).
             todo before 2029: check if we need to make a second call and merge results.
             */
-        auto totdData = api.GetTotdByMonth(100);
-        auto ml = totdData['monthList'];
+        auto totdData = TotdResp(api.GetTotdByMonth(100));
+        auto ml = totdData.monthList;
         for (uint i = 0; i < ml.Length; i++) {
             auto m = ml[i];
-            auto days = m['days'];
+            auto days = m.days;
             for (uint d = 0; d < days.Length; d++) {
                 auto day = days[d];
-                day['start'] = '' + int(day['startTimestamp']);
-                day['end'] = '' + int(day['endTimestamp']);
-                day.Remove('leaderboardGroup');
-                day.Remove('startTimestamp');
-                day.Remove('endTimestamp');
-                day.Remove('relativeStart');
-                day.Remove('relativeEnd');
-                days[d] = day;
+                string key = GetYMD(m.year, m.month, day.monthDay);
+                if (!totdDb.Exists(key) || totdDb.Get(key).mapUid.Length == 0) {
+                    totdDb.Set(key, day);
+                }
+                // day['start'] = '' + int(day['startTimestamp']);
+                // day['end'] = '' + int(day['endTimestamp']);
+                // day.Remove('leaderboardGroup');
+                // day.Remove('startTimestamp');
+                // day.Remove('endTimestamp');
+                // day.Remove('relativeStart');
+                // day.Remove('relativeEnd');
+                // days[d] = day;
             }
-            m['days'] = days;
-            ml[i] = m;
+            // m['days'] = days;
+            // ml[i] = m;
         }
-        totdData['monthList'] = ml;
-        data.j['totd'] = totdData;
+        // totdData['monthList'] = ml;
+        data.j['totd'] = Json::Value();
         if (persist) Persist();
+        return totdData.nextRequestTimestamp;
     }
 
     Json::Value TotdMapsSyncData() {

@@ -521,7 +521,7 @@ namespace DataManager {
             ts = timeStamp;
         }
     }
-
+    /* todo: updating is taking like forever? */
     void CoroLoopSaveAllTimes() {
         logcall("CoroLoopSaveAllTimes", "Starting...");
         while (true) {
@@ -534,7 +534,7 @@ namespace DataManager {
                     uint chunkSize = 100;
                     uint timeStamp = Time::Stamp;
                     for (uint i = 1; i <= nPlayers; i += chunkSize) {
-                        if (Setting_AllowSaveQualiSnapshots || divRows[i-1].visible) {
+                        if (Setting_AllowSaveQualiSnapshots || divRows[int(i/chunkSize)].visible) {
                             startnew(_CoroCacheTimesLive, UpdateTimesForLiveCache(0, i - 1, timeStamp));
                         }
                     }

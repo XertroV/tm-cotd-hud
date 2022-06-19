@@ -12,6 +12,8 @@ const string c_purple = "\\$a4f";
 const string c_timeOrange = "\\$d81";
 const string c_timeBlue = "\\$3ce";
 
+const string c_warn = "\\$fd2";
+
 const string c_menuIconColor = c_fuchsia;
 
 

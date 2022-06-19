@@ -1,9 +1,11 @@
 {
-    "monthList": [{
+    "monthList": [
+        {
         "year": 2022,
         "month": 5,
         "lastDay": 31,
-        "days": [{
+        "days": [
+            {
             "campaignId": 24462,
             "mapUid": "MH8WnAOEI3HAQkBVlBOeyK4rLC9",
             "day": 6,
@@ -358,7 +360,8 @@
         "year": 2022,
         "month": 4,
         "lastDay": 30,
-        "days": [{
+        "days": [
+            {
             "campaignId": 22650,
             "mapUid": "cguwnkDcQmQWeCGhDSGyAqFCNvk",
             "day": 4,
