@@ -318,12 +318,6 @@ class HistoryDb : JsonDb {
 
     /* Getters for the DB */
 
-    // dictionary@ DictWith__Keys() {
-    //     auto d = dictionary();
-    //     d['__keys'] = array<int>();
-    //     return d;
-    // }
-
     const array<string>@ GetMostRecentTotdDate() {
         auto keys = totdDb.GetKeys();
         keys.SortDesc();
@@ -332,8 +326,6 @@ class HistoryDb : JsonDb {
             if (totd.mapUid.Length > 0)
                 return keys[i].Split("-");
         }
-        // logcall("GetMostRecentTotdDate", c_warn + "using deprecated format!");
-        // return GetMostRecentTotdDateOld();
         return {};
     }
 
@@ -369,20 +361,14 @@ class HistoryDb : JsonDb {
 
     dictionary@ cachedChallenges = dictionary();
 
-    Json::Value GetChallenge(int id) {
+    Challenge@ GetChallenge(int id) {
         string _cid = '' + id;
-        if (cachedChallenges.Exists(_cid)) {
-            return cast<JsonBox@>(cachedChallenges[_cid]).j;
+        if (challengesDb.Exists(_cid)) {
+            return challengesDb.Get(_cid);
         }
-        try {
-            auto c = data.j['challenges']['items'][_cid];
-            auto jb = JsonBox(c);
-            @cachedChallenges[_cid] = jb;
-            return c;
-        } catch {
-            warn("GetChallenge exception returning record: " + getExceptionInfo());
-            return Json::Value();
-        }
+        return null;
+        // auto c = data.j['challenges']['items'][_cid];
+        // return Challenge(c);
     }
 
     void ResetChallengesCache() {
@@ -481,8 +467,8 @@ class HistoryDb : JsonDb {
                 /* if we updated a long time ago, update our offset based
                    on new most recent challenge.
                 */
-                auto latestChallenge = api.GetChallenges(1, 0)[0];
-                int maxId = latestChallenge['id'];
+                auto latestChallenge = Challenge(api.GetChallenges(1, 0)[0]);
+                int maxId = latestChallenge.id;
                 int oldMaxId = sd['state']['maxId'];
                 int maxIdDiff = maxId - oldMaxId;
                 print("Updating ChallengesSync state (stale).");
@@ -494,36 +480,28 @@ class HistoryDb : JsonDb {
             /* based on the offset, get 100 rows and populate the sync'd DB.
             */
             int offset = sd['state']['offset'];
-            Json::Value newCs;
+            Challenges@ newCs;
             if (offset < 0) {
-                newCs = Json::Array();
+                @newCs = Challenges({});
             } else {
                 int length = sd['state'].Get('length', 100);
-                newCs = api.GetChallenges(length, offset);
+                @newCs = Challenges(api.GetChallenges(length, offset));
             }
             if (newCs.Length > 0) {  // we'll get `[]` response when offset is too high.
+                // todo
                 auto chs = data.j['challenges'];
-                chs['maxId'] = newCs[0]['id'];  // first entry always has highest id
-                auto items = chs['items'];
-                if (IsJsonNull(items)) items = Json::Object();
+                chs['maxId'] = newCs[0].id;  // first entry always has highest id
                 for (uint i = 0; i < newCs.Length; i++) {
                     auto c = newCs[i];
-                    int _id = c['id'];
+                    int _id = c.id;
                     string id = "" + _id;
                     if (!challengesDb.Exists(id)) {
-                        challengesDb.Set(id, Challenge(c));
-                    }
-                    if (IsJsonNull(items[id])) {
-                        int startDate = c['startDate'];
-                        int endDate = c['endDate'];
-                        items[id] = c;
-                        items[id]['startDate'] = '' + startDate;
-                        items[id]['endDate'] = '' + endDate;
+                        challengesDb.Set(id, c);
                     } else {
                         trace("[SyncChallenges] Skipping challenge " + id + " since it's already in the DB.");
                     }
                 }
-                chs['items'] = items;
+                chs['items'] = Json::Value();
                 data.j['challenges'] = chs;
             }
             if (offset == 0) {
@@ -737,7 +715,7 @@ class CotdIndexDb : JsonDb {
                     yield();
                     lastBreak = Time::Now;
                 }
-                Json::Value c = histDb.GetChallenge(i);
+                auto c = histDb.GetChallenge(i);
                 AddChallenge(i, c);
             }
             Persist();
@@ -748,13 +726,13 @@ class CotdIndexDb : JsonDb {
         data.j['maxId'] = Math::Max(maxId, int(data.j['maxId']));
     }
 
-    void AddChallenge(int id, Json::Value c) {
-        if (!IsJsonNull(c)) {
-            int cId = c['id'];
+    void AddChallenge(int id, Challenge@ &in c) {
+        if (c !is null) {
+            int cId = c.id;
             if (cId != id) {
                 throw("[AddChallenge] Challenge ID Mismatch! " + id + " vs " + cId);
             }
-            string name = c['name'];
+            string name = c.name;
             if (name.SubStr(0, 14) == "Cup of the Day") {
                 string date = name.SubStr(15, 10); // 2022-05-30
                 string[] ymd = date.Split('-');
@@ -816,7 +794,6 @@ class CotdTimesReqData {
     }
 }
 
-
 class MapDb : JsonDb {
     GameInfo@ gi = GameInfo();
     CotdApi@ api;
@@ -830,6 +807,7 @@ class MapDb : JsonDb {
     CotdIndexDb@ cotdIndexDb;
     JsonDictDb@ playerNameDb;
     JsonQueueDb@ playerNameQDb;
+    DictOfTmMap_WriteLog@ mapDb;
     // private JsonQueueDb@ histGenQDb;
 
     MapDb(const string &in path) {
@@ -842,6 +820,7 @@ class MapDb : JsonDb {
         @cotdIndexDb = CotdIndexDb(PersistentData::filepath_CotdIndexDb, 'cotdIndexDb-v1');
         @playerNameDb = JsonDictDb(PersistentData::filepath_PlayerNameDb, 'playerNameDb-v1');
         @playerNameQDb = JsonQueueDb(PersistentData::filepath_PlayerNameQDb, 'playerNameQDb-v1');
+        @mapDb = DictOfTmMap_WriteLog(PersistentData::dataFolder, "mapDb-maps.txt");
         // @playerNameQDb = JsonQueueDb(PersistentData::filepath_HistogramGenQDb, 'histGenQDb-v1');
         startnew(CoroutineFunc(SyncLoops));
     }
@@ -853,6 +832,7 @@ class MapDb : JsonDb {
         }
         while (histDb is null) {
             @histDb = PersistentData::histDb;
+            yield();
         }
         cotdIndexDb.SetHistDb(histDb);
     }
@@ -878,41 +858,46 @@ class MapDb : JsonDb {
         */
         uint upToXMaps = 50;
         while (true) {
-            string[] uids = array<string>();
-            while (!queueDb.IsEmpty() && uids.Length < upToXMaps) {
-                string uid = queueDb.GetQueueItemNow();
-                uids.InsertAt(uids.Length, uid);
+            if (queueDb.IsEmpty()) {
+                sleep(50);
+                continue;
             }
+            string[] uids = ArrayOfJToString(queueDb.GetNQueueItemsNow(upToXMaps));
+            // while (!queueDb.IsEmpty() && uids.Length < upToXMaps) {
+            //     string uid = queueDb.GetQueueItemNow();
+            //     uids.InsertAt(uids.Length, uid);
+            // }
             if (uids.Length > 0) {
                 auto maps = api.GetMapsInfo(uids);
                 for (uint i = 0; i < maps.Length; i++) {
-                    auto map = maps[i];
-                    auto mapj = Json::Object();
+                    auto mapGameObj = maps[i];
+                    auto map = TmMap(mapGameObj);
                     /* metadata */
-                    mapj['Id'] = map.Id;
-                    mapj['Uid'] = map.Uid;
-                    mapj['Type'] = tostring(map.Type);
-                    mapj['Name'] = tostring(map.Name);
-                    mapj['Style'] = tostring(map.Style);
-                    mapj['TimeStamp'] = '' + map.TimeStamp;
-                    /* author stuff */
-                    mapj['AuthorAccountId'] = map.AuthorAccountId;
-                    mapj['AuthorWebServicesUserId'] = map.AuthorWebServicesUserId;
-                    mapj['AuthorDisplayName'] = tostring(map.AuthorDisplayName);
-                    mapj['AuthorIsFirstPartyDisplayName'] = map.AuthorIsFirstPartyDisplayName;
-                    mapj['SubmitterWebServicesUserId'] = map.SubmitterWebServicesUserId;
-                    mapj['SubmitterAccountId'] = map.SubmitterAccountId;
-                    /* times */
-                    mapj['AuthorScore'] = map.AuthorScore;
-                    mapj['GoldScore'] = map.GoldScore;
-                    mapj['SilverScore'] = map.SilverScore;
-                    mapj['BronzeScore'] = map.BronzeScore;
-                    /* files */
-                    mapj['ThumbnailUrl'] = map.ThumbnailUrl;
-                    mapj['FileUrl'] = map.FileUrl;
-                    mapj['FileName'] = tostring(map.FileName);
-                    /* save it */
-                    data.j['maps'][map.Uid] = mapj;
+                    // mapj['Id'] = map.Id;
+                    // mapj['Uid'] = map.Uid;
+                    // mapj['Type'] = tostring(map.Type);
+                    // mapj['Name'] = tostring(map.Name);
+                    // mapj['Style'] = tostring(map.Style);
+                    // mapj['TimeStamp'] = '' + map.TimeStamp;
+                    // /* author stuff */
+                    // mapj['AuthorAccountId'] = map.AuthorAccountId;
+                    // mapj['AuthorWebServicesUserId'] = map.AuthorWebServicesUserId;
+                    // mapj['AuthorDisplayName'] = tostring(map.AuthorDisplayName);
+                    // mapj['AuthorIsFirstPartyDisplayName'] = map.AuthorIsFirstPartyDisplayName;
+                    // mapj['SubmitterWebServicesUserId'] = map.SubmitterWebServicesUserId;
+                    // mapj['SubmitterAccountId'] = map.SubmitterAccountId;
+                    // /* times */
+                    // mapj['AuthorScore'] = map.AuthorScore;
+                    // mapj['GoldScore'] = map.GoldScore;
+                    // mapj['SilverScore'] = map.SilverScore;
+                    // mapj['BronzeScore'] = map.BronzeScore;
+                    // /* files */
+                    // mapj['ThumbnailUrl'] = map.ThumbnailUrl;
+                    // mapj['FileUrl'] = map.FileUrl;
+                    // mapj['FileName'] = tostring(map.FileName);
+                    // /* save it */
+                    // data.j['maps'][map.Uid] = mapj;
+                    mapDb.Set(map.Uid, map);
                     QueueThumbnailGet(map.ThumbnailUrl);
                     logcall('SyncMap', 'Completed: ' + map.Uid);
                 }
@@ -1096,7 +1081,7 @@ class MapDb : JsonDb {
         while (true) {
             if (!playerNameQDb.IsEmpty()) {
                 auto _playerIds = playerNameQDb.GetNQueueItemsNow(100);
-                string[] playerIds = JArrayToString(_playerIds);
+                string[] playerIds = ArrayOfJToString(_playerIds);
                 yield();
                 logcall("_SyncLoopPlayerNames", "Fetching " + playerIds.Length + " player names. " + playerIds[0] +  string::Join(playerIds, ","));
                 auto names = api.GetPlayersDisplayNames(playerIds);
@@ -1143,7 +1128,7 @@ class MapDb : JsonDb {
         if (!MapIsCached(mapUid)) {
             queueDb.PutQueueEntry(Json::Value(mapUid));
         } else {
-            QueueThumbnailGet(GetMap(mapUid)['ThumbnailUrl']);
+            QueueThumbnailGet(GetMap(mapUid).ThumbnailUrl);
         }
     }
 
@@ -1155,13 +1140,11 @@ class MapDb : JsonDb {
 
     void QueueMapChallengeTimesGet(const string &in mapUid, int challengeId, bool force = false) {
         auto challenge = histDb.GetChallenge(challengeId);
-        if (challenge.GetType() == Json::Type::Object) {
-            int cEnd = Text::ParseInt(challenge['endDate']);
-            int dontDownloadBefore = cEnd;
-            if (dontDownloadBefore > Time::Stamp) {
-                warn("Skipping QueueMapChallengeTimesGet for future COTD: " + mapUid + "/" + challengeId);
-                return;
-            }
+        int cEnd = challenge.endDate;
+        int dontDownloadBefore = cEnd;
+        if (dontDownloadBefore > Time::Stamp) {
+            warn("Skipping QueueMapChallengeTimesGet for future COTD: " + mapUid + "/" + challengeId);
+            return;
         }
         if (force || !PersistentData::MapTimesCached(mapUid, challengeId)) {
             auto obj = Json::Object();
@@ -1209,18 +1192,18 @@ class MapDb : JsonDb {
     /* access functions */
 
     bool MapIsCached(const string &in mapUid) {
-        auto map = data.j['maps'][mapUid];
-        return !IsJsonNull(map) && !IsJsonNull(map['Id']);
+        return mapDb.Exists(mapUid);
+        // auto map = data.j['maps'][mapUid];
+        // return !IsJsonNull(map) && !IsJsonNull(map['Id']);
     }
 
-    Json::Value GetMap(const string &in uid) {
-        return data.j['maps'][uid];
+    TmMap@ GetMap(const string &in uid) {
+        return mapDb.Get(uid);
     }
 
-    Json::Value MapUidToThumbnailUrl(const string &in uid) {
+    string MapUidToThumbnailUrl(const string &in uid) {
         auto map = GetMap(uid);
-        if (IsJsonNull(map)) { return map; }
-        return map['ThumbnailUrl'];
+        return map.ThumbnailUrl;
     }
 
     int[] GetChallengesForDate(const string &in year, const string &in month, const string &in day) {

@@ -287,7 +287,7 @@ namespace CotdExplorer {
 
     void DrawMapTooltip(const string &in mapUid) {
         auto map = mapDb.GetMap(mapUid);
-        if (IsJsonNull(map)) return;
+        if (map is null) return;
         if (UI::IsItemHovered()) {  /* && PersistentData::ThumbnailCached(tnUrl) */
             // UI::PushStyleColor(UI::Col::PopupBg, vec4(.2, .2, .2, .4));
             UI::BeginTooltip();
@@ -297,11 +297,11 @@ namespace CotdExplorer {
         }
     }
 
-    void DrawMapInfo(Json::Value map, bool isTitle = false, bool drawThumbnail = true, float thumbnailSizeRel = 1.0) {
-        string tnUrl = map['ThumbnailUrl'];
-        string authorName = map['AuthorDisplayName'];
-        string authorScore = Time::Format(map['AuthorScore']);
-        string mapName = map['Name'];
+    void DrawMapInfo(TmMap@ map, bool isTitle = false, bool drawThumbnail = true, float thumbnailSizeRel = 1.0) {
+        string tnUrl = map.ThumbnailUrl;
+        string authorName = map.AuthorDisplayName;
+        string authorScore = Time::Format(map.AuthorScore);
+        string mapName = map.Name;
         mapName = EscapeRawToOpenPlanet(MakeColorsOkayDarkMode(mapName));
         if (isTitle) TextHeading(mapName);
         else UI::Text(mapName);
@@ -706,21 +706,21 @@ namespace CotdExplorer {
         }
     }
 
-    void DrawTotdMapInfoTable(Json::Value map, const string &in seasonId, const string &in totdDate) {
-        if (IsJsonNull(map)) {
+    void DrawTotdMapInfoTable(TmMap@ map, const string &in seasonId, const string &in totdDate) {
+        if (map is null) {
             TextBigStrong("\\$fa4" + "Map is not found, it might be in the download queue.");
             DrawMapDownloadProgress();
             return;
         }
-        string mapUid = map['Uid'];
-        string tnUrl = map['ThumbnailUrl'];
-        string authorId = map['AuthorWebServicesUserId'];
-        string authorScore = Time::Format(map['AuthorScore']);
-        string authorName = map['AuthorDisplayName'];
+        string mapUid = map.Uid;
+        string tnUrl = map.ThumbnailUrl;
+        string authorId = map.AuthorWebServicesUserId;
+        string authorScore = Time::Format(map.AuthorScore);
+        string authorName = map.AuthorDisplayName;
         string authorNameAndId = authorName + " " + authorId;
         // apply special after setting authorNameAndId
         if (IsSpecialPlayerId(authorId)) authorName = rainbowLoopColorCycle(authorName, true);
-        string mapName = map['Name'];
+        string mapName = map.Name;
         string origMapName = mapName;
         mapName = EscapeRawToOpenPlanet(MakeColorsOkayDarkMode(mapName));
         TextHeading(mapName + " \\$z(TOTD for " + totdDate + ")");
@@ -747,13 +747,13 @@ namespace CotdExplorer {
                 if (!debounce.CanProceed('play-map-btn', 2000)) {
                     warn("debouncer said we could proceed but then said we can't proceed :(");
                 }
-                gi.GetMainaTitleControlScriptAPI().PlayMap(wstring(string(map['FileUrl'])), '', '');
+                gi.GetMainaTitleControlScriptAPI().PlayMap(wstring(string(map.FileUrl)), '', '');
             };
             UI::PopFont();
 
             // TMX: /api/maps/get_map_info/uid/{id}
-            ButtonLink("TMX", "https://trackmania.exchange/mapsearch2?trackname=" + origMapName);
-            UI::SameLine();
+            // ButtonLink("TMX", "https://trackmania.exchange/mapsearch2?trackname=" + origMapName);
+            // UI::SameLine();
             ButtonLink("TM.IO", "https://trackmania.io/#/totd/leaderboard/" + seasonId + "/" + mapUid);
 
             UI::TableNextColumn(); /* mid */
@@ -827,9 +827,9 @@ namespace CotdExplorer {
                 UI::TableNextColumn();
                 for (int i = 0; i < Math::Min(cIds.Length, COTD_BTNS.Length); i++) {
                     auto c = histDb.GetChallenge(cIds[i]);
-                    if (!IsJsonNull(c)) {
-                        _disabled = Text::ParseInt(c['endDate']) >= Time::Stamp;
-                        string cName = string(c['name']);
+                    if (c !is null) {
+                        _disabled = c.endDate >= uint(Time::Stamp);
+                        string cName = string(c.name);
                         bool isSingleton = cName.SubStr(26, 1) != "#";
                         int cotdNum = 1;
                         if (!isSingleton)

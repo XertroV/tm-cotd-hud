@@ -275,11 +275,11 @@ class JsonQueueDb : JsonDb {
         return item;
     }
 
-    Json::Value GetNQueueItemsNow(uint n) {
-        Json::Value items = Json::Array();
+    array<Json::Value> GetNQueueItemsNow(uint n) {
+        array<Json::Value> items = array<Json::Value>();
         for (uint i = 0; i < n; i++) {
             if(IsEmpty()) break;
-            items.Add(GetQueueItemNow(false));
+            items.InsertLast(GetQueueItemNow(false));
         }
         Persist();
         return items;

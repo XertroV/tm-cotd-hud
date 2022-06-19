@@ -18,14 +18,14 @@ bool IsJsonNull(const Json::Value &in j) {
 //     return obj[key];
 // }
 
-void AssertJsonArrayNonEmpty(Json::Value v) {
+void AssertJsonArrayNonEmpty(Json::Value &in v) {
     if (v.GetType() != Json::Type::Array)
         throw("not a json array");
     if (v.Length == 0)
         throw("json array length is 0");
 }
 
-int JsonMinInt(Json::Value v) {
+int JsonMinInt(Json::Value &in v) {
     AssertJsonArrayNonEmpty(v);
     int min = v[0];
     int x;
@@ -36,7 +36,7 @@ int JsonMinInt(Json::Value v) {
     return min;
 }
 
-float JsonMinFloat(Json::Value v) {
+float JsonMinFloat(Json::Value &in v) {
     AssertJsonArrayNonEmpty(v);
     float min = v[0];
     float x;
@@ -47,7 +47,7 @@ float JsonMinFloat(Json::Value v) {
     return min;
 }
 
-int[] JArrayToInt(Json::Value v) {
+int[] JArrayToInt(Json::Value &in v) {
     AssertJsonArrayNonEmpty(v);
     int[] xs = array<int>(v.Length);
     for (uint i = 0; i < v.Length; i++) {
@@ -56,7 +56,7 @@ int[] JArrayToInt(Json::Value v) {
     return xs;
 }
 
-float[] JArrayToFloat(Json::Value v) {
+float[] JArrayToFloat(Json::Value &in v) {
     AssertJsonArrayNonEmpty(v);
     float[] xs = array<float>(v.Length);
     for (uint i = 0; i < v.Length; i++) {
@@ -65,8 +65,16 @@ float[] JArrayToFloat(Json::Value v) {
     return xs;
 }
 
-string[] JArrayToString(Json::Value v) {
+string[] JArrayToString(Json::Value &in v) {
     AssertJsonArrayNonEmpty(v);
+    string[] xs = array<string>();
+    for (uint i = 0; i < v.Length; i++) {
+        xs.InsertLast(v[i]);
+    }
+    return xs;
+}
+
+string[] ArrayOfJToString(array<Json::Value> &in v) {
     string[] xs = array<string>();
     for (uint i = 0; i < v.Length; i++) {
         xs.InsertLast(v[i]);
