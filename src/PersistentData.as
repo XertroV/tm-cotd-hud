@@ -52,12 +52,6 @@ namespace PersistentData {
         CheckAndCreateFolder(folder_MapTimes);
         CheckAndCreateFolder(folder_HistogramData);
         CheckAndCreateFolder(folder_LiveTimesCache);
-        // if (!IO::FileExists(filepath_Follows)) {
-        //     // auto f = IO::File(filepath_Follows, IO::FileMode::Write);
-        //     // // f.Open(IO::FileMode::Write);  /* Append, Read, None */
-        //     // f.Write('{"players": []}');
-        //     // f.Close();
-        // }
     }
 
     void CheckAndCreateFolder(const string &in folder) {
@@ -664,12 +658,6 @@ class HistoryDb : JsonDb {
 class MapQueueDb : JsonQueueDb {
     MapQueueDb(const string &in path) {
         super(path, 'mapQueueDb-v1');
-        startnew(CoroutineFunc(SyncLoops));
-    }
-
-    void SyncLoops() {
-        // CheckInitQueueData();
-        // startnew(CoroutineFunc(_SyncLoopMapData));
     }
 }
 
@@ -679,6 +667,7 @@ const Json::Value emptyArr = Json::Array();
 
 class CotdIndexDb : JsonDb {
     private HistoryDb@ histDb;
+    private DictOfCompetition_WriteLog@ compsDb;
 
     CotdIndexDb(const string &in path, const string &in dbId) {
         super(path, dbId);
@@ -696,13 +685,21 @@ class CotdIndexDb : JsonDb {
     void ResetAndReIndex() {
         histDb.ResetChallengesCache();  // hopefully this fixes issue with not detecting challenges right for new COTDs
         data.j['maxId'] = -1;
+        data.j['compMaxId'] = -1;
         data.j['ymdToCotdChallenges'] = Json::Object();
+        data.j['ymdToCotdComps'] = Json::Object();
         logcall("CotdIndexDb.ResetAndReIndex", "Reset. Scanning now.");
         Persist();
+        startnew(CoroutineFunc(DoScan));
+        startnew(CoroutineFunc(DoScanComps));
     }
 
     void SetHistDb(HistoryDb@ _db) {
         @histDb = _db;
+    }
+
+    void SetCompsDb(DictOfCompetition_WriteLog@ _db) {
+        @compsDb = _db;
     }
 
     void DoScan() {
@@ -711,7 +708,7 @@ class CotdIndexDb : JsonDb {
         int cMaxId = histDb.GetChallengesMaxId();
         if (maxId < cMaxId) {
             for (int i = maxId + 1; i <= cMaxId; i++) {
-                if (Time::Now - lastBreak > 5) {
+                if (Time::Now - lastBreak > 15) {
                     yield();
                     lastBreak = Time::Now;
                 }
@@ -735,11 +732,7 @@ class CotdIndexDb : JsonDb {
             string name = c.name;
             if (name.SubStr(0, 14) == "Cup of the Day") {
                 string date = name.SubStr(15, 10); // 2022-05-30
-                string[] ymd = date.Split('-');
-                assert(ymd.Length == 3, "ymd has 3 elements");
-                assert(ymd[0].Length == 4, "ymd[0] is of length 4");
-                // print("ymd[0]:" + ymd[0]);
-
+                string[] ymd = FromYMD(date);
                 auto ymdObj = data.j['ymdToCotdChallenges'];
                 auto year = ymdObj[ymd[0]];
                 if (year.GetType() != Json::Type::Object) year = Json::Object();
@@ -748,10 +741,12 @@ class CotdIndexDb : JsonDb {
                 auto day = month[ymd[2]];
                 if (day.GetType() != Json::Type::Array) day = Json::Array();
 
-                day.Add(cId);
-                month[ymd[2]] = day;
-                year[ymd[1]] = month;
-                data.j['ymdToCotdChallenges'][ymd[0]] = year;
+                if (!JArrayContainsInt(day, cId)) {
+                    day.Add(cId);
+                    month[ymd[2]] = day;
+                    year[ymd[1]] = month;
+                    data.j['ymdToCotdChallenges'][ymd[0]] = year;
+                }
             } else {
                 trace("[AddChallenge] skipping challenge with name: " + name);
             }
@@ -777,6 +772,78 @@ class CotdIndexDb : JsonDb {
             _cs[i] = cs[i];
         }
         return _cs;
+    }
+
+    private uint lastCompScanNItems = 0;
+
+    void DoScanComps() {
+        compsDb.AwaitInitialized();
+        int lastBreak = Time::Now;
+        auto compsKVs = compsDb.GetItems();
+        lastCompScanNItems = compsKVs.Length;
+        int nScanned = 0;
+        for (uint i = 0; i < compsKVs.Length; i++) {
+            if (Time::Now - lastBreak > 15) {
+                yield();
+                lastBreak = Time::Now;
+            }
+            auto comp = compsKVs[i].val;
+            AddComp(comp);
+            SetCompNScanned(++nScanned);
+        }
+        Persist();
+    }
+
+    void DoScanCompsIfNew() {
+        compsDb.AwaitInitialized();
+        if (lastCompScanNItems < compsDb.GetSize()) {
+            DoScanComps();
+        }
+    }
+
+    void SetCompNScanned(int nScanned) {
+        data.j['compNScanned'] = Math::Max(nScanned, int(data.j.Get('compNScanned', 0)));
+    }
+
+    int GetCompNScanned() {
+        return data.j['compNScanned'];
+    }
+
+    void AddComp(Competition@ &in comp) {
+        if (comp !is null) {
+            if (comp.name.SubStr(0, 14) == "Cup of the Day") {
+                string[] ymd = FromYMD(ExtractYMD(comp.name));
+                auto ymdObj = data.j['ymdToCotdComps'];
+                if (ymdObj.GetType() != Json::Type::Object) ymdObj = Json::Object();
+
+                auto year = ymdObj[ymd[0]];
+                if (year.GetType() != Json::Type::Object) year = Json::Object();
+                auto month = year[ymd[1]];
+                if (month.GetType() != Json::Type::Object) month = Json::Object();
+                auto day = month[ymd[2]];
+                if (day.GetType() != Json::Type::Array) day = Json::Array();
+                if (!JArrayContainsInt(day, comp.id)) {
+                    day.Add(comp.id);
+                    month[ymd[2]] = day;
+                    year[ymd[1]] = month;
+                    ymdObj[ymd[0]] = year;
+                    data.j['ymdToCotdComps'] = ymdObj;
+                }
+            } else {
+                // trace_dev("[AddComp] skipping competition with name: " + comp.name);
+            }
+        }
+    }
+
+    int[] GetCompsForDate(const string &in y, const string &in m, const string &in d) {
+        try {
+            auto compIds = data.j['ymdToCotdComps'][y][m][d];
+            auto ret = JArrayToInt(compIds);
+            ret.SortAsc();
+            return ret;
+        } catch {
+            return {};
+        }
     }
 }
 
@@ -808,6 +875,13 @@ class MapDb : JsonDb {
     JsonDictDb@ playerNameDb;
     JsonQueueDb@ playerNameQDb;
     DictOfTmMap_WriteLog@ mapDb;
+    DictOfCompetition_WriteLog@ compsDb;
+    DictOfCompRound_WriteLog@ roundsDb;
+    DictOfCompRoundMatch_WriteLog@ matchesDb;
+    JsonQueueDb@ compsQDb;
+    JsonQueueDb@ roundsQDb;
+    JsonQueueDb@ matchesQDb;
+
     // private JsonQueueDb@ histGenQDb;
 
     MapDb(const string &in path) {
@@ -821,7 +895,12 @@ class MapDb : JsonDb {
         @playerNameDb = JsonDictDb(PersistentData::filepath_PlayerNameDb, 'playerNameDb-v1');
         @playerNameQDb = JsonQueueDb(PersistentData::filepath_PlayerNameQDb, 'playerNameQDb-v1');
         @mapDb = DictOfTmMap_WriteLog(PersistentData::dataFolder, "mapDb-maps.txt");
-        // @playerNameQDb = JsonQueueDb(PersistentData::filepath_HistogramGenQDb, 'histGenQDb-v1');
+        @compsDb = DictOfCompetition_WriteLog(PersistentData::dataFolder, "compsDb.txt");
+        @roundsDb = DictOfCompRound_WriteLog(PersistentData::dataFolder, "compRoundsDb.txt");
+        @matchesDb = DictOfCompRoundMatch_WriteLog(PersistentData::dataFolder, "compRoundMatchesDb.txt");
+        @compsQDb = JsonQueueDb(PersistentData::dataFolder + "/compsQDb.json", "comps-queueDb-v1");
+        @roundsQDb = JsonQueueDb(PersistentData::dataFolder + "/compRoundsQDb.json", "compRounds-queueDb-v1");
+        @matchesQDb = JsonQueueDb(PersistentData::dataFolder + "/compRoundMatchesQDb.json", "compRoundMatches-queueDb-v1");
         startnew(CoroutineFunc(SyncLoops));
     }
 
@@ -835,6 +914,7 @@ class MapDb : JsonDb {
             yield();
         }
         cotdIndexDb.SetHistDb(histDb);
+        cotdIndexDb.SetCompsDb(compsDb);
     }
 
     void SyncLoops() {
@@ -846,8 +926,13 @@ class MapDb : JsonDb {
         startnew(CoroutineFunc(_SyncLoopCotdMapTimes));
         startnew(CoroutineFunc(_SyncLoopPlayerNames));
         startnew(CoroutineFunc(_LoopCheckPlayerNamesInGame));
+        startnew(CoroutineFunc(_SyncLoopComps));
+        startnew(CoroutineFunc(_SyncLoopCompRounds));
+        startnew(CoroutineFunc(_SyncLoopCompRoundMatches));
     }
 
+    private uint _mapsInProgress = 0;
+    uint get_mapsInProgress() { return _mapsInProgress; }
     void _SyncLoopMapData() {
         // todo
         /* - check if empty -> sleep
@@ -859,49 +944,22 @@ class MapDb : JsonDb {
         uint upToXMaps = 50;
         while (true) {
             if (queueDb.IsEmpty()) {
+                _mapsInProgress = 0;
                 sleep(50);
                 continue;
             }
             string[] uids = ArrayOfJToString(queueDb.GetNQueueItemsNow(upToXMaps));
-            // while (!queueDb.IsEmpty() && uids.Length < upToXMaps) {
-            //     string uid = queueDb.GetQueueItemNow();
-            //     uids.InsertAt(uids.Length, uid);
-            // }
+            _mapsInProgress = uids.Length;
             if (uids.Length > 0) {
                 auto maps = api.GetMapsInfo(uids);
                 for (uint i = 0; i < maps.Length; i++) {
                     auto mapGameObj = maps[i];
                     auto map = TmMap(mapGameObj);
-                    /* metadata */
-                    // mapj['Id'] = map.Id;
-                    // mapj['Uid'] = map.Uid;
-                    // mapj['Type'] = tostring(map.Type);
-                    // mapj['Name'] = tostring(map.Name);
-                    // mapj['Style'] = tostring(map.Style);
-                    // mapj['TimeStamp'] = '' + map.TimeStamp;
-                    // /* author stuff */
-                    // mapj['AuthorAccountId'] = map.AuthorAccountId;
-                    // mapj['AuthorWebServicesUserId'] = map.AuthorWebServicesUserId;
-                    // mapj['AuthorDisplayName'] = tostring(map.AuthorDisplayName);
-                    // mapj['AuthorIsFirstPartyDisplayName'] = map.AuthorIsFirstPartyDisplayName;
-                    // mapj['SubmitterWebServicesUserId'] = map.SubmitterWebServicesUserId;
-                    // mapj['SubmitterAccountId'] = map.SubmitterAccountId;
-                    // /* times */
-                    // mapj['AuthorScore'] = map.AuthorScore;
-                    // mapj['GoldScore'] = map.GoldScore;
-                    // mapj['SilverScore'] = map.SilverScore;
-                    // mapj['BronzeScore'] = map.BronzeScore;
-                    // /* files */
-                    // mapj['ThumbnailUrl'] = map.ThumbnailUrl;
-                    // mapj['FileUrl'] = map.FileUrl;
-                    // mapj['FileName'] = tostring(map.FileName);
-                    // /* save it */
-                    // data.j['maps'][map.Uid] = mapj;
                     mapDb.Set(map.Uid, map);
                     QueueThumbnailGet(map.ThumbnailUrl);
                     logcall('SyncMap', 'Completed: ' + map.Uid);
                 }
-                Persist();
+                queueDb.Persist();
             } else {
                 sleep(250);
             }
@@ -913,9 +971,8 @@ class MapDb : JsonDb {
             if (!thumbQDb.IsEmpty()) {
                 startnew(CoroutineFunc(_DownloadNextThumb));
                 yield();
-                yield();
             } else {
-                sleep(250);
+                sleep(50);
             }
         }
     }
@@ -933,7 +990,8 @@ class MapDb : JsonDb {
             if (cotdIndexDb.GetMaxId() < challengesMaxId) {
                 cotdIndexDb.DoScan();
             }
-            sleep(250);
+            cotdIndexDb.DoScanCompsIfNew();
+            sleep(100);
         }
     }
 
@@ -943,7 +1001,7 @@ class MapDb : JsonDb {
             if (!recordsQDb.IsEmpty()) {
                 startnew(CoroutineFunc(_SyncNextRecord));
             } else {
-                sleep(500);
+                sleep(50);
             }
             yield();
         }
@@ -1111,6 +1169,98 @@ class MapDb : JsonDb {
         }
     }
 
+    /* pattern:
+        we are done historical if we have id=1 (nb: first COTD is id=40).
+        if we're not done historical then just restart
+        - it's only like ~30 requests
+        - and once we're done, we're done forever
+        now that we're done historical, sync new stuff (which will be repeated every hour)
+        - we do this from offset=0 till we hit records we already have.
+    */
+    void _SyncLoopComps() {
+        compsDb.AwaitInitialized();
+        _GetCompsHistorical();
+        logcall("_SyncLoopComps", "Starting");
+        // vars for loop
+        uint offset = 0;
+        uint length = 10;
+        // outer 1hr long loop
+        while (true) {
+            // reset request params
+            offset = 0;
+            length = 10;
+            bool gotOverlapping = false;
+            // inner loop to keep getting rows while there's new stuff
+            while (!gotOverlapping) {
+                auto comps = Competitions(api.GetCompetitions(length, offset));
+                for (uint i = 0; i < comps.Length; i++) {
+                    auto comp = comps[i];
+                    if (compsDb.Exists('' + comp.id)) {
+                        gotOverlapping = true;
+                    } else {
+                        compsDb.Set('' + comp.id, comp);
+                        gotOverlapping = false; // set gotOverlapping back to false if it was true b/c if a new comp gets published then the first comp will be overlapping but the last won't.
+                    }
+                }
+                offset += length;
+                length = Math::Min(100, length * 2);
+            }
+            logcall("_SyncLoopComps", "pausing for 1hr rest; next params would have been: l=" + length + ",o=" + offset + " (earliest exit (no new info) would show l=20,o=10)");
+            sleep(3600 * 1000);
+        }
+    }
+
+    void _GetCompsHistorical() {
+        logcall("_GetCompsHistorical", "Starting");
+        // nb: could estimate offset here using number of records in DB, but will be an overestimate over time since we'll cache some comps that get deleted.
+        uint offset = 0;
+        uint length = 100;
+        int maxId = -1;
+        while (true) {
+            if (compsDb.Exists('1')) return; // we're done the historical scan at this point
+            auto comps = Competitions(api.GetCompetitions(length, offset));
+            if (offset == 0) maxId = comps[0].id;
+            if (int(offset) > maxId) throw('should exit before this');
+            for (uint j = 0; j < comps.Length; j++) {
+                auto comp = comps[j];
+                compsDb.Set('' + comp.id, comp);
+            }
+            logcall("_GetCompsHistorical", "completed loop, got n_comps=" + comps.Length + ", at offset=" + offset);
+            offset += length;
+            yield();
+            sleep(500);
+        }
+        logcall("_GetCompsHistorical", "Done");
+    }
+
+    void _SyncLoopCompRounds() {
+        logcall("_SyncLoopCompRounds", "Starting");
+        while (true) {
+            if (!roundsQDb.IsEmpty()) {
+                startnew(CoroutineFunc(_SyncNextCompRound));
+            } else {
+                sleep(50);
+            }
+            yield();
+        }
+    }
+
+    void _SyncNextCompRound() {}
+
+    void _SyncLoopCompRoundMatches() {
+        logcall("_SyncLoopCompRoundMatches", "Starting");
+        while (true) {
+            if (!matchesQDb.IsEmpty()) {
+                startnew(CoroutineFunc(_SyncNextCompRoundMatch));
+            } else {
+                sleep(50);
+            }
+            yield();
+        }
+    }
+
+    void _SyncNextCompRoundMatch() {}
+
     /* sync util functions */
 
     bool HaveIndexedChallenge(int cId) {
@@ -1119,22 +1269,20 @@ class MapDb : JsonDb {
         return v;
     }
 
-    // todo
-
     /* queue a map for download. safe to call multiple times.
        will do nothing if we have already got the map.
     */
-    void QueueMapGet(const string &in mapUid) {
+    void QueueMapGet(const string &in mapUid, bool persist = true) {
         if (!MapIsCached(mapUid)) {
-            queueDb.PutQueueEntry(Json::Value(mapUid));
+            queueDb.PutQueueEntry(Json::Value(mapUid), persist);
         } else {
-            QueueThumbnailGet(GetMap(mapUid).ThumbnailUrl);
+            QueueThumbnailGet(GetMap(mapUid).ThumbnailUrl, persist);
         }
     }
 
-    void QueueThumbnailGet(const string &in tnUrl) {
+    void QueueThumbnailGet(const string &in tnUrl, bool persist = true) {
         if (!PersistentData::ThumbnailCached(tnUrl)) {
-            thumbQDb.PutQueueEntry(tnUrl);
+            thumbQDb.PutQueueEntry(tnUrl, persist);
         }
     }
 
@@ -1212,5 +1360,10 @@ class MapDb : JsonDb {
 
     int[] GetChallengesForDate(const string &in year, const string &in month, const string &in day) {
         return cotdIndexDb.GetChallengesForDate(year, month, day);
+    }
+
+    int[] GetCompsForDate(const string &in y, const string &in m, const string &in d) {
+        print("GetCompsForDate: " + string::Join({y,m,d}, "-"));
+        return cotdIndexDb.GetCompsForDate(y, m, d);
     }
 }

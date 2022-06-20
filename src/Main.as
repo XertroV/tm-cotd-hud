@@ -23,6 +23,7 @@ void Main() {
     // SetDevSettings();
     // startnew(DebugTest_LoadingScreen);
     // startnew(DebugTest_PrintPgUIConfigs);
+    startnew(DevMain);
 #endif
 
 #if UNIT_TEST || DEV
@@ -98,3 +99,16 @@ Watchers:
 CTrackMania@ GetTmApp() {
     return cast<CTrackMania>(GetApp());
 }
+
+#if DEV
+// for doing one off things like logging api results
+void DevMain() {
+    // auto api = CotdApi();
+    // auto r = api.GetCompetitions(3, 2);
+    // print("GetCompetitions: " + Json::Write(r));
+    // auto rounds = api.GetCompRounds(2927, 2);
+    // print("GetCompRounds: " + Json::Write(rounds));
+    // auto matches = api.GetCompRoundMatches(7317, 2);
+    // print("GetCompRoundMatches: " + Json::Write(matches));
+}
+#endif

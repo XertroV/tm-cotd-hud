@@ -18,9 +18,13 @@ bool IsJsonNull(const Json::Value &in j) {
 //     return obj[key];
 // }
 
-void AssertJsonArrayNonEmpty(Json::Value &in v) {
+void AssertJsonArray(Json::Value &in v) {
     if (v.GetType() != Json::Type::Array)
         throw("not a json array");
+}
+
+void AssertJsonArrayNonEmpty(Json::Value &in v) {
+    AssertJsonArray(v);
     if (v.Length == 0)
         throw("json array length is 0");
 }
@@ -80,4 +84,12 @@ string[] ArrayOfJToString(array<Json::Value> &in v) {
         xs.InsertLast(v[i]);
     }
     return xs;
+}
+
+bool JArrayContainsInt(Json::Value &in j, int v) {
+    AssertJsonArray(j);
+    for (uint i = 0; i < j.Length; i++) {
+        if (int(j[i]) == v) return true;
+    }
+    return false;
 }

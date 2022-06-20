@@ -61,7 +61,7 @@ namespace CotdExplorer {
         calendarDayBtnDims = vec2(1920, 1080) * vec2(0.04, 0.05);
         calendarMonthBtnDims = vec2(1920, 1080) * vec2(0.0472, 0.05);
         challengeBtnDims = vec2(1920, 1080) * vec2(.056, .05);
-        windowActive.v = IfDev();
+        windowActive.v = IsDev();
     }
 
     void OnMouseMove(int x, int y) {
@@ -287,8 +287,7 @@ namespace CotdExplorer {
 
     void DrawMapTooltip(const string &in mapUid) {
         auto map = mapDb.GetMap(mapUid);
-        if (map is null) return;
-        if (UI::IsItemHovered()) {  /* && PersistentData::ThumbnailCached(tnUrl) */
+        if (UI::IsItemHovered()) {
             // UI::PushStyleColor(UI::Col::PopupBg, vec4(.2, .2, .2, .4));
             UI::BeginTooltip();
             DrawMapInfo(map, false, true, 1.0);
@@ -298,6 +297,11 @@ namespace CotdExplorer {
     }
 
     void DrawMapInfo(TmMap@ map, bool isTitle = false, bool drawThumbnail = true, float thumbnailSizeRel = 1.0) {
+        if (map is null) {
+            UI::Text("Downloading Map Info...");
+            UI::Text("Queued: " + mapDb.queueDb.Length + " / In Progress: " + mapDb.mapsInProgress);
+            return;
+        }
         string tnUrl = map.ThumbnailUrl;
         string authorName = map.AuthorDisplayName;
         string authorScore = Time::Format(map.AuthorScore);
@@ -627,21 +631,13 @@ namespace CotdExplorer {
 
     void EnsureMapDataForCurrMonth() {
         EnsureMapDataForYM('', '');
-        // dictionary@ month = CotdTreeYM();
-        // auto keys = month.GetKeys();
-        // for (uint i = 0; i < keys.Length; i++) {
-        //     auto day = cast<JsonBox@>(month[keys[i]]);
-        //     mapDb.QueueMapGet(day.j['mapUid']);
-        // }
     }
 
     void EnsureMapDataForYM(const string &in year, const string &in month) {
-        // auto mo = cast<dictionary>(cast<dictionary>(cotdYMDMapTree[year])[month]);
         auto mo = CotdTreeYM(year, month);
         auto keys = mo.GetKeys();
         for (uint i = 0; i < keys.Length; i++) {
             auto day = cast<JsonBox@>(mo[keys[i]]);
-            // mapDb.QueueMapGet(day.j['mapUid']);
             EnsureMapDataForYMD(year, month, keys[i]);
         }
     }
@@ -663,6 +659,7 @@ namespace CotdExplorer {
     void EnsureMapDataForCurrDay() {
         EnsureMapDataForYMD('', '', '');
         challengeIdsForSelectedCotd = CotdChallengesForSelectedDate();
+        compIdsForSelectedCotd = CotdCompForSelectedDate();
     }
 
     void EnsureMapDataForYMD(const string &in _year, const string &in _month, const string &in _day) {
@@ -674,7 +671,7 @@ namespace CotdExplorer {
         if (seasonUid.Length == 0) return;
         string endTs = '' + day.endTimestamp;
         auto cIds = CotdChallengesForYMD(_year, _month, _day);
-        mapDb.QueueMapGet(uid);
+        mapDb.QueueMapGet(uid, false);
         mapDb.QueueMapRecordGet(seasonUid, uid, endTs);
     }
 
@@ -701,6 +698,14 @@ namespace CotdExplorer {
     void DrawChallengeDownloadProgress() {
         auto maxId = histDb.ChallengesSdMaxId();
         UI::TextWrapped("Challenge sync progress | ix: " + mapDb.cotdIndexDb.GetMaxId() + " / dl: " + histDb.GetChallengesMaxId() + " / total: " + maxId);
+        if (UI::Button("Check again if available...")) {
+            startnew(EnsureMapDataForCurrDay);
+        }
+    }
+
+    void DrawCompDownloadProgress() {
+        auto scanned = mapDb.cotdIndexDb.GetCompNScanned();
+        UI::TextWrapped("Competition sync progress | index: " + scanned + " / dl: " + mapDb.compsDb.GetSize());
         if (UI::Button("Check again if available...")) {
             startnew(EnsureMapDataForCurrDay);
         }
@@ -802,15 +807,20 @@ namespace CotdExplorer {
 
 
     int[] challengeIdsForSelectedCotd = {};
+    int[] compIdsForSelectedCotd = {};
     void _RenderExplorerCotdCupSelection() {
         // auto cIds = CotdChallengesForSelectedDate();
         auto cIds = challengeIdsForSelectedCotd;
+        auto compIds = compIdsForSelectedCotd;
         TrackOfTheDayEntry@ totdInfo = CotdTreeYMD();
         string mapUid = totdInfo.mapUid;
         bool _disabled = false;
         if (cIds.Length == 0) {
             UI::TextWrapped("\\$f81 Warning: cannot find challengeIds for COTDs on " + SelectedCotdDateStr() + "; nChallenges=" + cIds.Length);
             DrawChallengeDownloadProgress();
+        } else if (compIds.Length == 0) {
+            UI::TextWrapped("\\$f81 Warning: cannot find competition IDs for COTDs on " + SelectedCotdDateStr() + "; nComps=" + compIds.Length);
+            DrawCompDownloadProgress();
         } else {
             TextHeading(_ExplorerCotdTitleStr() + " | Select Cup");
             if (cIds.Length < 3 && ExpectMultipleCups(explYear.val, explMonth.val, explDay.val)) {
@@ -929,6 +939,11 @@ namespace CotdExplorer {
         return mapDb.GetChallengesForDate(year, month, day);
     }
 
+    int[] CotdCompForSelectedDate() {
+        string[] ymd = ToYMDArr(explYear.val, explMonth.val, explDay.val);
+        return mapDb.GetCompsForDate(ymd[0], ymd[1], ymd[2]);
+    }
+
     /* returns false when showLoading=false and the image is loading */
     bool _DrawThumbnail(const string &in urlOrFileName, bool showLoading = true, float sizeMult = 1.5) {
         if (PersistentData::ThumbnailCached(urlOrFileName)) {
@@ -949,15 +964,38 @@ namespace CotdExplorer {
         UI::Image(tex, mapThumbDims * sizeMult);
     }
 
+    void ResetCotdCupButton() {
+        UI::Dummy(vec2(10, 0));
+        UI::SameLine();
+        if (UI::Button("Select Cup #")) {
+            resetLevel = 3;
+            _ResetExplorerCotdSelection();
+        }
+    }
+
     void _RenderExplorerCotdCup() {
         int cId = explChallenge.val;
-        TextHeading(_ExplorerCotdTitleStr());
+        TextHeading(_ExplorerCotdTitleStr(), true, ResetCotdCupButton);
         auto mapInfo = CotdTreeYMD();
         string mapUid = mapInfo.mapUid;
         string seasonUid = mapInfo.seasonUid;
-        // auto map = mapDb.GetMap(mapUid);
 
-        if (UI::BeginTable(UI_EXPLORER + "-cotdOuter", 4, TableFlagsStretch())) {
+        int tabBarFlags = UI::TabBarFlags::NoCloseWithMiddleMouseButton;
+        UI::BeginTabBar("cotd-tabs-" + cId, tabBarFlags);
+        if (UI::BeginTabItem("Qualifiers##" + cId)) {
+            _DrawCotdQualiTabContents(mapUid, cId);
+            UI::EndTabItem();
+        }
+
+        if (UI::BeginTabItem("Division Results##" + cId)) {
+            _DrawCotdDivisionResTabContents(cId);
+            UI::EndTabItem();
+        }
+        UI::EndTabBar();
+    }
+
+    void _DrawCotdQualiTabContents(const string &in mapUid, uint cId) {
+        if (UI::BeginTable(UI_EXPLORER + "-cotdOuter", 5, TableFlagsStretch())) {
             // UI::TableSetupColumn("Nil", UI::TableColumnFlags::WidthFixed, 20.);
             UI::TableNextColumn();
 
@@ -976,6 +1014,10 @@ namespace CotdExplorer {
 
             UI::EndTable();
         }
+    }
+
+    void _DrawCotdDivisionResTabContents(uint cId) {
+        //
     }
 
     dictionary@ COTD_HISTOGRAM_DATA = dictionary();

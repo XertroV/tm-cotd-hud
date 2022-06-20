@@ -24,6 +24,9 @@ void todo(const string &in text) {
 
 void trace_benchmark(const string &in action, uint deltaMs) {
     trace(c_mid_grey + "[" + c_purple + action + c_mid_grey + "] took " + c_purple + deltaMs + " ms");
-#if DEV || UNIT_TEST
-#endif
+}
+
+void trace_dev(const string &in msg) {
+    if (IsDev())
+        trace(msg);
 }

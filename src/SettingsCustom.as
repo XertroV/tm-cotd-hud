@@ -74,7 +74,7 @@ BG DATA
 bool Setting_SyncAllowBgQualifierTimes = false;
 
 [Setting hidden]
-bool Setting_AllowSaveQualiSnapshots = IfDev();
+bool Setting_AllowSaveQualiSnapshots = IsDev();
 
 [SettingsTab name="Data & DBs"]
 void RenderSettingsDataSync() {

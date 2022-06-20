@@ -1,0 +1,18 @@
+[{
+    "leaderboardComputeType": "CUP_OF_THE_DAY",
+    "id": 7317,
+    "startDate": 1.6554e+09,
+    "nbMatches": 46,
+    "name": "Cup of the Day 2022-06-16 #1 - Round",
+    "trainingChallengeId": null,
+    "lockDate": null,
+    "status": "COMPLETED",
+    "position": 0,
+    "teamLeaderboardComputeType": null,
+    "deletedOn": null,
+    "endDate": 1.65541e+09,
+    "isLocked": false,
+    "autoNeedsMatches": true,
+    "matchScoreDirection": "DESC",
+    "qualifierChallengeId": 1449
+}]

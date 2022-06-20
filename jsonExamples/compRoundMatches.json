@@ -1,0 +1,19 @@
+{
+    "matches": [{
+        "id": 31364,
+        "name": "Cup of the Day 2022-06-16 #1 - Match 1",
+        "tags": [],
+        "position": 0,
+        "deletedOn": null,
+        "isCompleted": true,
+        "clubMatchLiveId": "LID-MTCH-2b1jd1z2brshtt4"
+    }, {
+        "id": 31365,
+        "name": "Cup of the Day 2022-06-16 #1 - Match 2",
+        "tags": [],
+        "position": 1,
+        "deletedOn": null,
+        "isCompleted": true,
+        "clubMatchLiveId": "LID-MTCH-c4upsh0is5qporb"
+    }]
+}
