@@ -1117,6 +1117,7 @@ namespace CotdExplorer {
     }
 
     int lastCidDownload = -1;
+    CacheQualiTimes@ qtCache = CacheQualiTimes();
 
     bool _CotdQualiTimesTable(int cId) {
         auto mapInfo = CotdTreeYMD();
@@ -1147,8 +1148,11 @@ namespace CotdExplorer {
             }
             /* other status things? */
             if (dlDone) {
-                auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
-                int nPlayers = jb.j['nPlayers'];
+                if (qtCache.cId != uint(cId)) {
+                    qtCache.SetCache(mapUid, uint(cId));
+                }
+                // auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
+                int nPlayers = qtCache.nPlayers;
                 // UI::TableNextRow();
                 // DrawAs2Cols("Total Players", '' + nPlayers);
                 UI::TableNextRow();
@@ -1226,25 +1230,27 @@ namespace CotdExplorer {
     }
 
     void _DrawCotdTimesTableColumns(const string &in mapUid, int cId) {
-        auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
-        float nPlayers = jb.j['nPlayers'];
-        float chunkSize = jb.j['chunkSize'];
-        uint drawNTopTimes = 10;
-        auto times = jb.j['ranges']['1'];
-        int lastChunkIx = int(Math::Floor((nPlayers - 1) / chunkSize) * chunkSize) + 1;
-        auto lastTimes = jb.j['ranges']['' + lastChunkIx];
-        // logcall('_DrawCotdTimesTableCOls', 'last times ix: ' + lastChunkIx + '; j=' + Json::Write(lastTimes));
-        int topScore = times[0]['score'];
-        for (uint i = 0; i < drawNTopTimes; i++) {
-            _DrawCotdTimeTableRow(times[i], topScore);
+        for (uint i = 0; i < qtCache.Length; i++) {
+            _DrawCotdTimeTableRow(qtCache.GetRow(i));
         }
-        UI::TableNextColumn();
-        UI::Text("...");
+        // auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
+        // float chunkSize = qtCache.chunkSize;
+        // uint drawNTopTimes = 10;
+        // auto times = jb.j['ranges']['1'];
+        // int lastChunkIx = int(Math::Floor((nPlayers - 1) / chunkSize) * chunkSize) + 1;
+        // auto lastTimes = jb.j['ranges']['' + lastChunkIx];
+        // // logcall('_DrawCotdTimesTableCOls', 'last times ix: ' + lastChunkIx + '; j=' + Json::Write(lastTimes));
+        // int topScore = times[0]['score'];
+        // for (uint i = 0; i < drawNTopTimes; i++) {
+        //     _DrawCotdTimeTableRow(times[i], topScore);
+        // }
         // UI::TableNextColumn();
-        UI::TableNextRow();
-        if (lastTimes.Length >= 2)
-            _DrawCotdTimeTableRow(lastTimes[lastTimes.Length - 2], topScore);
-        _DrawCotdTimeTableRow(lastTimes[lastTimes.Length - 1], topScore);
+        // UI::Text("...");
+        // // UI::TableNextColumn();
+        // UI::TableNextRow();
+        // if (lastTimes.Length >= 2)
+        //     _DrawCotdTimeTableRow(lastTimes[lastTimes.Length - 2], topScore);
+        // _DrawCotdTimeTableRow(lastTimes[lastTimes.Length - 1], topScore);
     }
 
     int copiedCooldownSince = 0;
@@ -1276,34 +1282,35 @@ namespace CotdExplorer {
             AddSimpleTooltip(tooltipText);
     }
 
-    void _DrawCotdTimeTableRow(Json::Value time, int topScore) {
-        int rank = time['rank'];
-        int score = time['score'];
-        string pid = time['player'];
+    void _DrawCotdTimeTableRow(array<string> &in row) {
         UI::TableNextColumn();
-        UI::Text('' + rank);
+        UI::Text(row[0]);
         UI::TableNextColumn();
-        UI::Text(Time::Format(score));
+        UI::Text(row[1]);
         UI::TableNextColumn();
-        if (rank > 1)
-            UI::Text(c_timeOrange + "+" + Time::Format(score - topScore));
+        if (row[0] != "1")
+            UI::Text(row[2]);
         UI::TableNextColumn();
         // todo player name
-        bool nameExists = mapDb.playerNameDb.Exists(pid);
-        string hl = CooldownHLColor(pid, nameExists ? "" : "\\$a42");
-        string nameRaw = nameExists ? mapDb.playerNameDb.Get(pid) : "?? " + pid.Split('-')[0];
-        string pName = IsSpecialPlayerId(pid)
-            ? "\\$s" + rainbowLoopColorCycle(nameRaw, true)
-            : hl + nameRaw;
-        UI::Text(pName);
-        if (UI::IsItemClicked()) {
-            trace("Copying to clipboard: " + pid);
-            IO::SetClipboard(pid);
-            lastCopiedPid = pid;
-            copiedCooldownSince = Time::Now;
-        }
-        if (!mapDb.playerNameDb.Exists(pid)) {
-            AddSimpleTooltip("Player ID not found. Click to copy.");
+        string pid = row[3];
+        if (pid.Length > 10) {
+            bool nameExists = mapDb.playerNameDb.Exists(pid);
+            string hl = CooldownHLColor(pid, nameExists ? "" : "\\$a42");
+            string nameRaw = nameExists ? mapDb.playerNameDb.Get(pid) : "?? " + pid.Split('-')[0];
+            string pName = IsSpecialPlayerId(pid)
+                ? rainbowLoopColorCycle(nameRaw, true)
+                : hl + nameRaw;
+            // string pName = hl + nameRaw;
+            UI::Text(pName);
+            if (UI::IsItemClicked()) {
+                trace("Copying to clipboard: " + pid);
+                IO::SetClipboard(pid);
+                lastCopiedPid = pid;
+                copiedCooldownSince = Time::Now;
+            }
+            if (!mapDb.playerNameDb.Exists(pid)) {
+                AddSimpleTooltip("Player Name for this ID not found. Click to copy the ID.");
+            }
         }
         UI::TableNextRow();
     }

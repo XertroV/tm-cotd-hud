@@ -521,7 +521,7 @@ namespace DataManager {
             ts = timeStamp;
         }
     }
-    /* todo: updating is taking like forever? */
+
     void CoroLoopSaveAllTimes() {
         logcall("CoroLoopSaveAllTimes", "Starting...");
         while (true) {

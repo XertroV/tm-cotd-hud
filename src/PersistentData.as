@@ -1139,7 +1139,11 @@ class MapDb : JsonDb {
     }
 
     void QueueMapChallengeTimesGet(const string &in mapUid, int challengeId, bool force = false) {
-        auto challenge = histDb.GetChallenge(challengeId);
+        Challenge@ challenge = histDb.GetChallenge(challengeId);
+        if (challenge is null) {
+            warn("Attempted to queue challenge that does not exist! cId=" + challengeId);
+            return;
+        }
         int cEnd = challenge.endDate;
         int dontDownloadBefore = cEnd;
         if (dontDownloadBefore > Time::Stamp) {
