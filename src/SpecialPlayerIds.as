@@ -22,6 +22,10 @@ const string[] SPECIAL_PLAYER_IDS = {
     "24b09acf-f745-408e-80fc-b1141054504c", // Simplynick
     "07ff9d3a-849e-496e-aca9-6ac41ed23e75", // MEDICINE9268
     "af30b7a1-fc37-485f-94bf-f00e39805d8c", // Ixxonn
+    "de590c4e-f98c-4783-afa8-a01efb069ceb", // LinkTM
+    "b05db0f8-d845-47d2-b0e5-795717038ac6", // Massa
+    "961d1145-8c7b-48c3-9191-0d1d91e44a4a", // Dog..
+    "1336b019-0d7d-43f7-b227-ff336f8b7140", // Mawi__
 #endif
     "asdf"
 };

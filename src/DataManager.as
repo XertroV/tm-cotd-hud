@@ -205,7 +205,7 @@ namespace DataManager {
 
     void LoopUpdateDivsInCotd() {
         uint loopSleepMs = 100;
-        uint loopUpdatePeriodMs = 120 * 1000;
+        uint loopUpdatePeriodMs = 5 * 1000;
 
         while (true) {
             auto now = Time::get_Now();
@@ -218,7 +218,7 @@ namespace DataManager {
             // must be COTD
             shouldUpdate = shouldUpdate && gi.IsCotdQuali();
 
-            if (debounce.CanProceed('log shouldUpdate cotdDivs', loopUpdatePeriodMs) || shouldUpdate)
+            if (gi.IsCotdQuali() && debounce.CanProceed('log shouldUpdate cotdDivs', loopUpdatePeriodMs) || shouldUpdate)
                 dev_logcall("LoopUpdateDivsInCotd", 'shouldUpdate:' + shouldUpdate);
 
             /* Update divs */
