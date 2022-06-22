@@ -5,11 +5,14 @@ WindowState w_EulaFirstLoad('COTD HUD + Explorer EULA', Setting_EulaWindow);
 
 namespace WEULA {
     void Render() {
+        if(!w_EulaFirstLoad.IsVisible()) {
+            Setting_EulaWindow = false;
+        }
         if (Setting_EulaAgreement) Setting_EulaWindow = false;
         if (Setting_EulaWindow) {
             if (!w_EulaFirstLoad.IsVisible()) return;
             if (w_EulaFirstLoad.IsAppearing()) {
-                vec2 size = vec2(1000, 700);
+                vec2 size = vec2(1100, 800);
                 UI::SetNextWindowSize(size.x, size.y, UI::Cond::Always);
                 vec2 wh = vec2(Draw::GetWidth(), Draw::GetHeight());
                 vec2 center = wh / 2.;

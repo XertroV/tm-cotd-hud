@@ -438,7 +438,7 @@ void RenderSettingsEula() {
     CenteredTextBigHeading("\"End User License Agreement\"", BcCommands::ByCotdHudStr);
     UI::PushFont(subheadingFont);
     UI::TextWrapped(string::Join(
-        { "By checking the following box you hereby agree to the following 'End User License Agreement' for COTD HUD + Explorer (i.e., \"this work\").\nHere, \"we\" refers to the developers of this software."
+        { "You are asked to agree to the following 'End User License Agreement' (EULA) for COTD HUD + Explorer (i.e., \"this work\") in exchange for the utility it provides.\nIn this EULA, \"we\" refers to the developers of this software."
         , ""
         , "The EULA is that you both acknowledge and concent to all of the following:"
         , ""
@@ -449,6 +449,10 @@ void RenderSettingsEula() {
         , "\t→\t Any additional requirements as specified under any license that the distribution of this work that you are using is published under."
         , ""
         , "\t→\t \\$<\\$ee2Downloading will begin as soon as you click 'Accept EULA'.\\$>"
+        , ""
+        , "\t→\t Revoking this agreement requires restarting Trackmania."
+        , ""
+        , "\t→\t Your consent will be sought before gathering telemetry if this software ever integrates such functionality. Currently no such functionality is present. (In such a case, this clause must be replaced for the author to be considered honest.)"
         , ""
         , "\t→\t (Beta clause) This software may have breaking version changes which require you to re-download any and all data. Currently the DB api is unstable and we are not sure that it will remain stable."
         , ""
