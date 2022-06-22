@@ -43,6 +43,7 @@ void Render() {
     WDebugNod::Render();
     WAllTimes::Render();
     WAllDivResults::Render();
+    WEULA::Render();
 }
 
 void RenderInterface() {

@@ -486,4 +486,15 @@ void RenderSettingsEula() {
         AddSimpleTooltip("Remember: you must restart\nTrackmania for this to take effect!");
     }
     UI::PopFont();
+    VPad();
+    VPad();
+    UI::Separator();
+    VPad();
+    VPad();
+    if (Setting_EulaAgreement && !Setting_EulaWindow) {
+        if (UI::Button("(Debug) Reset EULA conset & also show EULA popup window")) {
+            Setting_EulaWindow = true;
+            Setting_EulaAgreement = false;
+        }
+    }
 }
