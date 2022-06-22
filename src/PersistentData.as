@@ -879,7 +879,9 @@ class MapDb : JsonDb {
     DictOfUintToCompRound_WriteLog@ roundsDb;
     DictOfUintToArrayOfUint_WDefault_WriteLog@ roundsToMatches;
     DictOfUintToCompRoundMatch_WriteLog@ matchesDb;
-    DictOfUintToMatchResults_WriteLog@ matchResultsDb;
+    // DictOfUintToMatchResults_WriteLog@ matchResultsDb;
+    _DictOfUintToMatchResults_WriteLog::DirOf@ matchResultsDb;
+    // _MatchResults::DirOf@ matchResultsDb;
     JsonQueueDb@ compsQDb;
     JsonQueueDb@ roundsQDb;
     JsonQueueDb@ matchesQDb;
@@ -903,7 +905,9 @@ class MapDb : JsonDb {
         @compsDb = DictOfCompetition_WriteLog(PersistentData::dataFolder, "compsDb.txt");
         @roundsDb = DictOfUintToCompRound_WriteLog(PersistentData::dataFolder, "compRoundsDb.txt");
         @matchesDb = DictOfUintToCompRoundMatch_WriteLog(PersistentData::dataFolder, "compRoundMatchesDb.txt");
-        @matchResultsDb = DictOfUintToMatchResults_WriteLog(PersistentData::dataFolder, "matchResultsDb.txt");
+        // @matchResultsDb = DictOfUintToMatchResults_WriteLog(PersistentData::dataFolder, "matchResultsDb.txt");
+        @matchResultsDb = _DictOfUintToMatchResults_WriteLog::DirOf(PersistentData::dataFolder + "/matchResultsDb");
+        // @matchResultsDb = _MatchResults::DirOf(PersistentData::dataFolder + "/matchResultsDb");
         @compsToRounds = DictOfUintToArrayOfUint_WDefault_WriteLog(PersistentData::dataFolder, "compsToRoundsIx.txt");
         @roundsToMatches = DictOfUintToArrayOfUint_WDefault_WriteLog(PersistentData::dataFolder, "roundToMatchesIx.txt");
         @compsQDb = JsonQueueDb(PersistentData::dataFolder + "/compsQDb.json", "comps-queueDb-v1");
@@ -1329,7 +1333,7 @@ class MapDb : JsonDb {
             roundsToMatches.Set(roundId, matchIds);
             logcall("_SyncNextCompRoundMatch", "got matches for round:" + roundId);
             logcall("_SyncNextCompRoundMatch", "match1:" + matchesDb.Get(matchIds[0]).ToString());
-            QueueCompMatchResultsGet(matchIds);
+            QueueCompMatchResultsGet(roundId, matchIds);
         }
     }
 
@@ -1347,9 +1351,11 @@ class MapDb : JsonDb {
 
     void _SyncNextCompMatchResults() {
         if (!matchResultsQDb.IsEmpty()) {
-            uint matchId = matchResultsQDb.GetQueueItemNow();
+            Json::Value toGet = matchResultsQDb.GetQueueItemNow();
+            uint roundId = toGet[0];
+            uint matchId = toGet[1];
             auto matchResults = MatchResults(api.GetCompMatchResults(matchId));
-            matchResultsDb.Set(matchId, matchResults);
+            matchResultsDb.Get(roundId).Set(matchId, matchResults);
             logcall("_SyncNextCompMatchResults", "got results for match:" + matchId);
 
             string[] pids = array<string>(matchResults.results.Length);
@@ -1462,8 +1468,15 @@ class MapDb : JsonDb {
         matchesQDb.PutQueueEntries(ArrayOfUintToJs(rounds));
     }
 
-    void QueueCompMatchResultsGet(const uint[] &in matchIds) {
-        matchResultsQDb.PutQueueEntries(ArrayOfUintToJs(matchIds));
+    void QueueCompMatchResultsGet(uint roundId, const uint[] &in matchIds) {
+        Json::Value[] entries = {};
+        for (uint i = 0; i < matchIds.Length; i++) {
+            auto arr = Json::Array();
+            arr.Add(roundId);
+            arr.Add(matchIds[i]);
+            entries.InsertLast(arr);
+        }
+        matchResultsQDb.PutQueueEntries(entries);
     }
 
     /* access functions */
@@ -1503,5 +1516,9 @@ class MapDb : JsonDb {
     const array<CompRoundMatch@>@ GetMatchesForCotdComp(uint compId) {
         auto matchIds = GetMatchIdsForCotdComp(compId);
         return matchesDb.GetMany(matchIds);
+    }
+
+    const uint GetRoundIdForCotdComp(uint compId) {
+        return compsToRounds.Get(compId)[0];
     }
 }

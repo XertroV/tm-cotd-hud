@@ -1020,6 +1020,8 @@ namespace CotdExplorer {
         }
     }
 
+    bool gotAllResultsForComp = false;
+    uint gotAllResultsForCompId = 0;
     void _DrawCotdDivisionResTabContents(uint compId) {
         auto mapInfo = CotdTreeYMD();
         string mapUid = mapInfo.mapUid;
@@ -1031,7 +1033,7 @@ namespace CotdExplorer {
             gotMatches = mapDb.roundsToMatches.Exists(round1.id);
             if (gotMatches) {
                 auto matchIds = mapDb.roundsToMatches.Get(round1.id);
-                gotMatchResults = matchIds.Length == mapDb.matchResultsDb.CountExists(matchIds);
+                gotMatchResults = matchIds.Length == mapDb.matchResultsDb.Get(round1.id).CountExists(matchIds);
             }
         }
 
@@ -1186,9 +1188,6 @@ namespace CotdExplorer {
         @COTD_HISTOGRAM_DATA[key] = histData;
     }
 
-    void GenerateHistogramData(ref@ HistData) {
-
-    }
 
     int lastCidDownload = -1;
     CacheQualiTimes@ qtCache = CacheQualiTimes();
@@ -1392,27 +1391,28 @@ namespace CotdExplorer {
         }
         if (!gotMatchResults) return;
         auto matchIds = mapDb.GetMatchIdsForCotdComp(compId);
+        auto roundId = mapDb.GetRoundIdForCotdComp(compId);
         uint drawTopN = 10;
         uint drawBotN = 2;
 
         if (UI::BeginTable(UI_EXPLORER + "-cotdTopDivWinners##"+compId, 2, TableFlagsStretch())) {
-            for (uint i = 0; i < Math::Min(drawTopN, matchIds.Length); i++) {
-                DrawDivResultsRowForMatch(matchIds[i]);
+            for (uint i = 0; i < uint(Math::Min(drawTopN, matchIds.Length)); i++) {
+                DrawDivResultsRowForMatch(roundId, matchIds[i]);
             }
             if (matchIds.Length > drawTopN + drawBotN) {
                 DrawAs2Cols("...", "");
             }
             uint lastDivsStart = Math::Max(drawTopN, matchIds.Length - drawBotN);
             for (uint i = lastDivsStart; i < matchIds.Length; i++) {
-                DrawDivResultsRowForMatch(matchIds[i]);
+                DrawDivResultsRowForMatch(roundId, matchIds[i]);
             }
             UI::EndTable();
         }
     }
 
-    void DrawDivResultsRowForMatch(uint matchId) {
+    void DrawDivResultsRowForMatch(uint roundId, uint matchId) {
         auto match = mapDb.matchesDb.Get(matchId);
-        auto mResults = mapDb.matchResultsDb.Get(matchId);
+        auto mResults = mapDb.matchResultsDb.Get(roundId).Get(matchId);
         auto winner = mResults.results[0];
         bool matchDone = winner.rank.IsSome();
         string name = matchDone ? RenderPlayerNameFromId(winner.participant) : c_orange_600 + "Unknown Winner";
@@ -1439,7 +1439,8 @@ namespace CotdExplorer {
                 UI::Text("Downloaded rounds info.");
                 UI::Text("Downloaded matches info.");
                 auto matchIds = mapDb.GetMatchIdsForCotdComp(compId);
-                UI::Text("Downloading match results: " + mapDb.matchResultsDb.CountExists(matchIds) + " / " + matchIds.Length);
+                auto roundId = mapDb.GetRoundIdForCotdComp(compId);
+                UI::Text("Downloading match results: " + mapDb.matchResultsDb.Get(roundId).CountExists(matchIds) + " / " + matchIds.Length);
             } else if (gotRounds) {
                 UI::Text("Downloaded rounds.");
                 UI::Text("Downloaded matches info...");
@@ -1456,8 +1457,8 @@ namespace CotdExplorer {
 
 
     void _DrawCompInfos(uint compId) {
-        auto matches = mapDb.GetMatchesForCotdComp(compId);
-        DrawAs2Cols("# Matches:", '' + matches.Length);
+        auto matchIds = mapDb.GetMatchIdsForCotdComp(compId);
+        DrawAs2Cols("# Matches:", '' + matchIds.Length);
     }
 
     /* Explorer UI Idea: Tree Structure
