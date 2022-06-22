@@ -51,37 +51,14 @@ This plugin will use a lot of disk space, relatively speaking. Especially over t
 - [ ] fix: LAB color gradients to take shortest path to avoid going the 'long way round'
 - [x] bug: clear divisions on new cotd
 - [x] bug fix: restart on new COTD (halts and doesn't update)
+- [ ] export binary data to json files (to make it easy for ppl to use it if they want to).
+- [ ] match results
+  - [x] sync comps, rounds, matches
+  - [ ] check if results were incomplete
+  - [ ] store results in individual files (~60 match results loads in ~20ms)
 
 
 ### first release
 
 - [x] ensure downloading COTD snapshot rankings is behind an option
 - [ ] wizard v0 -- mostly to warn about alpha grade software. if anything breaks at the start of COTD use Developer > Reload Plugin > COTD HUD (**TODO before v0.1.0**)
-
-### benchmarks
-
-#### openplanet v1.23.7
-
-- historical db
-    - worst persist: 196ms, 97ms (initial sync)
-    - load time: 70ms
-- player name db
-    - load time 156ms (32k rows)
-
-#### openplanet v1.23.8
-
-- historical db
-    - worst persist: 219ms, 117ms, 94ms (initial sync)
-    - worst persist: 280ms, 193ms, 144ms (initial sync; repeated) -- final persists only 112ms tho
-    - load time: 45ms, 40ms, 35ms sometimes
-    - typical persist: 106ms mb, 113, 170
-- player name db
-    - load time 164ms (32k rows)
-    - improved algorithm (avoids `.Split`): 75-80ms
-
-<!-- ## openplanet docs stuff
-
-- no description on nvg::TextBounds -- should probably say what it returns or something.
-  - and set nvg::FontFace and nvg::FontSize first.
-
-- nvg::LoadFont params -->

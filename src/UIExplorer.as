@@ -408,6 +408,7 @@ namespace CotdExplorer {
               explDay = MaybeInt(),
               explCup = MaybeInt(),
               explChallenge = MaybeInt(),
+              explComp = MaybeInt(),
               explQDiv = MaybeInt(),
               explMatch = MaybeInt()
               ;
@@ -426,6 +427,7 @@ namespace CotdExplorer {
         if (level <= 3) {
             explCup.AsNothing();
             explChallenge.AsNothing();
+            explComp.AsNothing();
         }
         // todo: these aren't implemented yet
         if (level <= 4) explQDiv.AsNothing();
@@ -850,7 +852,7 @@ namespace CotdExplorer {
                         btnLab = COTD_BTNS[cotdNum - 1];
                         UI::TableNextColumn();
                         if (MDisabledButton(_disabled, btnLab, challengeBtnDims)) {
-                            OnSelectedCotdChallenge(cotdNum, mapUid, cIds[i]);
+                            OnSelectedCotdChallenge(cotdNum, mapUid, cIds[i], compIds[i]);
                         }
                     } else {
                         UI::TableNextColumn();
@@ -865,9 +867,10 @@ namespace CotdExplorer {
         }
     }
 
-    void OnSelectedCotdChallenge(int cotdNum, const string &in mapUid, int cId) {
+    void OnSelectedCotdChallenge(int cotdNum, const string &in mapUid, int cId, int compId) {
         explCup.AsJust(cotdNum); // selection params
         explChallenge.AsJust(cId);
+        explComp.AsJust(compId);
         lastCidDownload = -1; // reset download button
         startnew(EnsurePlayerNames); // get player names if we have times
         histToShow = mapUid + "--" + cId; // the histogram to show
@@ -975,6 +978,7 @@ namespace CotdExplorer {
 
     void _RenderExplorerCotdCup() {
         int cId = explChallenge.val;
+        int compId = explComp.val;
         TextHeading(_ExplorerCotdTitleStr(), true, ResetCotdCupButton);
         auto mapInfo = CotdTreeYMD();
         string mapUid = mapInfo.mapUid;
@@ -987,8 +991,8 @@ namespace CotdExplorer {
             UI::EndTabItem();
         }
 
-        if (UI::BeginTabItem("Division Results##" + cId)) {
-            _DrawCotdDivisionResTabContents(cId);
+        if (UI::BeginTabItem("Division Results##" + compId)) {
+            _DrawCotdDivisionResTabContents(compId);
             UI::EndTabItem();
         }
         UI::EndTabBar();
@@ -1016,8 +1020,36 @@ namespace CotdExplorer {
         }
     }
 
-    void _DrawCotdDivisionResTabContents(uint cId) {
-        //
+    void _DrawCotdDivisionResTabContents(uint compId) {
+        auto mapInfo = CotdTreeYMD();
+        string mapUid = mapInfo.mapUid;
+        // string seasonUid = mapInfo.seasonUid;
+        bool gotRounds = mapDb.compsToRounds.Exists(compId);
+        bool gotMatches = false, gotMatchResults = false;
+        if (gotRounds) {
+            auto round1 = mapDb.roundsDb.Get(mapDb.compsToRounds.Get(compId)[0]);
+            gotMatches = mapDb.roundsToMatches.Exists(round1.id);
+            if (gotMatches) {
+                auto matchIds = mapDb.roundsToMatches.Get(round1.id);
+                gotMatchResults = matchIds.Length == mapDb.matchResultsDb.CountExists(matchIds);
+            }
+        }
+
+        if (UI::BeginTable(UI_EXPLORER + "-cotdCompOuter-" + compId, 5, TableFlagsStretch())) {
+            UI::TableNextColumn();
+            UI::TableNextColumn();
+            TextHeading("Divisions");
+            _CotdDivisionResultsTable(compId, gotRounds, gotMatches, gotMatchResults);
+
+            UI::TableNextColumn();
+            UI::TableNextColumn();
+            TextHeading("Analysis... (Todo)");
+            if (!gotMatchResults) {
+                UI::Text("Please download COTD match results first.");
+            }
+            UI::TableNextColumn();
+            UI::EndTable();
+        }
     }
 
     dictionary@ COTD_HISTOGRAM_DATA = dictionary();
@@ -1275,24 +1307,6 @@ namespace CotdExplorer {
         for (uint i = 0; i < qtCache.Length; i++) {
             _DrawCotdTimeTableRow(qtCache.GetRow(i));
         }
-        // auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
-        // float chunkSize = qtCache.chunkSize;
-        // uint drawNTopTimes = 10;
-        // auto times = jb.j['ranges']['1'];
-        // int lastChunkIx = int(Math::Floor((nPlayers - 1) / chunkSize) * chunkSize) + 1;
-        // auto lastTimes = jb.j['ranges']['' + lastChunkIx];
-        // // logcall('_DrawCotdTimesTableCOls', 'last times ix: ' + lastChunkIx + '; j=' + Json::Write(lastTimes));
-        // int topScore = times[0]['score'];
-        // for (uint i = 0; i < drawNTopTimes; i++) {
-        //     _DrawCotdTimeTableRow(times[i], topScore);
-        // }
-        // UI::TableNextColumn();
-        // UI::Text("...");
-        // // UI::TableNextColumn();
-        // UI::TableNextRow();
-        // if (lastTimes.Length >= 2)
-        //     _DrawCotdTimeTableRow(lastTimes[lastTimes.Length - 2], topScore);
-        // _DrawCotdTimeTableRow(lastTimes[lastTimes.Length - 1], topScore);
     }
 
     int copiedCooldownSince = 0;
@@ -1355,6 +1369,95 @@ namespace CotdExplorer {
             }
         }
         UI::TableNextRow();
+    }
+
+    void _CotdDivisionResultsTable(uint compId, bool gotRounds, bool gotMatches, bool gotMatchResults) {
+        if (UI::BeginTable(UI_EXPLORER + "-cotdResults##"+compId, 2, TableFlagsFixed())) {
+            DrawAs2Cols("Competition ID:", '' + compId);
+            if (!gotMatchResults) {
+                _DrawCompRoundMatchesStatus(compId, gotRounds, gotMatches, gotMatchResults);
+            } else {
+                _DrawCompInfos(compId);
+            }
+            // rounds
+            // -> matches
+            // don't have rounds/matches -> download button
+            // got rounds but not matches -> ??
+            // got both -> draw stuff
+            // n matches
+            // winning time of each match? don't have this right
+            // just players and positions
+            // stats: avg movement of place?
+            UI::EndTable();
+        }
+        if (!gotMatchResults) return;
+        auto matchIds = mapDb.GetMatchIdsForCotdComp(compId);
+        uint drawTopN = 10;
+        uint drawBotN = 2;
+
+        if (UI::BeginTable(UI_EXPLORER + "-cotdTopDivWinners##"+compId, 2, TableFlagsStretch())) {
+            for (uint i = 0; i < Math::Min(drawTopN, matchIds.Length); i++) {
+                DrawDivResultsRowForMatch(matchIds[i]);
+            }
+            if (matchIds.Length > drawTopN + drawBotN) {
+                DrawAs2Cols("...", "");
+            }
+            uint lastDivsStart = Math::Max(drawTopN, matchIds.Length - drawBotN);
+            for (uint i = lastDivsStart; i < matchIds.Length; i++) {
+                DrawDivResultsRowForMatch(matchIds[i]);
+            }
+            UI::EndTable();
+        }
+    }
+
+    void DrawDivResultsRowForMatch(uint matchId) {
+        auto match = mapDb.matchesDb.Get(matchId);
+        auto mResults = mapDb.matchResultsDb.Get(matchId);
+        auto winner = mResults.results[0];
+        bool matchDone = winner.rank.IsSome();
+        string name = matchDone ? RenderPlayerNameFromId(winner.participant) : c_orange_600 + "Unknown Winner";
+        DrawAs2Cols("Div " + (match.position + 1), name);
+        UI::TableNextRow();
+    }
+
+    const string RenderPlayerNameFromId(const string &in pid) {
+        return _RenderPlayerName(mapDb.playerNameDb.Get(pid), IsSpecialPlayerId(pid));
+    }
+
+    const string _RenderPlayerName(const string &in name, bool isSpecial) {
+        return isSpecial ? rainbowLoopColorCycle(name, true) : name;
+    }
+
+    int lastCompIdDlClick = -1;
+    void _DrawCompRoundMatchesStatus(uint compId, bool gotRounds, bool gotMatches, bool gotMatchResults) {
+        if (gotMatchResults) {
+            UI::Text("All results data downloaded for: " + compId);
+            return;
+        }
+        if (lastCompIdDlClick == int(compId)) {
+            if (gotMatches) {
+                UI::Text("Downloaded rounds info.");
+                UI::Text("Downloaded matches info.");
+                auto matchIds = mapDb.GetMatchIdsForCotdComp(compId);
+                UI::Text("Downloading match results: " + mapDb.matchResultsDb.CountExists(matchIds) + " / " + matchIds.Length);
+            } else if (gotRounds) {
+                UI::Text("Downloaded rounds.");
+                UI::Text("Downloaded matches info...");
+            } else {
+                UI::Text("Downloading rounds info...");
+            }
+            return;
+        }
+        if (UI::Button("Download Matches Data")) {
+            lastCompIdDlClick = int(compId);
+            mapDb.QueueCompRoundsGet({compId});
+        }
+    }
+
+
+    void _DrawCompInfos(uint compId) {
+        auto matches = mapDb.GetMatchesForCotdComp(compId);
+        DrawAs2Cols("# Matches:", '' + matches.Length);
     }
 
     /* Explorer UI Idea: Tree Structure

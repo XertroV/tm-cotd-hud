@@ -60,6 +60,14 @@ int[] JArrayToInt(Json::Value &in v) {
     return xs;
 }
 
+array<Json::Value>@ ArrayOfUintToJs(const uint[] &in xs) {
+    array<Json::Value> ret = array<Json::Value>(xs.Length);
+    for (uint i = 0; i < xs.Length; i++) {
+        ret[i] = Json::Value(xs[i]);
+    }
+    return ret;
+}
+
 float[] JArrayToFloat(Json::Value &in v) {
     AssertJsonArrayNonEmpty(v);
     float[] xs = array<float>(v.Length);

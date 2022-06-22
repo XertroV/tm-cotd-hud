@@ -110,5 +110,60 @@ void DevMain() {
     // print("GetCompRounds: " + Json::Write(rounds));
     // auto matches = api.GetCompRoundMatches(7317, 2);
     // print("GetCompRoundMatches: " + Json::Write(matches));
+
+    // TestStringLen();
+    // MemBufTest();
+    // BufTest();
+}
+
+void TestStringLen() {
+    const string s = "World|Europe|Poland|Śląskie";
+    print("String s: " + s);
+    print("s.Length: " + s.Length);
+    print("s.SubStr(0, s.Length): " + s.SubStr(0, s.Length));
+    print("s.SubStr(0, s.Length).Length: " + s.SubStr(0, s.Length).Length);
+}
+
+void MemBufTest() {
+    MemoryBuffer buf = MemoryBuffer(0);
+    print('buf size: ' + buf.GetSize());
+    buf.Write(uint(1337));
+    print('buf size: ' + buf.GetSize());
+    buf.Seek(0, 0);
+    print('buf size: ' + buf.GetSize());
+    uint gotBack = buf.ReadUInt32();
+    print('buf size: ' + buf.GetSize());
+    print("wanted 1337, got: " + gotBack);
+    print('buf.AtEnd();' + buf.AtEnd());
+    buf.Write("123456789 123456789 123456789 123456789 123456789 ");
+    buf.Seek(4, 0);
+    print('buf.AtEnd();' + buf.AtEnd());
+    print('expect buffer size to have increased by 50');
+    print('buf size: ' + buf.GetSize());
+    print('read str: ' + buf.ReadString(50));
+    print('buf.AtEnd();' + buf.AtEnd());
+}
+
+void BufTest() {
+    Buffer@ buf = Buffer();
+    BufTest1(buf);
+    buf.Seek(0, 0);
+    print('buf size: ' + buf.GetSize());
+    BufTest2(buf);
+    print('expect buffer size to have increased by 50');
+    print('buf size: ' + buf.GetSize());
+}
+
+void BufTest1 (Buffer@ &in buf) {
+    print('buf size: ' + buf.GetSize());
+    buf.Write(uint(0));
+    print('buf size: ' + buf.GetSize());
+}
+
+void BufTest2 (Buffer@ &in buf) {
+    uint gotBack = buf.ReadUInt32();
+    print('buf size: ' + buf.GetSize());
+    print("wanted 0, got: " + gotBack);
+    buf.Write("123456789 123456789 123456789 123456789 123456789 ");
 }
 #endif

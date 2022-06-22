@@ -193,6 +193,20 @@ void DrawAs2Cols(const string &in c1, const string &in c2) {
     UI::Text(c2);
 }
 
+void DrawAs2Cols(DrawUiElems@ f1, DrawUiElems@ f2) {
+    UI::TableNextColumn();
+    f1();
+    UI::TableNextColumn();
+    f2();
+}
+
+void DrawAs2Cols(DrawUiElemsWRef@ f1, ref@ r1, DrawUiElemsWRef@ f2, ref@ r2) {
+    UI::TableNextColumn();
+    f1(r1);
+    UI::TableNextColumn();
+    f2(r2);
+}
+
 /* cooldown colors */
 
 Color@ cooldownStart = Color(vec3(3., 0xc, 0xe) / 16.).ToHSL();

@@ -212,13 +212,13 @@ class JsonQueueDb : JsonDb {
          1. a unique string; or
          2. an object with j['id'] property that's a unique string.
     */
-    void PutQueueEntry(Json::Value j, bool persist = true) {
-        auto ty = j.GetType();
-        if (ty != Json::Type::String && ty != Json::Type::Object) {
-            throw("Json value is not a string nor an object.");
-        } else if (ty == Json::Type::Object && j['id'].GetType() != Json::Type::String) {
-            throw("Json value is an object but the 'id' property is non-existent or not a string.");
-        }
+    void PutQueueEntry(Json::Value &in j, bool persist = true) {
+        // auto ty = j.GetType();
+        // if (ty != Json::Type::String && ty != Json::Type::Object) {
+        //     throw("Json value is not a string nor an object.");
+        // } else if (ty == Json::Type::Object && j['id'].GetType() != Json::Type::String) {
+        //     throw("Json value is an object but the 'id' property is non-existent or not a string.");
+        // }
 
         int end = GetQueueEnd();
         data.j['queue']['' + end] = j; /* add queue item */
@@ -229,6 +229,13 @@ class JsonQueueDb : JsonDb {
         meta['isEmpty'] = false;
         meta['lastUpdated'] = "" + Time::Stamp;
         data.j['meta'] = meta;
+        if (persist) Persist();
+    }
+
+    void PutQueueEntries(array<Json::Value> &in js, bool persist = true) {
+        for (uint i = 0; i < js.Length; i++) {
+            PutQueueEntry(js[i], false);
+        }
         if (persist) Persist();
     }
 

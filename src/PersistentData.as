@@ -310,6 +310,14 @@ class HistoryDb : JsonDb {
         startnew(CoroutineFunc(SyncLoops));
     }
 
+    bool get_Initialized() {
+        return totdDb.Initialized && challengesDb.Initialized;
+    }
+
+    void AwaitInitialized() {
+        while (!Initialized) yield();
+    }
+
     /* Getters for the DB */
 
     const array<string>@ GetMostRecentTotdDate() {
@@ -624,21 +632,12 @@ class HistoryDb : JsonDb {
                 auto day = days[d];
                 string key = GetYMD(m.year, m.month, day.monthDay);
                 if (!totdDb.Exists(key) || totdDb.Get(key).mapUid.Length == 0) {
-                    totdDb.Set(key, day);
+                    if (day.mapUid.Length > 5) {
+                        totdDb.Set(key, day);
+                    }
                 }
-                // day['start'] = '' + int(day['startTimestamp']);
-                // day['end'] = '' + int(day['endTimestamp']);
-                // day.Remove('leaderboardGroup');
-                // day.Remove('startTimestamp');
-                // day.Remove('endTimestamp');
-                // day.Remove('relativeStart');
-                // day.Remove('relativeEnd');
-                // days[d] = day;
             }
-            // m['days'] = days;
-            // ml[i] = m;
         }
-        // totdData['monthList'] = ml;
         data.j['totd'] = Json::Value();
         if (persist) Persist();
         return totdData.nextRequestTimestamp;
@@ -812,7 +811,7 @@ class CotdIndexDb : JsonDb {
     void AddComp(Competition@ &in comp) {
         if (comp !is null) {
             if (comp.name.SubStr(0, 14) == "Cup of the Day") {
-                string[] ymd = FromYMD(ExtractYMD(comp.name));
+                string[] ymd = NameToYMD(comp.name);
                 auto ymdObj = data.j['ymdToCotdComps'];
                 if (ymdObj.GetType() != Json::Type::Object) ymdObj = Json::Object();
 
@@ -876,11 +875,17 @@ class MapDb : JsonDb {
     JsonQueueDb@ playerNameQDb;
     DictOfTmMap_WriteLog@ mapDb;
     DictOfCompetition_WriteLog@ compsDb;
-    DictOfCompRound_WriteLog@ roundsDb;
-    DictOfCompRoundMatch_WriteLog@ matchesDb;
+    DictOfUintToArrayOfUint_WDefault_WriteLog@ compsToRounds;
+    DictOfUintToCompRound_WriteLog@ roundsDb;
+    DictOfUintToArrayOfUint_WDefault_WriteLog@ roundsToMatches;
+    DictOfUintToCompRoundMatch_WriteLog@ matchesDb;
+    DictOfUintToMatchResults_WriteLog@ matchResultsDb;
     JsonQueueDb@ compsQDb;
     JsonQueueDb@ roundsQDb;
     JsonQueueDb@ matchesQDb;
+    JsonQueueDb@ matchResultsQDb;
+
+    private bool _initialized = false;
 
     // private JsonQueueDb@ histGenQDb;
 
@@ -896,25 +901,24 @@ class MapDb : JsonDb {
         @playerNameQDb = JsonQueueDb(PersistentData::filepath_PlayerNameQDb, 'playerNameQDb-v1');
         @mapDb = DictOfTmMap_WriteLog(PersistentData::dataFolder, "mapDb-maps.txt");
         @compsDb = DictOfCompetition_WriteLog(PersistentData::dataFolder, "compsDb.txt");
-        @roundsDb = DictOfCompRound_WriteLog(PersistentData::dataFolder, "compRoundsDb.txt");
-        @matchesDb = DictOfCompRoundMatch_WriteLog(PersistentData::dataFolder, "compRoundMatchesDb.txt");
+        @roundsDb = DictOfUintToCompRound_WriteLog(PersistentData::dataFolder, "compRoundsDb.txt");
+        @matchesDb = DictOfUintToCompRoundMatch_WriteLog(PersistentData::dataFolder, "compRoundMatchesDb.txt");
+        @matchResultsDb = DictOfUintToMatchResults_WriteLog(PersistentData::dataFolder, "matchResultsDb.txt");
+        @compsToRounds = DictOfUintToArrayOfUint_WDefault_WriteLog(PersistentData::dataFolder, "compsToRoundsIx.txt");
+        @roundsToMatches = DictOfUintToArrayOfUint_WDefault_WriteLog(PersistentData::dataFolder, "roundToMatchesIx.txt");
         @compsQDb = JsonQueueDb(PersistentData::dataFolder + "/compsQDb.json", "comps-queueDb-v1");
         @roundsQDb = JsonQueueDb(PersistentData::dataFolder + "/compRoundsQDb.json", "compRounds-queueDb-v1");
         @matchesQDb = JsonQueueDb(PersistentData::dataFolder + "/compRoundMatchesQDb.json", "compRoundMatches-queueDb-v1");
+        @matchResultsQDb = JsonQueueDb(PersistentData::dataFolder + "/matchResultsQDb.json", "matchResults-queueDb-v1");
         startnew(CoroutineFunc(SyncLoops));
     }
 
-    void EnsureInit() {
-        if (IsJsonNull(data.j['maps'])) {
-            data.j['maps'] = Json::Object();
-            Persist();
-        }
-        while (histDb is null) {
-            @histDb = PersistentData::histDb;
-            yield();
-        }
-        cotdIndexDb.SetHistDb(histDb);
-        cotdIndexDb.SetCompsDb(compsDb);
+    bool get_Initialized() {
+        return _initialized;
+    }
+
+    void AwaitInitialized() {
+        while (!_initialized) yield();
     }
 
     void SyncLoops() {
@@ -929,6 +933,28 @@ class MapDb : JsonDb {
         startnew(CoroutineFunc(_SyncLoopComps));
         startnew(CoroutineFunc(_SyncLoopCompRounds));
         startnew(CoroutineFunc(_SyncLoopCompRoundMatches));
+        startnew(CoroutineFunc(_SyncLoopCompMatchResults));
+    }
+
+    void EnsureInit() {
+        if (IsJsonNull(data.j['maps'])) {
+            data.j['maps'] = Json::Object();
+            Persist();
+        }
+        while (histDb is null) {
+            @histDb = PersistentData::histDb;
+            yield();
+        }
+        cotdIndexDb.SetHistDb(histDb);
+        cotdIndexDb.SetCompsDb(compsDb);
+        histDb.AwaitInitialized();
+        compsDb.AwaitInitialized();
+        roundsDb.AwaitInitialized();
+        matchesDb.AwaitInitialized();
+        matchResultsDb.AwaitInitialized();
+        compsToRounds.AwaitInitialized();
+        roundsToMatches.AwaitInitialized();
+        _initialized = true;
     }
 
     private uint _mapsInProgress = 0;
@@ -1169,6 +1195,20 @@ class MapDb : JsonDb {
         }
     }
 
+    /*
+
+     ######   #######  ##     ## ########   ######
+    ##    ## ##     ## ###   ### ##     ## ##    ##
+    ##       ##     ## #### #### ##     ## ##
+    ##       ##     ## ## ### ## ########   ######
+    ##       ##     ## ##     ## ##              ##
+    ##    ## ##     ## ##     ## ##        ##    ##
+     ######   #######  ##     ## ##         ######
+
+    COMPS
+
+    */
+
     /* pattern:
         we are done historical if we have id=1 (nb: first COTD is id=40).
         if we're not done historical then just restart
@@ -1239,19 +1279,65 @@ class MapDb : JsonDb {
             if (!roundsQDb.IsEmpty()) {
                 startnew(CoroutineFunc(_SyncNextCompRound));
             } else {
-                sleep(50);
+                sleep(100);
             }
             yield();
         }
     }
 
-    void _SyncNextCompRound() {}
+    void _SyncNextCompRound() {
+        if (!roundsQDb.IsEmpty()) {
+            uint compId = roundsQDb.GetQueueItemNow();
+            uint[] roundIds = {};
+            auto rounds = CompRounds(api.GetCompRounds(compId));
+            for (uint i = 0; i < rounds.Length; i++) {
+                auto round = rounds[i];
+                roundIds.InsertLast(round.id);
+                roundsDb.Set(round.id, round);
+            }
+            if (rounds.Length >= 100) {
+                warn("api.GetCompRounds returned 100 entries!");
+            }
+            compsToRounds.Set(compId, roundIds);
+            QueueCompRoundMatchesGet(roundIds);
+        }
+    }
 
     void _SyncLoopCompRoundMatches() {
         logcall("_SyncLoopCompRoundMatches", "Starting");
         while (true) {
             if (!matchesQDb.IsEmpty()) {
                 startnew(CoroutineFunc(_SyncNextCompRoundMatch));
+            }
+            sleep(100);
+        }
+    }
+
+    void _SyncNextCompRoundMatch() {
+        if (!matchesQDb.IsEmpty()) {
+            uint roundId = matchesQDb.GetQueueItemNow();
+            uint[] matchIds = {};
+            auto matches = CompRoundMatches(api.GetCompRoundMatches(roundId)['matches']);
+            for (uint i = 0; i < matches.Length; i++) {
+                auto match = matches[i];
+                matchIds.InsertLast(match.id);
+                matchesDb.Set(match.id, match);
+            }
+            if (matches.Length >= 100) {
+                warn("api.GetCompRoundMatches returned 100 entries!");
+            }
+            roundsToMatches.Set(roundId, matchIds);
+            logcall("_SyncNextCompRoundMatch", "got matches for round:" + roundId);
+            logcall("_SyncNextCompRoundMatch", "match1:" + matchesDb.Get(matchIds[0]).ToString());
+            QueueCompMatchResultsGet(matchIds);
+        }
+    }
+
+    void _SyncLoopCompMatchResults() {
+        logcall("_SyncLoopCompMatchResults", "Starting");
+        while (true) {
+            if (!matchResultsQDb.IsEmpty()) {
+                startnew(CoroutineFunc(_SyncNextCompMatchResults));
             } else {
                 sleep(50);
             }
@@ -1259,7 +1345,33 @@ class MapDb : JsonDb {
         }
     }
 
-    void _SyncNextCompRoundMatch() {}
+    void _SyncNextCompMatchResults() {
+        if (!matchResultsQDb.IsEmpty()) {
+            uint matchId = matchResultsQDb.GetQueueItemNow();
+            auto matchResults = MatchResults(api.GetCompMatchResults(matchId));
+            matchResultsDb.Set(matchId, matchResults);
+            logcall("_SyncNextCompMatchResults", "got results for match:" + matchId);
+
+            string[] pids = array<string>(matchResults.results.Length);
+            for (uint i = 0; i < matchResults.results.Length; i++) {
+                auto res = matchResults.results[i];
+                pids[i] = res.participant;
+            }
+            QueuePlayerNamesGet(pids);
+        }
+    }
+
+    /*
+
+     #######  ##     ## ######## ##     ## ########    #### ######## ######## ##     ##
+    ##     ## ##     ## ##       ##     ## ##           ##     ##    ##       ###   ###
+    ##     ## ##     ## ##       ##     ## ##           ##     ##    ##       #### ####
+    ##     ## ##     ## ######   ##     ## ######       ##     ##    ######   ## ### ##
+    ##  ## ## ##     ## ##       ##     ## ##           ##     ##    ##       ##     ##
+    ##    ##  ##     ## ##       ##     ## ##           ##     ##    ##       ##     ##
+     ##### ##  #######  ########  #######  ########    ####    ##    ######## ##     ##
+
+    */
 
     /* sync util functions */
 
@@ -1287,6 +1399,7 @@ class MapDb : JsonDb {
     }
 
     void QueueMapChallengeTimesGet(const string &in mapUid, int challengeId, bool force = false) {
+        histDb.AwaitInitialized();
         Challenge@ challenge = histDb.GetChallenge(challengeId);
         if (challenge is null) {
             warn("Attempted to queue challenge that does not exist! cId=" + challengeId);
@@ -1341,6 +1454,18 @@ class MapDb : JsonDb {
         if (c > 0) playerNameQDb.Persist();
     }
 
+    void QueueCompRoundsGet(const uint[] &in comps) {
+        roundsQDb.PutQueueEntries(ArrayOfUintToJs(comps));
+    }
+
+    void QueueCompRoundMatchesGet(const uint[] &in rounds) {
+        matchesQDb.PutQueueEntries(ArrayOfUintToJs(rounds));
+    }
+
+    void QueueCompMatchResultsGet(const uint[] &in matchIds) {
+        matchResultsQDb.PutQueueEntries(ArrayOfUintToJs(matchIds));
+    }
+
     /* access functions */
 
     bool MapIsCached(const string &in mapUid) {
@@ -1365,5 +1490,18 @@ class MapDb : JsonDb {
     int[] GetCompsForDate(const string &in y, const string &in m, const string &in d) {
         print("GetCompsForDate: " + string::Join({y,m,d}, "-"));
         return cotdIndexDb.GetCompsForDate(y, m, d);
+    }
+
+    const array<uint>@ GetMatchIdsForCotdComp(uint compId) {
+        auto roundIds = compsToRounds.Get(compId);
+        if (roundIds.Length != 1) {
+            throw("Should only have 1 round in COTD comps. Had:" + roundIds.Length);
+        }
+        return roundsToMatches.Get(roundIds[0]);
+    }
+
+    const array<CompRoundMatch@>@ GetMatchesForCotdComp(uint compId) {
+        auto matchIds = GetMatchIdsForCotdComp(compId);
+        return matchesDb.GetMany(matchIds);
     }
 }

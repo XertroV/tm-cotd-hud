@@ -67,6 +67,13 @@ class CotdApi {
         return CallCompApiPath("/api/rounds/" + roundId + "/matches?" + LengthAndOffset(length, offset));
     }
 
+    /** example ret:
+      * {"matchLiveId":"LID-MTCH-1bvcwiihhotaykd","roundPosition":0,"scoreUnit":"point","results":[{"participant":"8b636b33-6046-4be9-8b54-7b28634ac1e3","rank":1,"score":63,"zone":"World|Europe|Germany|Hessen|Kassel"},{"participant":"2fe54a48-a3b1-4d8a-a6f1-e90d6df1aa6a","rank":2,"score":62,"zone":"World|Europe|Portugal|Norte"},{"participant":"b981e0b1-2d6a-4470-9b52-c1f6b0b1d0a6","rank":3,"score":61,"zone":"World|North America|Canada|Quebec"}]}
+      */
+    Json::Value GetCompMatchResults(uint matchId, uint length = 100, uint offset = 0) {
+        return CallCompApiPath("/api/matches/" + matchId + "/results?" + LengthAndOffset(length, offset));
+    }
+
     /** example return value
       * [{"time":48679,"uid":"jAtn7LQt2MTG5xv4BeiQwZAX1K","player":"a4cd0259-4ad1-48d9-bf0a-3fee92008686","score":48679,"rank":64}]
       */

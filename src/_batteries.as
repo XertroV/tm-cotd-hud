@@ -38,3 +38,7 @@ const string ExtractYMD(const string &in cotdName) {
     assert(cotdName.SubStr(0, 14) == "Cup of the Day", "is not a Cup of the Day event name.");
     return cotdName.SubStr(15, 10);
 }
+
+const array<string>@ NameToYMD(const string &in name) {
+    return FromYMD(ExtractYMD(name));
+}
