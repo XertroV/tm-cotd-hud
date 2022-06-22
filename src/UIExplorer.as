@@ -1374,6 +1374,8 @@ namespace CotdExplorer {
     void _CotdDivisionResultsTable(uint compId, bool gotRounds, bool gotMatches, bool gotMatchResults) {
         if (UI::BeginTable(UI_EXPLORER + "-cotdResults##"+compId, 2, TableFlagsFixed())) {
             DrawAs2Cols("Competition ID:", '' + compId);
+            if (gotRounds)
+                DrawAs2Cols("Round ID:", '' + mapDb.GetRoundIdForCotdComp(compId));
             if (!gotMatchResults) {
                 _DrawCompRoundMatchesStatus(compId, gotRounds, gotMatches, gotMatchResults);
             } else {

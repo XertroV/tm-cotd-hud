@@ -1,5 +1,26 @@
+void AwaitEula() {
+    while (!Setting_EulaAgreement) yield();
+}
+
+bool EulaAccepted() {
+    return Setting_EulaAgreement;
+}
+
 void Main() {
     startnew(InitSpecialPlayers);
+
+#if DEV
+    // SetDevSettings();
+    // startnew(DebugTest_LoadingScreen);
+    // startnew(DebugTest_PrintPgUIConfigs);
+    startnew(DevMain);
+#endif
+
+#if UNIT_TEST || DEV
+    TestColors();
+#endif
+
+    AwaitEula();
 
     // note: not sure if this includes standard or just club -- do we need club?
     while (!NadeoServices::IsAuthenticated("NadeoClubServices")) {
@@ -20,33 +41,25 @@ void Main() {
 #if DEPENDENCY_BETTERCHAT
     startnew(BcCommands::Main);
 #endif
-
-#if DEV
-    // SetDevSettings();
-    // startnew(DebugTest_LoadingScreen);
-    // startnew(DebugTest_PrintPgUIConfigs);
-    startnew(DevMain);
-#endif
-
-#if UNIT_TEST || DEV
-    TestColors();
-#endif
 }
 
 void Update(float dt) {
+    if (!EulaAccepted()) return;
     DataManager::Update(dt);
 }
 
 void Render() {
+    WEULA::Render();
+    if (!EulaAccepted()) return;
     CotdHud::Render();
     CotdExplorer::Render();
     WDebugNod::Render();
     WAllTimes::Render();
     WAllDivResults::Render();
-    WEULA::Render();
 }
 
 void RenderInterface() {
+    if (!EulaAccepted()) return;
     CotdHud::RenderInterface();
     CotdExplorer::RenderInterface();
     RenderWindowUtilityColorGradients();
@@ -55,11 +68,13 @@ void RenderInterface() {
 }
 
 void RenderMenu() {
+    if (!EulaAccepted()) return;
     CotdExplorer::RenderMenu();
     CotdHud::RenderMenu();
 }
 
 void RenderMainMenu() {
+    if (!EulaAccepted()) return;
     CotdExplorer::RenderMainMenu();
     CotdHud::RenderMainMenu();
 }
@@ -67,6 +82,7 @@ void RenderMainMenu() {
 // void RenderSettings() {}
 
 void OnSettingsChanged() {
+    if (!EulaAccepted()) return;
     trace("Main.OnSettingsChanged");
     DataManager::OnSettingsChanged();
     CotdHud::OnSettingsChanged();
@@ -75,6 +91,7 @@ void OnSettingsChanged() {
 }
 
 void OnMouseMove(int x, int y) {
+    if (!EulaAccepted()) return;
     CotdExplorer::OnMouseMove(x, y);
 }
 
