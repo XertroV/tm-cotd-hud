@@ -4,6 +4,7 @@ namespace BcCommands {
     const string byLineA = "$c7fb$c8fy$b8f $b8fC$a8fO$98fT$99fD$89f $79fH$79fU$69fD$5af $3afo$3afn$4ae $4bdO$5bcp$5bce$5cbn$5caP$4d9l$4d8a$3e7n$2e6e$0f5t";
     /* by COTD HUD */
     const string byLineB = "$c7fb$b8fy$a8f $89fC$69fO$3afT$3afD$5bd $5caH$4d8U$0f5D";
+    const string ByCotdHudStr = EscapeRawToOpenPlanet(BcCommands::byLineB);
 
 #if DEPENDENCY_BETTERCHAT
     void _SendMsg(const string &in text) {

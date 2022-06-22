@@ -249,7 +249,7 @@ string rainbowLoopColorCycle(const string &in text, bool escape = false, float l
     string ret = "";
     string c;
     for (int i = 0; i < text.Length; i++) {
-        c = loopColors[int(fwds ? nLoopColors + startIx - i : startIx + i) % nLoopColors];
+        c = loopColors[int(Math::Abs(fwds ? (nLoopColors + startIx + text.Length - i) : startIx + i)) % nLoopColors];
         if (escape) ret += "\\";
         ret += c + text.SubStr(i, 1);
     }
