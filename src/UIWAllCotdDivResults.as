@@ -1,6 +1,6 @@
-WindowState w_AllCotdQualiTimes('COTD Qualifying Times', false);
+WindowState w_AllCotdDivResults('COTD Division Results', false);
 
-namespace WAllTimes {
+namespace WAllDivResults {
     void Render() {}
 
     void RenderInterface() {
@@ -9,10 +9,11 @@ namespace WAllTimes {
 
     string filterName = 'doesnt work yet';
     string mapUid;  /* do not set directly */
-    int cId;  /* do not set directly */
-    Json::Value[] times;
+    uint cId;  /* do not set directly */
+    // CompRoundMatches@[] matches;
+    MapDb@ mapDb;
     string[] cache_Ranks = array<string>();
-    string[] cache_Times = array<string>();
+    string[] cache_DivRank = array<string>();
     string[] cache_Deltas = array<string>();
     string[] cache_DivDeltas = array<string>();
     string[] cache_PlayerDeltas = array<string>();
@@ -24,84 +25,95 @@ namespace WAllTimes {
     bool playerFound = false;
     uint playerRank = 0;
 
-    void SetParams(const string &in _mapUid, int _cId) {
-        mapUid = _mapUid;
+    void SetParams(uint _cId) {
         cId = _cId;
-        times = PersistentData::GetCotdMapTimesAllJ(mapUid, cId);
+        @mapDb = PersistentData::mapDb;
         startnew(PopulateCache);
     }
 
     void PopulateCache() {
+        auto matchIds = mapDb.GetMatchIdsForCotdComp(cId);
         playerId = DataManager::gi.PlayersId();
-        nPlayers = times.Length;
         // nDivs = uint(Math::Ceil(float(nPlayers) / 64.));
-        nDivs = ((nPlayers - 1) >> 6) + 1; // faster and more elegant
+        nDivs = matchIds.Length; // faster and more elegant
+        auto matches = mapDb.matchResultsDb.Get(mapDb.GetRoundIdForCotdComp(cId));
+        nPlayers = (nDivs - 1) * 64 + matches.Get(matchIds[nDivs - 1]).results.Length;
+        if (nDivs == 0) nPlayers = 0;
         cache_Ranks.Resize(nPlayers + nDivs);
-        cache_Times.Resize(nPlayers + nDivs);
+        cache_DivRank.Resize(nPlayers + nDivs);
         cache_Deltas.Resize(nPlayers + nDivs);
         cache_DivDeltas.Resize(nPlayers + nDivs);
         cache_PlayerDeltas.Resize(nPlayers + nDivs);
         cache_Players.Resize(nPlayers + nDivs);
         cache_Special.Resize(nPlayers + nDivs);
-        uint bestTime = nPlayers > 0 ? times[0]['score'] : 0;
+        // uint bestTime = nPlayers > 0 ? times[0]['score'] : 0;
         string pid, name, _d;
         bool special;
-        uint time, nDivsDone = 0, i, bestInDiv, thisDiv, playerScore = 0;
+        uint nDivsDone = 0, i, bestInDiv, thisDiv, playerScore = 0;
         playerFound = false;
         uint lastBreak = 0;
-        for (uint _i = 0; _i < nPlayers; _i++) {
+        uint gRank = 0;
+        for (uint divIx = 0; divIx < nDivs; divIx++) {
             if (Time::Now - lastBreak > 8) {
                 yield();
                 lastBreak = Time::Now;
             }
-            i = _i + nDivsDone;
-            time = uint(times[_i]['score']);
-            if (_i % 64 == 0) {
-                thisDiv = uint(Math::Ceil(float(_i) / 64. + 1));
-                _d = "Div " + thisDiv;
-                cache_Ranks[i] = c_brightBlue + 'D ' + thisDiv;
-                cache_Times[i] = c_brightBlue + '------------';
-                cache_Deltas[i] = c_brightBlue + '------------';
-                cache_DivDeltas[i] = c_brightBlue + '------------';
-                cache_PlayerDeltas[i] = c_brightBlue + '------------';
-                cache_Players[i] = c_brightBlue + _d;
-                cache_Special[i] = false;
-                nDivsDone++;
-                i = _i + nDivsDone;
-                bestInDiv = time;
-            }
-            cache_Ranks[i] = '' + (_i + 1);
-            cache_Times[i] = Time::Format(time);
-            cache_Deltas[i] = time == bestTime ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - bestTime));
-            cache_DivDeltas[i] = time == bestInDiv ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - bestInDiv));
-            pid = times[_i]['player'];
-            name = PersistentData::mapDb.playerNameDb.Get(pid);
-            special = IsSpecialPlayerId(pid);
-            cache_Players[i] = name;
-            cache_Special[i] = special;
-            if (playerFound) {
-                cache_PlayerDeltas[i] = time == playerScore ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - playerScore));
-            }
-            if (pid == playerId) {
-                playerFound = true;
-                playerScore = time;
-                playerRank = _i + 1;
-                cache_PlayerDeltas[i] = '';
+            auto match = matches.Get(matchIds[divIx]);
+            i = divIx * 64 + nDivsDone;
+            /* start of div */
+            thisDiv = divIx + 1;
+            _d = "Div " + thisDiv;
+            cache_Ranks[i] = c_brightBlue + 'D ' + thisDiv;
+            cache_DivRank[i] = c_brightBlue + '-----';
+            // cache_Deltas[i] = c_brightBlue + '------------';
+            // cache_DivDeltas[i] = c_brightBlue + '------------';
+            // cache_PlayerDeltas[i] = c_brightBlue + '------------';
+            cache_Players[i] = c_brightBlue + _d;
+            cache_Special[i] = false;
+            nDivsDone++;
+
+            /* start of player rows */
+            for (uint j = 0; j < match.results.Length; j++) {
+                i++;
+                auto r = match.results[j].rank;
+                auto gr = ++gRank;
+                auto maxDivRank = thisDiv * 64;
+                if (r.IsSome()) {
+                    cache_Ranks[i] = '' + gr;
+                    cache_DivRank[i] = ('' + r.GetOr(0xFFFFFFFF));
+                } else {
+                    cache_Ranks[i] = '' + maxDivRank;
+                    cache_DivRank[i] = '--';
+                }
+                pid = match.results[j].participant;
+                name = PersistentData::mapDb.playerNameDb.Get(pid);
+                special = IsSpecialPlayerId(pid);
+                cache_Players[i] = name;
+                cache_Special[i] = special;
+                if (playerFound) {
+                    // cache_PlayerDeltas[i] = time == playerScore ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - playerScore));
+                }
+                if (pid == playerId) {
+                    playerFound = true;
+                    // playerScore = time;
+                    playerRank = gRank;
+                    // cache_PlayerDeltas[i] = '';
+                }
             }
         }
 
-        if (playerFound) {
-            nDivsDone = 0;
-            for (uint _i = 0; _i < playerRank - 1; _i++) {
-                time = uint(times[_i]['score']);
-                i = _i + nDivsDone;
-                if (_i % 64 == 0) {
-                    nDivsDone++;
-                    i = _i + nDivsDone;
-                }
-                cache_PlayerDeltas[i] = playerScore == time ? '' : c_timeBlue + '-' + Time::Format(Math::Abs(playerScore - time));
-            }
-        }
+        // if (playerFound) {
+        //     nDivsDone = 0;
+        //     for (uint _i = 0; _i < playerRank - 1; _i++) {
+        //         time = uint(times[_i]['score']);
+        //         i = _i + nDivsDone;
+        //         if (_i % 64 == 0) {
+        //             nDivsDone++;
+        //             i = _i + nDivsDone;
+        //         }
+        //         cache_PlayerDeltas[i] = playerScore == time ? '' : c_timeBlue + '-' + Time::Format(Math::Abs(playerScore - time));
+        //     }
+        // }
     }
 
     void CoroDelayedPopulateCache() {
@@ -115,21 +127,21 @@ namespace WAllTimes {
     }
 
     void MainWindow() {
-        if (!w_AllCotdQualiTimes.IsVisible()) return;
+        if (!w_AllCotdDivResults.IsVisible()) return;
 
-        if (w_AllCotdQualiTimes.IsAppearing()) {
+        if (w_AllCotdDivResults.IsAppearing()) {
             UI::SetNextWindowSize(476, 820, UI::Cond::Always);
         }
 
-        UI::Begin(w_AllCotdQualiTimes.title, w_AllCotdQualiTimes.visible.v);
+        UI::Begin(w_AllCotdDivResults.title, w_AllCotdDivResults.visible.v);
 
-        TextBigHeading("Qualifying Times | " + CotdExplorer::_ExplorerCotdTitleStr());
+        TextBigHeading("Division Results | " + CotdExplorer::_ExplorerCotdTitleStr());
         UI::Separator();
 
         VPad();
 
 #if DEV
-        if (UI::BeginTable('qualiy-times-filters', 2, TableFlagsStretch())) {
+        if (UI::BeginTable('div-results-filters', 2, TableFlagsStretch())) {
 
             UI::TableNextColumn();
             UI::AlignTextToFramePadding();
@@ -146,7 +158,7 @@ namespace WAllTimes {
         if (playerFound) cols++;
         bool drawPDelta = playerFound;
 
-        if (UI::BeginTable('qualiy-times', cols, TableFlagsStretch() | UI::TableFlags::ScrollY)) {
+        if (UI::BeginTable('div-results', cols, TableFlagsStretch() | UI::TableFlags::ScrollY)) {
             UI::TableSetupScrollFreeze(0, 1);
             UI::TableSetupColumn("Rank", UI::TableColumnFlags::WidthFixed);
             UI::TableSetupColumn("Time", UI::TableColumnFlags::WidthFixed);
@@ -170,7 +182,7 @@ namespace WAllTimes {
                     UI::TableNextColumn();
                     UI::Text(cache_Ranks[i]);
                     UI::TableNextColumn();
-                    UI::Text(cache_Times[i]);
+                    UI::Text(cache_DivRank[i]);
                     UI::TableNextColumn();
                     UI::Text(cache_Deltas[i]);
                     UI::TableNextColumn();

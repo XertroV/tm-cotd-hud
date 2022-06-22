@@ -40,6 +40,7 @@ void Render() {
     CotdExplorer::Render();
     WDebugNod::Render();
     WAllTimes::Render();
+    WAllDivResults::Render();
 }
 
 void RenderInterface() {
@@ -47,6 +48,7 @@ void RenderInterface() {
     CotdExplorer::RenderInterface();
     RenderWindowUtilityColorGradients();
     WAllTimes::RenderInterface();
+    WAllDivResults::RenderInterface();
 }
 
 void RenderMenu() {

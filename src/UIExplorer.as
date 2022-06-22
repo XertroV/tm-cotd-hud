@@ -881,6 +881,7 @@ namespace CotdExplorer {
             startnew(_GenHistogramData); // proactively generate histograms where data is available
         }
         w_AllCotdQualiTimes.Hide(); // hide all times window if it's still around from a previous COTD
+        w_AllCotdDivResults.Hide();
     }
 
     void EnsurePlayerNames() {
@@ -1395,7 +1396,23 @@ namespace CotdExplorer {
         uint drawTopN = 10;
         uint drawBotN = 2;
 
-        if (UI::BeginTable(UI_EXPLORER + "-cotdTopDivWinners##"+compId, 2, TableFlagsStretch())) {
+        if (UI::BeginTable(UI_EXPLORER + "-cotdTopDivWinners##"+compId, 2, TableFlagsFixed())) {
+
+            UI::TableNextColumn();
+            UI::PushFont(subheadingFont);
+            UI::AlignTextToFramePadding();
+            UI::Text("Division Winners:");
+            UI::PopFont();
+
+            UI::TableNextColumn();
+            UI::AlignTextToFramePadding();
+            if (UI::Button((w_AllCotdDivResults.IsVisible() ? "Hide" : "Show") + " All Results")) {
+                WAllDivResults::SetParams(compId);
+                w_AllCotdDivResults.Toggle();
+            }
+            UI::TableNextRow();
+            DrawAs2Cols("", "");
+
             for (uint i = 0; i < uint(Math::Min(drawTopN, matchIds.Length)); i++) {
                 DrawDivResultsRowForMatch(roundId, matchIds[i]);
             }
