@@ -56,6 +56,7 @@ This plugin will use a lot of disk space, relatively speaking. Especially over t
   - [x] sync comps, rounds, matches
   - [ ] check if results were incomplete
   - [ ] store results in individual files (~60 match results loads in ~20ms)
+- [ ] bug: long cotds break (b/c nplayers==0 for so long?)
 
 
 ### first release

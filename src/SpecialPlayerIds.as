@@ -2,7 +2,7 @@ dictionary@ SPECIAL_PLAYER_IDS = {
     { "0a2d1bc0-4aaa-4374-b2db-3d561bdab1c9", true }, // xertrov
     { "2740dfa4-dd5f-4696-b010-c1fca43a791c", true }, // Chips
     { "7398eeb6-9b4e-44b8-a7a1-a2149955ac70", true }, // Miss
-    { "d320a237-1b0a-4069-af83-f2c09fbf042e", true }, // AR_Mudda
+    { "d320a237-1b0a-4069-af83-f2c09fbf042e", true }, // AR_Mudda -- for 3x COTD wins on the same TOTD
 #if DEV
     { "bd45204c-80f1-4809-b983-38b3f0ffc1ef", true }, // wirtual, useful for testing
     { "d46fb45d-d422-47c9-9785-67270a311e25", true }, // elconn
@@ -30,7 +30,19 @@ dictionary@ SPECIAL_PLAYER_IDS = {
     {"asdf", true}
 };
 
-// way faster
+DictOfBool_WriteLog@ specialPlayerIds;
+
+void InitSpecialPlayers() {
+    @specialPlayerIds = DictOfBool_WriteLog(PersistentData::dataFolder, "specialPlayers.bin");
+    specialPlayerIds.AwaitInitialized();
+    if (specialPlayerIds.GetSize() == 0) {
+        auto pids = SPECIAL_PLAYER_IDS.GetKeys();
+        for (uint i = 0; i < pids.Length; i++) {
+            specialPlayerIds.Set(pids[i], true);
+        }
+    }
+}
+
 bool IsSpecialPlayerId(const string &in pid) {
-    return SPECIAL_PLAYER_IDS.Exists(pid);
+    return specialPlayerIds.Exists(pid);
 }

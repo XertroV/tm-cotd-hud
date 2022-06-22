@@ -1,4 +1,6 @@
 void Main() {
+    startnew(InitSpecialPlayers);
+
     // note: not sure if this includes standard or just club -- do we need club?
     while (!NadeoServices::IsAuthenticated("NadeoClubServices")) {
         yield();
