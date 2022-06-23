@@ -1,18 +1,9 @@
 
 namespace PersistentData {
-    const string mainFolderName = "cotd-hud";
-    /* a path modifier for when we are doing dev etc to avoid clobbering DBs */
-#if DEV
-    const string PM = "dev";
-#elif UNIT_TEST
-    const string PM = "unit_test";
-#else
-    const string PM = "main";
-    // const int blah = throw("No runtime environment specified (RELEASE / DEV / UNIT_TEST)");
-#endif
+    const string mainFolderName = "Storage/" + Meta::ExecutingPlugin().ID;
 
     /* set our data folder to include the path mod (PM) set above */
-    const string dataFolder = IO::FromDataFolder(mainFolderName + "/" + PM);
+    const string dataFolder = IO::FromDataFolder(mainFolderName);
     string MkPath(string fname) { return dataFolder + "/" + fname; };
 
     const string filepath_Follows = MkPath("follows.json");
@@ -305,8 +296,8 @@ class HistoryDb : JsonDb {
     HistoryDb(const string &in path) {
         super(path, 'historyDb-totdsAndChallenges');
         @api = CotdApi();
-        @totdDb = DictOfTrackOfTheDayEntry_WriteLog(path.Replace("/historical-cotd.json", ""), "historical-totd.txt");
-        @challengesDb = DictOfChallenge_WriteLog(path.Replace("/historical-cotd.json", ""), "historical-challenges.txt");
+        @totdDb = DictOfTrackOfTheDayEntry_WriteLog(path.Replace("/historical-cotd.json", ""), "historical-totd.bin");
+        @challengesDb = DictOfChallenge_WriteLog(path.Replace("/historical-cotd.json", ""), "historical-challenges.bin");
         startnew(CoroutineFunc(SyncLoops));
     }
 
@@ -901,15 +892,15 @@ class MapDb : JsonDb {
         @cotdIndexDb = CotdIndexDb(PersistentData::filepath_CotdIndexDb, 'cotdIndexDb-v1');
         @playerNameDb = JsonDictDb(PersistentData::filepath_PlayerNameDb, 'playerNameDb-v1');
         @playerNameQDb = JsonQueueDb(PersistentData::filepath_PlayerNameQDb, 'playerNameQDb-v1');
-        @mapDb = DictOfTmMap_WriteLog(PersistentData::dataFolder, "mapDb-maps.txt");
-        @compsDb = DictOfCompetition_WriteLog(PersistentData::dataFolder, "compsDb.txt");
-        @roundsDb = DictOfUintToCompRound_WriteLog(PersistentData::dataFolder, "compRoundsDb.txt");
-        @matchesDb = DictOfUintToCompRoundMatch_WriteLog(PersistentData::dataFolder, "compRoundMatchesDb.txt");
-        // @matchResultsDb = DictOfUintToMatchResults_WriteLog(PersistentData::dataFolder, "matchResultsDb.txt");
+        @mapDb = DictOfTmMap_WriteLog(PersistentData::dataFolder, "mapDb-maps.bin");
+        @compsDb = DictOfCompetition_WriteLog(PersistentData::dataFolder, "compsDb.bin");
+        @roundsDb = DictOfUintToCompRound_WriteLog(PersistentData::dataFolder, "compRoundsDb.bin");
+        @matchesDb = DictOfUintToCompRoundMatch_WriteLog(PersistentData::dataFolder, "compRoundMatchesDb.bin");
+        // @matchResultsDb = DictOfUintToMatchResults_WriteLog(PersistentData::dataFolder, "matchResultsDb.bin");
         @matchResultsDb = _DictOfUintToMatchResults_WriteLog::DirOf(PersistentData::dataFolder + "/matchResultsDb");
         // @matchResultsDb = _MatchResults::DirOf(PersistentData::dataFolder + "/matchResultsDb");
-        @compsToRounds = DictOfUintToArrayOfUint_WDefault_WriteLog(PersistentData::dataFolder, "compsToRoundsIx.txt");
-        @roundsToMatches = DictOfUintToArrayOfUint_WDefault_WriteLog(PersistentData::dataFolder, "roundToMatchesIx.txt");
+        @compsToRounds = DictOfUintToArrayOfUint_WDefault_WriteLog(PersistentData::dataFolder, "compsToRoundsIx.bin");
+        @roundsToMatches = DictOfUintToArrayOfUint_WDefault_WriteLog(PersistentData::dataFolder, "roundToMatchesIx.bin");
         @compsQDb = JsonQueueDb(PersistentData::dataFolder + "/compsQDb.json", "comps-queueDb-v1");
         @roundsQDb = JsonQueueDb(PersistentData::dataFolder + "/compRoundsQDb.json", "compRounds-queueDb-v1");
         @matchesQDb = JsonQueueDb(PersistentData::dataFolder + "/compRoundMatchesQDb.json", "compRoundMatches-queueDb-v1");
