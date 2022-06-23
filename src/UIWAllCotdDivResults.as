@@ -60,9 +60,9 @@ namespace WAllDivResults {
             /* start of div */
             thisDiv = divIx + 1;
             _d = "Div " + thisDiv;
-            cache_Ranks[i] = c_brightBlue + 'D ' + thisDiv;
+            cache_Ranks[i] = c_brightBlue + 'Div ' + thisDiv;
             cache_DivRank[i] = c_brightBlue + '--------';
-            cache_PlayerDeltas[i] = c_brightBlue + '------';
+            cache_PlayerDeltas[i] = c_brightBlue + '--------';
             cache_Players[i] = c_brightBlue + _d;
             cache_Special[i] = false;
             nDivsDone++;
@@ -156,10 +156,10 @@ namespace WAllDivResults {
 
         if (UI::BeginTable('div-results', cols, TableFlagsStretch() | UI::TableFlags::ScrollY)) {
             UI::TableSetupScrollFreeze(0, 1);
-            UI::TableSetupColumn("Rank", UI::TableColumnFlags::WidthFixed);
+            UI::TableSetupColumn("Rank", UI::TableColumnFlags::WidthFixed, 50);
             if (drawPDelta)
-                UI::TableSetupColumn("Rank Δ", UI::TableColumnFlags::WidthFixed);
-            UI::TableSetupColumn("Div Rank", UI::TableColumnFlags::WidthFixed);
+                UI::TableSetupColumn("Rank Δ", UI::TableColumnFlags::WidthFixed, 50);
+            UI::TableSetupColumn("Div Rank", UI::TableColumnFlags::WidthFixed, 60);
             UI::TableSetupColumn("Player", UI::TableColumnFlags::WidthStretch);
 
             UI::TableHeadersRow();

@@ -1471,7 +1471,8 @@ namespace CotdExplorer {
     }
 
     const string RenderPlayerNameFromId(const string &in pid) {
-        return _RenderPlayerName(mapDb.playerNameDb.Get(pid), IsSpecialPlayerId(pid));
+        string name = mapDb.playerNameDb.Exists(pid) ? mapDb.playerNameDb.Get(pid) : "?? " + pid.SubStr(0, 8);
+        return _RenderPlayerName(name, IsSpecialPlayerId(pid));
     }
 
     const string _RenderPlayerName(const string &in name, bool isSpecial) {

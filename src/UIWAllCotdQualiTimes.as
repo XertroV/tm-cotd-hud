@@ -59,7 +59,7 @@ namespace WAllTimes {
             if (_i % 64 == 0) {
                 thisDiv = uint(Math::Ceil(float(_i) / 64. + 1));
                 _d = "Div " + thisDiv;
-                cache_Ranks[i] = c_brightBlue + 'D ' + thisDiv;
+                cache_Ranks[i] = c_brightBlue + 'Div ' + thisDiv;
                 cache_Times[i] = c_brightBlue + '------------';
                 cache_Deltas[i] = c_brightBlue + '------------';
                 cache_DivDeltas[i] = c_brightBlue + '------------';
@@ -118,7 +118,7 @@ namespace WAllTimes {
         if (!w_AllCotdQualiTimes.IsVisible()) return;
 
         if (w_AllCotdQualiTimes.IsAppearing()) {
-            UI::SetNextWindowSize(476, 820, UI::Cond::Always);
+            UI::SetNextWindowSize(540, 980, UI::Cond::Always);
         }
 
         UI::Begin(w_AllCotdQualiTimes.title, w_AllCotdQualiTimes.visible.v);
@@ -148,12 +148,12 @@ namespace WAllTimes {
 
         if (UI::BeginTable('qualiy-times', cols, TableFlagsStretch() | UI::TableFlags::ScrollY)) {
             UI::TableSetupScrollFreeze(0, 1);
-            UI::TableSetupColumn("Rank", UI::TableColumnFlags::WidthFixed);
-            UI::TableSetupColumn("Time", UI::TableColumnFlags::WidthFixed);
-            UI::TableSetupColumn("Delta", UI::TableColumnFlags::WidthFixed);
-            UI::TableSetupColumn("Div Δ", UI::TableColumnFlags::WidthFixed);
+            UI::TableSetupColumn("Rank", UI::TableColumnFlags::WidthFixed, 50);
+            UI::TableSetupColumn("Time", UI::TableColumnFlags::WidthFixed, 70);
+            UI::TableSetupColumn("Delta", UI::TableColumnFlags::WidthFixed, 70);
+            UI::TableSetupColumn("Div Δ", UI::TableColumnFlags::WidthFixed, 70);
             if (drawPDelta)
-                UI::TableSetupColumn("Self Δ", UI::TableColumnFlags::WidthFixed);
+                UI::TableSetupColumn("Self Δ", UI::TableColumnFlags::WidthFixed, 70);
             UI::TableSetupColumn("Player", UI::TableColumnFlags::WidthStretch);
 
             UI::TableHeadersRow();
