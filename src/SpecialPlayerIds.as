@@ -38,6 +38,7 @@ void InitSpecialPlayers() {
     if (specialPlayerIds.GetSize() == 0) {
         auto pids = SPECIAL_PLAYER_IDS.GetKeys();
         for (uint i = 0; i < pids.Length; i++) {
+            if (pids[i] == "asdf") continue;
             specialPlayerIds.Set(pids[i], true);
         }
     }
