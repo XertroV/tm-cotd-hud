@@ -83,7 +83,7 @@ void RenderSettingsEula() {
             if (MDisabledButton(!State_CheckedEulaAgreeBox, "Accept EULA")) {
                 State_CheckedEulaAgreeBox = false;  // if revoke is pressed this should be reset; so reset it now.
                 Setting_EulaAgreement = true;
-                CotdExplorer::windowActive.v = true;
+                startnew(ShowUiExplorerSlightDelay);
             }
             UI::PopFont();
         });
@@ -111,4 +111,9 @@ void RenderSettingsEula() {
             Setting_EulaAgreement = false;
         }
     }
+}
+
+void ShowUiExplorerSlightDelay() {
+    sleep(250);
+    CotdExplorer::windowActive.v = true;
 }
