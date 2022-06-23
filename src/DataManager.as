@@ -235,7 +235,7 @@ namespace DataManager {
     void UpdateDivs() {
         divs_lastUpdated = Time::get_Now();
         // if the div is in the past, load from disk
-        if (_ViewPriorChallenge() || divs_lastUpdated > GetChallengeEndDate()) {
+        if (_ViewPriorChallenge() || uint(Time::Stamp) > GetChallengeEndDate()) {
             // load from disk
             while (PersistentData::mapDb is null) yield();
             while (cotd_TimesForHistogram[0] == 0) { sleep(100); }
@@ -594,7 +594,7 @@ namespace DataManager {
         // wait for histogram data to be available through persistent data
         /* this will not resolve if the challenge is in the future unless triggered some other way */
         while (!PersistentData::MapTimesCached(cotdLatest_MapId, GetChallengeId())) sleep(1000);
-        sleep(10);
+        sleep(2000);
         logcall("CoroLoadInitHistogramData", "Loading data...");
         auto times = PersistentData::GetCotdMapTimesAll(cotdLatest_MapId, GetChallengeId());
         for (uint i = 0; i < times.Length; i++) {

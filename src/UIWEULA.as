@@ -43,9 +43,9 @@ void RenderSettingsEula() {
     UI::TextWrapped(string::Join(
         { "You are asked to agree to the following 'End User License Agreement' (EULA) for COTD HUD + Explorer (i.e., \"this work\") in exchange for the utility it provides.\nIn this EULA, \"we\" refers to the developers of this software."
         , ""
-        , "The EULA is that you both acknowledge and concent to all of the following:"
+        , "The EULA is that you both acknowledge and consent to all of the following:"
         , ""
-        , "\t→\t This software will use \\$<\\$6efyour Trackmania account\\$> to request \\$<\\$f81A LOT\\$> of data from Nadeo's APIs. We do not know how Nadeo will react to this, or whether it will have an impact on your account. Usage of this software implies consent to download potentially a lot of data. At least 100s of KB for each COTD that you view the data of or participate in (COTN and COTM are about 10% the size)."
+        , "\t→\t This software will use \\$<\\$6efyour Trackmania account\\$> to request \\$<\\$f84A LOT\\$> of data from Nadeo's APIs. We do not know how Nadeo will react to this, or whether it will have an impact on your account. Usage of this software implies consent to download potentially a lot of data. At least 100s of KB for each COTD that you view the data of or participate in (COTN and COTM are about 10% the size)."
         , ""
         , "\t→\t \\$<\\$ee2This software is provided with no warrantees or guarantees.\\$> If it is helpful to you then we are glad for that. But the authors will not accept responsibility for any harm that comes to you from use of this software, including any matters related to the above point."
         , ""
@@ -55,9 +55,9 @@ void RenderSettingsEula() {
         , ""
         , "\t→\t Revoking this agreement requires restarting Trackmania."
         , ""
-        , "\t→\t Your consent will be sought before gathering telemetry if this software ever integrates such functionality. Currently no such functionality is present. (In such a case, this clause must be replaced for the author to be considered honest.)"
-        , ""
-        , "\t→\t The source code this software (or an ancestor) is and/or has been released under a public domain license. Therefore, it left to you -- as your responsibility -- both to verify the integrity, behavior, and origin of this software and to only agree to this EULA if said integrity, behavior, and origin meets your relevant standards."
+        // , "\t→\t Your consent will be sought before gathering telemetry if this software ever integrates such functionality. Currently no such functionality is present. (In such a case, this clause must be replaced for the author to be considered honest.)"
+        // , ""
+        , "\t→\t The source code for this software (or an ancestor) is and/or has been released under a public domain license. Therefore, it is left to you -- as your responsibility -- both to verify the integrity, behavior, and origin of this software and to only agree to this EULA if said integrity, behavior, and origin meets your relevant standards."
         , ""
         , "\t→\t (Beta clause) This software may have breaking version changes which require you to re-download any and all data. Currently the DB api is unstable and we are not sure that it will remain stable."
         , ""
@@ -89,9 +89,9 @@ void RenderSettingsEula() {
     } else {
         CenteredTextBigHeading("\"End User License Agreement\" Status");
         VPad();
-        TextHeading(rainbowLoopColorCycle(">> You have agreed to the EULA! <<", true), false);
+        TextHeading(">> You have agreed to the EULA! <<", false);
         VPad();
-        UI::TextWrapped(rainbowLoopColorCycle("If you would like to revoke consent: you will need to click this button and then restart Trackmania (or this plugin via the Developer menu).\nAll existing data will remain but it will not be accessible through this plugin until you accept the EULA again.", true));
+        UI::TextWrapped("If you would like to revoke consent: you will need to click this button and then restart Trackmania (or this plugin via the Developer menu).\nAll existing data will remain but it will not be accessible through this plugin until you accept the EULA again.");
         VPad();
         if (UI::Button("Revoke EULA Consent")) {
             Setting_EulaAgreement = false;

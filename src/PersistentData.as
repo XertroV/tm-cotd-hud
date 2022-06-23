@@ -1482,7 +1482,7 @@ class MapDb : JsonDb {
     /* access functions */
 
     bool MapIsCached(const string &in mapUid) {
-        return mapDb.Exists(mapUid);
+        return mapDb.Exists(mapUid) && mapDb.Get(mapUid) !is null;
         // auto map = data.j['maps'][mapUid];
         // return !IsJsonNull(map) && !IsJsonNull(map['Id']);
     }

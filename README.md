@@ -57,7 +57,7 @@ This plugin will use a lot of disk space, relatively speaking. Especially over t
   - [ ] check if results were incomplete
   - [ ] store results in individual files (~60 match results loads in ~20ms)
 - [ ] bug: long cotds break (b/c nplayers==0 for so long?)
-
+- [ ] bug: when loading cotd hud data and times are queued to be cached: the hud does not reload after they have been cached.
 
 ### first release
 
