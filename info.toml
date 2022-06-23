@@ -5,7 +5,7 @@ category = "Race"
 version  = "0.1.0"
 
 [script]
-dependencies = [ "NadeoServices", "TrackmaniaApiObjsAndHelpers" ]
+dependencies = ["NadeoServices"]
 imports = [ "Permissions.as", "Time.as" ]
 #__DEFINES__
 # defines = [ "DEV" ]
