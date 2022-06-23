@@ -130,7 +130,7 @@ namespace CotdExplorer {
 
     void _RenderExplorerWindow() {
         if (windowActive.ChangedToTrue()) {
-            UI::SetNextWindowSize(730, 1100, UI::Cond::Always);
+            UI::SetNextWindowSize(730, Math::Min(Draw::GetHeight() - 80, 1150), UI::Cond::Always);
             windowActive.v = true;
         }
         UI::Begin(ExplorerWindowTitle, windowActive.v, GetWindowFlags());
