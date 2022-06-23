@@ -1415,6 +1415,7 @@ namespace CotdExplorer {
         auto roundId = mapDb.GetRoundIdForCotdComp(compId);
         uint drawTopN = 10;
         uint drawBotN = 2;
+        bool wk = true;  // winner known
 
         if (UI::BeginTable(UI_EXPLORER + "-cotdTopDivWinners##"+compId, 2, TableFlagsFixed())) {
 
@@ -1434,27 +1435,39 @@ namespace CotdExplorer {
             DrawAs2Cols("", "");
 
             for (uint i = 0; i < uint(Math::Min(drawTopN, matchIds.Length)); i++) {
-                DrawDivResultsRowForMatch(roundId, matchIds[i]);
+                wk = DrawDivResultsRowForMatch(roundId, matchIds[i]) && wk; // do && with wk after calling function.
             }
             if (matchIds.Length > drawTopN + drawBotN) {
                 DrawAs2Cols("...", "");
             }
             uint lastDivsStart = Math::Max(drawTopN, matchIds.Length - drawBotN);
             for (uint i = lastDivsStart; i < matchIds.Length; i++) {
-                DrawDivResultsRowForMatch(roundId, matchIds[i]);
+                wk = DrawDivResultsRowForMatch(roundId, matchIds[i]) && wk; // do && with wk after calling function.
             }
             UI::EndTable();
+
+            if (!wk) {
+                VPad();
+                VPad();
+                if (MDisabledButton(lastCompIdDlClick == int(compId), "Re-download Results")) {
+                    RedownloadRounds(compId);
+                }
+            }
         }
     }
 
-    void DrawDivResultsRowForMatch(uint roundId, uint matchId) {
+    // returns whether the winner was known or not
+    bool DrawDivResultsRowForMatch(uint roundId, uint matchId) {
         auto match = mapDb.matchesDb.Get(matchId);
         auto mResults = mapDb.matchResultsDb.Get(roundId).Get(matchId);
         auto winner = mResults.results[0];
         bool matchDone = winner.rank.IsSome();
-        string name = matchDone ? RenderPlayerNameFromId(winner.participant) : c_orange_600 + "Unknown Winner";
+        string name = matchDone
+            ? RenderPlayerNameFromId(winner.participant)
+            : c_orange_600 + "Unknown Winner";
         DrawAs2Cols("Div " + (match.position + 1), name);
         UI::TableNextRow();
+        return winner.rank.IsSome();
     }
 
     const string RenderPlayerNameFromId(const string &in pid) {
@@ -1469,9 +1482,7 @@ namespace CotdExplorer {
     void _DrawCompRoundMatchesStatus(uint compId, bool gotRounds, bool gotMatches, bool gotMatchResults) {
         if (gotMatchResults) {
             UI::Text("All results data downloaded for: " + compId);
-            return;
-        }
-        if (lastCompIdDlClick == int(compId)) {
+        } else if (lastCompIdDlClick == int(compId)) {
             if (gotMatches) {
                 UI::Text("Downloaded rounds info.");
                 UI::Text("Downloaded matches info.");
@@ -1484,12 +1495,21 @@ namespace CotdExplorer {
             } else {
                 UI::Text("Downloading rounds info...");
             }
-            return;
+        } else if (UI::Button("Download Matches Data")) {
+            DownloadComp(compId);
         }
-        if (UI::Button("Download Matches Data")) {
-            lastCompIdDlClick = int(compId);
-            mapDb.QueueCompRoundsGet({compId});
-        }
+    }
+
+    void DownloadComp(uint compId) {
+        lastCompIdDlClick = int(compId);
+        mapDb.QueueCompRoundsGet({compId});
+    }
+
+    void RedownloadRounds(uint compId) {
+        lastCompIdDlClick = int(compId);
+        auto roundId = mapDb.GetRoundIdForCotdComp(compId);
+        mapDb.matchResultsDb.Get(roundId).DeleteAll();
+        mapDb.QueueCompMatchResultsGet(roundId, mapDb.GetMatchIdsForCotdComp(compId));
     }
 
 
