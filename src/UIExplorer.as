@@ -1223,8 +1223,9 @@ namespace CotdExplorer {
 
         if (UI::BeginTable(UI_EXPLORER + "-cotdStatus", 2, TableFlagsFixed())) {
             /* map times */
+            DrawAs2Cols("Challenge ID:", Text::Format("%d", cId));
             UI::TableNextColumn();
-            UI::Dummy(vec2());
+            UI::AlignTextToFramePadding();
             UI::Text("Qualifying Times:");
             UI::TableNextColumn();
             if (canDownload) {
@@ -1233,7 +1234,7 @@ namespace CotdExplorer {
                     mapDb.QueueMapChallengeTimesGet(mapUid, cId);
                 }
             } else {
-                UI::Dummy(vec2());
+                UI::AlignTextToFramePadding();
                 if (!gotTimes) {
                     UI::Text("Downloading...");
                 } else {
@@ -1253,7 +1254,6 @@ namespace CotdExplorer {
                 DrawAs2Cols("Total Divisions:", '' + Text::Format("%.1f", nPlayers / 64.));
                 UI::TableNextRow();
                 DrawAs2Cols("Last Div:", Text::Format("%d", (nPlayers - 1) % 64 + 1) + " Players");
-                DrawAs2Cols("Challenge ID:", Text::Format("%d", cId));
             }
             UI::EndTable();
         }
@@ -1413,6 +1413,10 @@ namespace CotdExplorer {
             if (gotRounds)
                 DrawAs2Cols("Round ID:", '' + mapDb.GetRoundIdForCotdComp(compId));
             if (!gotMatchResults) {
+                UI::TableNextColumn();
+                UI::AlignTextToFramePadding();
+                UI::Text("# Matches");
+                UI::TableNextColumn();
                 _DrawCompRoundMatchesStatus(compId, gotRounds, gotMatches, gotMatchResults);
             } else {
                 _DrawCompInfos(compId);
@@ -1465,7 +1469,6 @@ namespace CotdExplorer {
             UI::EndTable();
 
             if (!wk) {
-                VPad();
                 VPad();
                 if (MDisabledButton(lastCompIdDlClick == int(compId), "Re-download Results")) {
                     RedownloadRounds(compId);

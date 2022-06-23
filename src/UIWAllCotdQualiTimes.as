@@ -23,11 +23,13 @@ namespace WAllTimes {
     string playerId;
     bool playerFound = false;
     uint playerRank = 0;
+    string cotdTitleStr = "";
 
     void SetParams(const string &in _mapUid, int _cId) {
         mapUid = _mapUid;
         cId = _cId;
         times = PersistentData::GetCotdMapTimesAllJ(mapUid, cId);
+        cotdTitleStr = CotdExplorer::_ExplorerCotdTitleStr();
         startnew(PopulateCache);
     }
 
@@ -123,7 +125,7 @@ namespace WAllTimes {
 
         UI::Begin(w_AllCotdQualiTimes.title, w_AllCotdQualiTimes.visible.v);
 
-        TextBigHeading("Qualifying Times | " + CotdExplorer::_ExplorerCotdTitleStr());
+        TextBigHeading("Qualifying Times | " + cotdTitleStr);
         UI::Separator();
 
         VPad();

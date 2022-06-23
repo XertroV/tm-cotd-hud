@@ -23,11 +23,15 @@ namespace WAllDivResults {
     string playerId;
     bool playerFound = false;
     uint playerRank = 0;
+    string cotdTitleStr = "";
 
     void SetParams(uint _cId, uint _divShowOnly = 0) {
         cId = _cId;
         divShowOnly = _divShowOnly;
         @mapDb = PersistentData::mapDb;
+        cotdTitleStr = CotdExplorer::_ExplorerCotdTitleStr();
+        if (divShowOnly > 0)
+            cotdTitleStr += " | Div " + divShowOnly;
         startnew(PopulateCache);
     }
 
@@ -148,7 +152,7 @@ namespace WAllDivResults {
 
         UI::Begin(w_AllCotdDivResults.title, w_AllCotdDivResults.visible.v);
 
-        TextBigHeading("Division Results | " + CotdExplorer::_ExplorerCotdTitleStr());
+        TextBigHeading("Div Results | " + cotdTitleStr);
         UI::Separator();
 
         VPad();
