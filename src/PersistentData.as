@@ -87,7 +87,7 @@ namespace PersistentData {
 
     dictionary@ _textureCache = dictionary();
 
-    Resources::Texture@ _ReadFileTex(const string &in filePath) {
+    UI::Texture@ _ReadFileTex(const string &in filePath) {
         logcall("_ReadFileTex", "Loading texture from disk: " + filePath);
         IO::File f(filePath, IO::FileMode::Read);
         auto ret = UI::LoadTexture(f.Read(f.Size()));
@@ -95,11 +95,11 @@ namespace PersistentData {
         return ret;
     }
 
-    Resources::Texture@ GetThumbTex(const string &in tnFile) {
-        Resources::Texture@ t;
+    UI::Texture@ GetThumbTex(const string &in tnFile) {
+        UI::Texture@ t;
         string fname = UrlToFileName(tnFile);
         if (_textureCache.Exists(fname)) {
-            @t = cast<Resources::Texture@>(_textureCache[fname]);
+            @t = cast<UI::Texture@>(_textureCache[fname]);
         } else {
             @t = _ReadFileTex(ThumbnailPath(fname));
             @_textureCache[fname] = t;

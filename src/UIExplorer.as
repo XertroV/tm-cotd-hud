@@ -574,6 +574,7 @@ namespace CotdExplorer {
         */
         explMonth.AsJust(month);
         startnew(EnsureMapDataForCurrMonth);
+        // startnew(LoadThumbTexturesForCurrMonth);  // idk if this is worth it
     }
 
     // todo -- can select june 12th but it's only june 1st
@@ -639,8 +640,25 @@ namespace CotdExplorer {
         auto mo = CotdTreeYM(year, month);
         auto keys = mo.GetKeys();
         for (uint i = 0; i < keys.Length; i++) {
-            auto day = cast<JsonBox@>(mo[keys[i]]);
             EnsureMapDataForYMD(year, month, keys[i]);
+        }
+    }
+
+    void LoadThumbTexturesForCurrMonth() {
+        LoadThumbTexturesForYM('', '');
+    }
+
+    void LoadThumbTexturesForYM(const string &in year, const string &in month) {
+        auto mo = CotdTreeYM(year, month);
+        auto keys = mo.GetKeys();
+        for (uint i = 0; i < keys.Length; i++) {
+            auto day = keys[i];
+            auto totd = CotdTreeYMD(year, month, day);
+            auto map = mapDb.GetMap(totd.mapUid);
+            if (PersistentData::ThumbnailCached(map.ThumbnailUrl)) {
+                yield();
+                PersistentData::GetThumbTex(map.ThumbnailUrl);  // load it from disk if it isn't already
+            }
         }
     }
 
@@ -964,7 +982,7 @@ namespace CotdExplorer {
         }
     }
 
-    void _DrawThumbnailWSize(Resources::Texture@ tex, float sizeMult) {
+    void _DrawThumbnailWSize(UI::Texture@ tex, float sizeMult) {
         UI::Image(tex, mapThumbDims * sizeMult);
     }
 

@@ -112,6 +112,7 @@ namespace DataManager {
         if (isCotd.ChangedToTrue()) {
             cotdLatest_MapId = gi.MapId();
             _ResetCotdStats();
+            startnew(EnsureCotdStatsReacquired);
             startnew(_FullUpdateCotdStatsSeries);
             startnew(_FullUpdateStatsOn);
             // todo: try starting a 30s coro or something that will retrigger stuff
@@ -156,6 +157,21 @@ namespace DataManager {
         }
         for (uint i = 0; i < cotd_TimesForHistogram.Length; i++) {
             cotd_TimesForHistogram[i] = 0;
+        }
+    }
+
+    void EnsureCotdStatsReacquired() {
+        while (IsJsonNull(cotdLatest_Status) || GetChallengeEndDate() < uint(Time::Stamp)) {
+            if (debounce.CanProceed('cotdLatest_Status', 3000)) {
+                ApiUpdateCotdStatus();
+            }
+            yield();
+        }
+        while (IsJsonNull(cotdLatest_PlayerRank) || GetCotdTotalPlayers() == 0) {
+            if (debounce.CanProceed('cotdLatest_PlayerRank', 3000)) {
+                ApiUpdateCotdPlayerRank();
+            }
+            yield();
         }
     }
 

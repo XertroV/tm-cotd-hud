@@ -27,6 +27,10 @@ const string[] ToYMDArr(uint year, uint month, uint day) {
         };
 }
 
+const string StrsToYMD(const string &in y, const string &in m, const string &in d) {
+    return y + '-' + m + '-' + d;
+}
+
 const array<string>@ FromYMD(const string &in date) {
     string[] ymd = date.Split('-');
     assert(ymd.Length == 3, "ymd has 3 elements");
