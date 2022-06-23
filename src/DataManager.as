@@ -60,6 +60,7 @@ namespace DataManager {
         startnew(LoopUpdateDivsInCotd);
         startnew(CoroLoopSaveAllTimes);
         startnew(CoroLoadInitHistogramData);
+        startnew(EnsureCotdStatsReacquired);
 
 #if DEV
         startnew(LoopDevPrintState);
@@ -161,7 +162,7 @@ namespace DataManager {
     }
 
     void EnsureCotdStatsReacquired() {
-        while (IsJsonNull(cotdLatest_Status) || GetChallengeEndDate() < uint(Time::Stamp)) {
+        while (IsJsonNull(cotdLatest_Status)) {
             if (debounce.CanProceed('cotdLatest_Status', 3000)) {
                 ApiUpdateCotdStatus();
             }
