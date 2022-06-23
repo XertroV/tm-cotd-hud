@@ -1064,9 +1064,11 @@ namespace CotdExplorer {
 
             UI::TableNextColumn();
             UI::TableNextColumn();
-            TextHeading("Analysis... (Todo)");
+            TextHeading("View Division Results");
             if (!gotMatchResults) {
                 UI::Text("Please download COTD match results first.");
+            } else {
+                _CotdDivisionsResultsButtons(compId);
             }
             UI::TableNextColumn();
             UI::EndTable();
@@ -1389,6 +1391,22 @@ namespace CotdExplorer {
         UI::TableNextRow();
     }
 
+    void _CotdDivisionsResultsButtons(uint compId) {
+        auto matchIds = mapDb.GetMatchIdsForCotdComp(compId);
+        // auto roundId = mapDb.GetRoundIdForCotdComp(compId);
+        if (UI::BeginTable(UI_EXPLORER + "-cotdDivBtns", 5, TableFlagsStretchSame())) {
+            for (uint i = 0; i < matchIds.Length; i++) {
+                UI::TableNextColumn();
+                if (UI::Button("Div " + (i + 1), vec2(58, 26))) {
+                    WAllDivResults::SetParams(compId, i + 1);
+                    w_AllCotdDivResults.Show();
+                }
+                UI::Dummy(vec2(0,0));
+            }
+            UI::EndTable();
+        }
+    }
+
     void _CotdDivisionResultsTable(uint compId, bool gotRounds, bool gotMatches, bool gotMatchResults) {
         if (UI::BeginTable(UI_EXPLORER + "-cotdResults##"+compId, 2, TableFlagsFixed())) {
             DrawAs2Cols("Competition ID:", '' + compId);
@@ -1427,9 +1445,9 @@ namespace CotdExplorer {
 
             UI::TableNextColumn();
             UI::AlignTextToFramePadding();
-            if (UI::Button((w_AllCotdDivResults.IsVisible() ? "Hide" : "Show") + " All Results")) {
-                WAllDivResults::SetParams(compId);
-                w_AllCotdDivResults.Toggle();
+            if (UI::Button("Show All Results")) {
+                WAllDivResults::SetParams(compId, 0);
+                w_AllCotdDivResults.Show();
             }
             UI::TableNextRow();
             DrawAs2Cols("", "");
