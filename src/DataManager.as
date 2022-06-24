@@ -89,22 +89,12 @@ namespace DataManager {
             else break;
         }
         // todo: save all of GetTotdMap data so that we can look at past COTDs, too
-
-        // // todo:
-        // sleep(500);
-        // print("api.GetMapsInfo");
-        // //
-        // auto r = api.GetMapsInfo({cotdLatest_MapId, "EBfG4g4zDXp3OzsBjV7r91_4QO0"});
-        // print(r.Length);
-        // for (uint i = 0; i < r.Length; i++) {
-        //     auto v = r[i];
-        //     print(tostring(v.Name));
-        // }
     }
 
     void Update(float dt) {
-        isCotd.Set(gi.IsCotd());
+        isCotd.Set(gi.IsCotdQuali());
 
+        // probably superfluous
         if (isCotd.v) {
             cotdLatest_MapId = gi.MapId();
         }
@@ -116,8 +106,6 @@ namespace DataManager {
             startnew(EnsureCotdStatsReacquired);
             startnew(_FullUpdateCotdStatsSeries);
             startnew(_FullUpdateStatsOn);
-            // todo: try starting a 30s coro or something that will retrigger stuff
-            // todo alt: is the 1hr sleep thing an issue?
         }
     }
 

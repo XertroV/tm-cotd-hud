@@ -47,7 +47,7 @@ void RenderSettingsEula() {
         , ""
         , "\t→\t This software will use \\$<\\$6efyour Trackmania account\\$> to request \\$<\\$f84A LOT\\$> of data from Nadeo's APIs. We do not know how Nadeo will react to this, or whether it will have an impact on your account. Usage of this software implies consent to download potentially a lot of data. At least 100s of KB for each COTD that you view the data of or participate in (COTN and COTM are about 10% the size)."
         , ""
-        , "\t→\t \\$<\\$ee2This software is provided with no warrantees or guarantees.\\$> If it is helpful to you then we are glad for that. But the authors will not accept responsibility for any harm that comes to you from use of this software, including any matters related to the above point."
+        , "\t→\t \\$<\\$ee2This software is provided with no warranties or guarantees.\\$> If it is helpful to you then we are glad for that. But the authors will not accept responsibility for any harm that comes to you from use of this software, including any matters related to the above point."
         , ""
         , "\t→\t Any additional requirements as specified under any license that the distribution of this work that you are using is published under."
         , ""

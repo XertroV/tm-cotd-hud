@@ -1462,6 +1462,7 @@ namespace CotdExplorer {
             if (matchIds.Length > drawTopN + drawBotN) {
                 DrawAs2Cols("...", "");
             }
+            // todo, check nonvisible divs too.
             uint lastDivsStart = Math::Max(drawTopN, matchIds.Length - drawBotN);
             for (uint i = lastDivsStart; i < matchIds.Length; i++) {
                 wk = DrawDivResultsRowForMatch(roundId, matchIds[i]) && wk; // do && with wk after calling function.
