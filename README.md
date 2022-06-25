@@ -21,24 +21,24 @@ This plugin will use a lot of disk space, relatively speaking. Especially over t
     - [x] Sync Map data (ad-hoc)
     - [x] UI selection layout / styles
     - [x] Draw Histogram (qualis)
-    - [ ] Division browser
+    - [x] Division browser
     - [ ] Search user in a COTD quali list
     - [ ] Other quali list filters
     - [ ] Search user all COTDs
-    - [ ] (optional, default:off) sync all cotd quali times in bg
+    - [x] (optional, default:off) sync all cotd quali times in bg
     - [x] "Play this map" button
     - [ ] TMX link button
     - [x] TM.IO link button
     - [ ] List all TOTD maps
     - [ ] In list: easy favorite-ing + easy click to play
     - [ ] show your own times / records (not totd but global) -- useful for playing all TOTDs
-    - [ ] match results (KO rounds)
+    - [x] match results (KO rounds)
     - [ ] animated histogram replays
     - [x] replay/snapshot download settings
 - [ ] COTD Friends
-  - [ ] Show who's playing this COTD and their times
+  - [x] Show who's playing this COTD and their times
   - [ ] BChat integration (`/track-cotd @XertroV`) (or `/add-cotd-friend`)
-  - [ ] Highlight the player in historical/explorer UI
+  - [x] Highlight the player in historical/explorer UI
   - [ ] Browse or view players in COTD + one-click add-as-friend
 - [x] Cache Player ID data (like name)
 - [x] Optimization: check current COTD data and don't re-request times unnecessarily -- should be cached once the COTD qualis are over.
@@ -52,13 +52,12 @@ This plugin will use a lot of disk space, relatively speaking. Especially over t
 - [x] bug: clear divisions on new cotd
 - [x] bug fix: restart on new COTD (halts and doesn't update)
 - [ ] export binary data to json files (to make it easy for ppl to use it if they want to).
-- [ ] match results
+- [x] match results
   - [x] sync comps, rounds, matches
-  - [ ] check if results were incomplete
-  - [ ] store results in individual files (~60 match results loads in ~20ms)
+  - [x] check if results were incomplete
+  - [x] store results in individual files (~60 match results loads in ~20ms)
 - [x] bug: long cotds break (b/c nplayers==0 for so long?)
 - [x] bug: when loading cotd hud data and times are queued to be cached: the hud does not reload after they have been cached.
-- [ ] export data .bin files as .json
 - [ ] quali rank vs div rank delta (a value of +-64 for each player showing improvement or not in ranking)
 
 ### first release
