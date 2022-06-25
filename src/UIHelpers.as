@@ -4,6 +4,12 @@ UI::Font@ subheadingFont = UI::LoadFont("DroidSans.ttf", 18, -1, -1, true, true)
 UI::Font@ subheadingBolFont = UI::LoadFont("DroidSans-Bold.ttf", 18, -1, -1, true, true);
 UI::Font@ stdBold = UI::LoadFont("DroidSans-Bold.ttf", 16, -1, -1, true, true);
 
+void SetCursorAtItemTopRight() {
+    auto rect = UI::GetItemRect();
+    auto pos = vec2(rect.x, rect.y) - UI::GetWindowPos() + vec2(rect.z, 0);
+    UI::SetCursorPos(pos);
+}
+
 /* tooltips */
 
 void AddSimpleTooltip(string msg) {
@@ -200,6 +206,13 @@ void DrawAs2Cols(DrawUiElems@ f1, DrawUiElems@ f2) {
     f2();
 }
 
+void DrawAs2Cols(const string &in c1, DrawUiElems@ f2) {
+    UI::TableNextColumn();
+    UI::Text(c1);
+    UI::TableNextColumn();
+    f2();
+}
+
 void DrawAs2Cols(DrawUiElemsWRef@ f1, ref@ r1, DrawUiElemsWRef@ f2, ref@ r2) {
     UI::TableNextColumn();
     f1(r1);
@@ -209,7 +222,7 @@ void DrawAs2Cols(DrawUiElemsWRef@ f1, ref@ r1, DrawUiElemsWRef@ f2, ref@ r2) {
 
 /* cooldown colors */
 
-Color@ cooldownStart = Color(vec3(3., 0xc, 0xe) / 16.).ToHSL();
+Color@ cooldownStart = Color(vec3(3., 0xc, 0xe) / 15.).ToHSL();
 Color@ cooldownMid = Color(vec3(.7,.9,.5)).ToHSL();
 Color@ cooldownEnd = Color(vec3(1,1,1)).ToHSL();
 string[] cooldownColors = ExtendStringArrs(
@@ -231,7 +244,7 @@ Color@ loopColorStart = Color(vec3(0, 73, 53), ColorTy::HSL);
 Color@ loopColorMid = Color(vec3(120, 73, 53), ColorTy::HSL);
 Color@ loopColorEnd = Color(vec3(240, 73, 53), ColorTy::HSL);
 Color@ loopColorStart2 = Color(vec3(360, 73, 53), ColorTy::HSL);
-// Color@ loopColorMid = Color(vec3(3., 0xc, 0xe) / 16.).ToHSL();  // h=190
+// Color@ loopColorMid = Color(vec3(3., 0xc, 0xe) / 15.).ToHSL();  // h=190
 
 string[] loopColors = ExtendStringArrs(
     ExtendStringArrs(

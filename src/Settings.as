@@ -42,6 +42,8 @@ bool Setting_HudAlwaysShowRainbowPlayerTime = false;
 [Setting category="HUD" name="Show your time in rainbow when you're in Div 1?" description="..."]
 bool Setting_HudShowMyTimeAsRainbowInDiv1 = true;
 
+[Setting category="HUD" name="Show times of favorited players?" description="Right click on a player's name in the explorer to favorite or unfavorite them."]
+bool Setting_HudShowFavoritedPlayersTimes = false;
 
 // [Setting category="HUD Histogram" name="Show HUD Histogram?" description="Shows a histogram graphing the distribution of 200 players' times. Typically those will be the 100 players above you and the 99 players below you. This is useful to see if there are any *breakpoints* that are important to pass (where you would substantially improve in ranking). If you are in the top or bottom 100 players, then the top or bottom 200 times are used instead."]
 [Setting hidden]

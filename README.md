@@ -56,11 +56,12 @@ This plugin will use a lot of disk space, relatively speaking. Especially over t
   - [x] sync comps, rounds, matches
   - [ ] check if results were incomplete
   - [ ] store results in individual files (~60 match results loads in ~20ms)
-- [ ] bug: long cotds break (b/c nplayers==0 for so long?)
-- [ ] bug: when loading cotd hud data and times are queued to be cached: the hud does not reload after they have been cached.
+- [x] bug: long cotds break (b/c nplayers==0 for so long?)
+- [x] bug: when loading cotd hud data and times are queued to be cached: the hud does not reload after they have been cached.
 - [ ] export data .bin files as .json
+- [ ] quali rank vs div rank delta (a value of +-64 for each player showing improvement or not in ranking)
 
 ### first release
 
 - [x] ensure downloading COTD snapshot rankings is behind an option
-- [x] wizard v0 -- mostly to warn about alpha grade software. if anything breaks at the start of COTD use Developer > Reload Plugin > COTD HUD (**TODO before v0.1.0**)
+- [x] wizard v0 -- mostly to warn about alpha grade software. if anything breaks at the start of COTD use Developer > Reload Plugin > COTD HUD

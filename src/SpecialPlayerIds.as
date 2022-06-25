@@ -45,5 +45,12 @@ void InitSpecialPlayers() {
 }
 
 bool IsSpecialPlayerId(const string &in pid) {
-    return specialPlayerIds.Exists(pid);
+    return specialPlayerIds.Exists(pid) && specialPlayerIds.Get(pid);
+}
+
+void AddSpecialPlayer(const string &in pid) {
+    specialPlayerIds.Set(pid, true);
+}
+void RemoveSpecialPlayer(const string &in pid) {
+    specialPlayerIds.Set(pid, false);
 }

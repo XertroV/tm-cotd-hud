@@ -62,6 +62,7 @@ namespace CotdHud {
         RenderGlobalStats();
         RenderDivs();
         RenderLastDivPop();
+        RenderFavorites();
         UI::End();
     }
 
@@ -258,6 +259,37 @@ namespace CotdHud {
                     default: sfx = "th";
                 }
                 UI::Text("\\$3ec(" + DataManager::GetCotdPlayerRank() + sfx + ")");
+            }
+        }
+    }
+
+
+    void RenderFavorites() {
+        if (Setting_HudShowFavoritedPlayersTimes) {
+            auto pids = DataManager::favoritesOrder;
+            if (pids.Length > 0) {
+                VPad();
+                UI::Separator();
+                VPad();
+                if (UI::BeginTable(UI_HUD + "-favs", 4, TableFlagsFixed())) {
+                    UI::TableSetupColumn("name");
+                    UI::TableSetupColumn("rank", UI::TableColumnFlags::PreferSortAscending);
+                    UI::TableSetupColumn("div");
+                    UI::TableSetupColumn("time");
+                    // UI::TableHeadersRow();
+                    for (uint i = 0; i < pids.Length; i++) {
+                        auto cols = string(DataManager::favoritesTimes[pids[i]]).Split('|', 2);
+                        UI::TableNextColumn();
+                        PlayerNames::Get(pids[i])._DrawInner(true, false);
+                        UI::TableNextColumn();
+                        UI::Text(cols[1]);
+                        UI::TableNextColumn();
+                        UI::Text('(' + (((Text::ParseInt(cols[1]) - 1) >> 6) + 1) + ')');
+                        UI::TableNextColumn();
+                        UI::Text(cols[0]);
+                    }
+                    UI::EndTable();
+                }
             }
         }
     }

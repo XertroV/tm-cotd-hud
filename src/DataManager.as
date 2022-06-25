@@ -41,6 +41,11 @@ namespace DataManager {
 
     string bcFavorites = "";
 
+    /* show favorites' times */
+
+    dictionary@ favoritesTimes = dictionary();
+    string[] favoritesOrder = {};
+
     void Main() {
         // This can't be run on script load -- 'Unbound function called' exception
         @api = CotdApi();
@@ -59,6 +64,7 @@ namespace DataManager {
         startnew(LoopUpdateCotdStatus);
         startnew(LoopUpdateDivsInCotd);
         startnew(CoroLoopSaveAllTimes);
+        startnew(CoroLoopScanForFavorites);
         startnew(CoroLoadInitHistogramData);
         startnew(EnsureCotdStatsReacquired);
 
@@ -147,6 +153,7 @@ namespace DataManager {
         for (uint i = 0; i < cotd_TimesForHistogram.Length; i++) {
             cotd_TimesForHistogram[i] = 0;
         }
+        favoritesTimes.DeleteAll();
     }
 
     void EnsureCotdStatsReacquired() {
@@ -566,6 +573,92 @@ namespace DataManager {
             IO::File td(PersistentData::folder_LiveTimesCache + "/cotdLive-" + cotdLatest_MapId + "-" + args.ts + ".csv", IO::FileMode::Append);
             td.WriteLine(toWrite);
             td.Close();
+        }
+    }
+
+    void CoroLoopScanForFavorites() {
+        // during COTD, if the setting is enabled, we'll check
+        // the rankings each 30s and cache special players.
+        LoadFavoritesTimesFromDisk();
+        while (true) {
+            if (Setting_HudShowFavoritedPlayersTimes) {
+                startnew(_ScanAllTimesForFavorites);
+            }
+            sleep(30 * 6000);
+        }
+    }
+
+    void _ScanAllTimesForFavorites() {
+        uint nPlayers = GetCotdTotalPlayers();
+        for (uint off = 0; off < nPlayers; nPlayers += 100) {
+            startnew(CoroutineFuncUserdata(_ScanFavsForOffset), Uint(off));
+            sleep(100);
+        }
+    }
+
+    class Uint {
+        uint v;
+        Uint(uint val) {
+            v = val;
+        }
+    }
+
+    void _ScanFavsForOffset(ref@ r) {
+        uint off = cast<Uint>(r).v;
+        auto times = ChallengeTimes(api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, 100, off));
+        bool setFav = false;
+        for (uint i = 0; i < times.Length; i++) {
+            auto time = times[i];
+            if (IsSpecialPlayerId(time.player)) {
+                favoritesTimes[time.player] = Time::Format(time.time) + "|" + time.rank;
+                setFav = true;
+            }
+        }
+        if (!setFav) return;
+        string[] favPids = favoritesTimes.GetKeys();
+        uint[] ranks = {};
+        dictionary@ rankToPid = dictionary();
+        for (uint i = 0; i < favPids.Length; i++) {
+            string[] parts = string(favoritesTimes[favPids[i]]).Split('|', 2);
+            uint rank = Text::ParseInt(parts[1]);
+            rankToPid['' + rank] = favPids[i];
+            ranks.InsertLast(rank);
+        }
+        favoritesOrder = {};
+        for (uint i = 0; i < ranks.Length; i++) {
+            favoritesOrder.InsertLast(string(rankToPid['' + ranks[i]]));
+        }
+    }
+
+    void LoadFavoritesTimesFromDisk() {
+        while (GetChallengeId() == 0) yield();
+        // if the div is in the past, load from disk
+        if (_ViewPriorChallenge() || uint(Time::Stamp) > GetChallengeEndDate()) {
+            // load from disk
+            while (PersistentData::mapDb is null) yield();
+            while (!PersistentData::MapTimesCached(cotdLatest_MapId, GetChallengeId())) sleep(1000);
+            auto times = PersistentData::GetCotdMapTimes(cotdLatest_MapId, GetChallengeId());
+            auto ks = times.j['ranges'].GetKeys();
+            uint[] ranks = {};
+            dictionary@ rankToPid = dictionary();
+            for (uint i = 0; i < ks.Length; i++) {
+                auto chunk = times.j['ranges'][ks[i]];
+                for (uint j = 0; j < chunk.Length; j++) {
+                    string pid = chunk[j]['player'];
+                    if (IsSpecialPlayerId(pid) && pid != gi.PlayersId()) {
+                        uint score = chunk[j]['score'];
+                        uint rank = chunk[j]['rank'];
+                        favoritesTimes[pid] = Time::Format(score) + "|" + rank;
+                        rankToPid['' + rank] = pid;
+                        ranks.InsertLast(rank);
+                    }
+                }
+            }
+            ranks.SortAsc();
+            favoritesOrder = {};
+            for (uint i = 0; i < ranks.Length; i++) {
+                favoritesOrder.InsertLast(string(rankToPid['' + ranks[i]]));
+            }
         }
     }
 

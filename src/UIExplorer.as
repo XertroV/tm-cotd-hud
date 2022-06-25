@@ -731,6 +731,7 @@ namespace CotdExplorer {
         }
     }
 
+    PlayerName@ map_author;
     void DrawTotdMapInfoTable(TmMap@ map, const string &in seasonId, const string &in totdDate) {
         if (map is null) {
             TextBigStrong("\\$fa4" + "Map is not found, it might be in the download queue.");
@@ -742,9 +743,13 @@ namespace CotdExplorer {
         string authorId = map.AuthorWebServicesUserId;
         string authorScore = Time::Format(map.AuthorScore);
         string authorName = map.AuthorDisplayName;
+        if (map_author is null or map_author.Id != authorId) {
+            // @map_author = PlayerName(authorName, authorId, IsSpecialPlayerId(authorId));
+            @map_author = PlayerNames::Get(authorId);
+        }
         string authorNameAndId = authorName + " " + authorId;
         // apply special after setting authorNameAndId
-        if (IsSpecialPlayerId(authorId)) authorName = rainbowLoopColorCycle(authorName, true);
+        // if (IsSpecialPlayerId(authorId)) authorName = rainbowLoopColorCycle(authorName, true);
         string mapName = map.Name;
         string origMapName = mapName;
         mapName = EscapeRawToOpenPlanet(MakeColorsOkayDarkMode(mapName));
@@ -761,7 +766,9 @@ namespace CotdExplorer {
             UI::TableNextColumn(); /* map info */
             // UI::Text(EscapeRawToOpenPlanet("Mapper: " + authorName));
             UI::Text("Name: " + mapName);
-            TextWithCooldown("Mapper: " + authorName, authorNameAndId, authorId, "\\$fff", "Click to copy author's Name and ID");
+            UI::Text("Mapper: ");
+            SetCursorAtItemTopRight();
+            map_author.DrawAsText();
             UI::Text("Author Time: " + authorScore);
             DrawMapRecordsOrLoading(mapUid);
             // UI::Text("Map Uid:");
@@ -1478,28 +1485,30 @@ namespace CotdExplorer {
         }
     }
 
+    PlayerName@ UnkWinnerPlayerName = PlayerName(c_orange_600 + "Unknown Winner", "", false);
     // returns whether the winner was known or not
     bool DrawDivResultsRowForMatch(uint roundId, uint matchId) {
         auto match = mapDb.matchesDb.Get(matchId);
         auto mResults = mapDb.matchResultsDb.Get(roundId).Get(matchId);
         auto winner = mResults.results[0];
         bool matchDone = winner.rank.IsSome();
-        string name = matchDone
-            ? RenderPlayerNameFromId(winner.participant)
-            : c_orange_600 + "Unknown Winner";
-        DrawAs2Cols("Div " + (match.position + 1), name);
+        PlayerName@ name = matchDone
+            ? PlayerNames::Get(winner.participant)
+            : UnkWinnerPlayerName;
+        DrawAs2Cols("Div " + (match.position + 1), name.DrawInTable);
         UI::TableNextRow();
         return winner.rank.IsSome();
     }
 
-    const string RenderPlayerNameFromId(const string &in pid) {
-        string name = mapDb.playerNameDb.Exists(pid) ? mapDb.playerNameDb.Get(pid) : "?? " + pid.SubStr(0, 8);
-        return _RenderPlayerName(name, IsSpecialPlayerId(pid));
-    }
+    // const string RenderPlayerNameFromId(const string &in pid) {
+    //     PlayerName@ name = PlayerNames::Get(pid);
+    //     string name = mapDb.playerNameDb.Exists(pid) ? mapDb.playerNameDb.Get(pid) : "?? " + pid.SubStr(0, 8);
+    //     return _RenderPlayerName(name, IsSpecialPlayerId(pid));
+    // }
 
-    const string _RenderPlayerName(const string &in name, bool isSpecial) {
-        return isSpecial ? rainbowLoopColorCycle(name, true) : name;
-    }
+    // const string _RenderPlayerName(const string &in name, bool isSpecial) {
+    //     return isSpecial ? rainbowLoopColorCycle(name, true) : name;
+    // }
 
     int lastCompIdDlClick = -1;
     void _DrawCompRoundMatchesStatus(uint compId, bool gotRounds, bool gotMatches, bool gotMatchResults) {

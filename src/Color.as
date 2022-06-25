@@ -158,7 +158,7 @@ vec3 hslToRGB(vec3 hsl) {
 uint8 ToSingleHexCol(float v) {
     if (v < 0) { v = 0; }
     if (v > 15.9999) { v = 15.9999; }
-    int u = uint8(Math::Floor(v));
+    int u = uint8(Math::Round(v));
     if (u < 10) { return 48 + u; }  /* 48 = '0' */
     return 87 + u;  /* u>=10 and 97 = 'a' */
     // switch (u) {
@@ -174,7 +174,7 @@ uint8 ToSingleHexCol(float v) {
 }
 
 string rgbToHexTri(vec3 rgb) {
-    auto v = rgb * 16;
+    auto v = rgb * 15;
     string ret = "000";
     ret[0] = ToSingleHexCol(v.x);
     ret[1] = ToSingleHexCol(v.y);
