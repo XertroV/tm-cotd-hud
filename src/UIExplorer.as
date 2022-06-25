@@ -1377,14 +1377,15 @@ namespace CotdExplorer {
         // todo player name
         string pid = row[3];
         if (pid.Length > 10) {
-            bool nameExists = mapDb.playerNameDb.Exists(pid);
-            string hl = CooldownHLColor(pid, nameExists ? "" : "\\$a42");
-            string nameRaw = nameExists ? mapDb.playerNameDb.Get(pid) : "?? " + pid.Split('-')[0];
-            string pName = IsSpecialPlayerId(pid)
-                ? rainbowLoopColorCycle(nameRaw, true)
-                : hl + nameRaw;
+            // bool nameExists = mapDb.playerNameDb.Exists(pid);
+            // string hl = CooldownHLColor(pid, nameExists ? "" : "\\$a42");
+            // string nameRaw = nameExists ? mapDb.playerNameDb.Get(pid) : "?? " + pid.Split('-')[0];
+            // string pName = IsSpecialPlayerId(pid)
+            //     ? rainbowLoopColorCycle(nameRaw, true)
+            //     : hl + nameRaw;
             // string pName = hl + nameRaw;
-            UI::Text(pName);
+            // UI::Text(pName);
+            PlayerNames::Get(pid).DrawInTable();
             if (UI::IsItemClicked()) {
                 trace("Copying to clipboard: " + pid);
                 IO::SetClipboard(pid);

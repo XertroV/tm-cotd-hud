@@ -581,18 +581,18 @@ namespace DataManager {
         // the rankings each 30s and cache special players.
         LoadFavoritesTimesFromDisk();
         while (true) {
-            if (Setting_HudShowFavoritedPlayersTimes) {
+            if (Setting_HudShowFavoritedPlayersTimes && isCotd.v) {
                 startnew(_ScanAllTimesForFavorites);
             }
-            sleep(30 * 6000);
+            sleep(30 * 1000);
         }
     }
 
     void _ScanAllTimesForFavorites() {
         uint nPlayers = GetCotdTotalPlayers();
-        for (uint off = 0; off < nPlayers; nPlayers += 100) {
+        for (uint off = 0; off < nPlayers; off += 100) {
             startnew(CoroutineFuncUserdata(_ScanFavsForOffset), Uint(off));
-            sleep(100);
+            sleep(200);
         }
     }
 
@@ -609,7 +609,7 @@ namespace DataManager {
         bool setFav = false;
         for (uint i = 0; i < times.Length; i++) {
             auto time = times[i];
-            if (IsSpecialPlayerId(time.player)) {
+            if (IsSpecialPlayerId(time.player) && time.player != gi.PlayersId()) {
                 favoritesTimes[time.player] = Time::Format(time.time) + "|" + time.rank;
                 setFav = true;
             }
@@ -624,9 +624,12 @@ namespace DataManager {
             rankToPid['' + rank] = favPids[i];
             ranks.InsertLast(rank);
         }
+        ranks.SortAsc();
         favoritesOrder = {};
         for (uint i = 0; i < ranks.Length; i++) {
-            favoritesOrder.InsertLast(string(rankToPid['' + ranks[i]]));
+            string pid = string(rankToPid['' + ranks[i]]);
+            if (!IsSpecialPlayerId(pid)) continue;
+            favoritesOrder.InsertLast(pid);
         }
     }
 
