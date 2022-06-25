@@ -16,8 +16,7 @@ namespace WAllTimes {
     string[] cache_Deltas = array<string>();
     string[] cache_DivDeltas = array<string>();
     string[] cache_PlayerDeltas = array<string>();
-    string[] cache_Players = array<string>();
-    bool[] cache_Special = array<bool>();
+    PlayerName@[] cache_Players = array<PlayerName@>();
     uint nPlayers = 0;
     uint nDivs = 0;
     string playerId;
@@ -44,7 +43,6 @@ namespace WAllTimes {
         cache_DivDeltas.Resize(nPlayers + nDivs);
         cache_PlayerDeltas.Resize(nPlayers + nDivs);
         cache_Players.Resize(nPlayers + nDivs);
-        cache_Special.Resize(nPlayers + nDivs);
         uint bestTime = nPlayers > 0 ? times[0]['score'] : 0;
         string pid, name, _d;
         bool special;
@@ -66,8 +64,7 @@ namespace WAllTimes {
                 cache_Deltas[i] = c_brightBlue + '------------';
                 cache_DivDeltas[i] = c_brightBlue + '------------';
                 cache_PlayerDeltas[i] = c_brightBlue + '------------';
-                cache_Players[i] = c_brightBlue + _d;
-                cache_Special[i] = false;
+                @cache_Players[i] = PlayerName(c_brightBlue + _d, '', false);
                 nDivsDone++;
                 i = _i + nDivsDone;
                 bestInDiv = time;
@@ -77,10 +74,7 @@ namespace WAllTimes {
             cache_Deltas[i] = time == bestTime ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - bestTime));
             cache_DivDeltas[i] = time == bestInDiv ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - bestInDiv));
             pid = times[_i]['player'];
-            name = PersistentData::mapDb.playerNameDb.Get(pid);
-            special = IsSpecialPlayerId(pid);
-            cache_Players[i] = name;
-            cache_Special[i] = special;
+            @cache_Players[i] = PlayerName(pid);  // don't get cached player name here -- right click breaks
             if (playerFound) {
                 cache_PlayerDeltas[i] = time == playerScore ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - playerScore));
             }
@@ -182,7 +176,8 @@ namespace WAllTimes {
                         UI::Text(cache_PlayerDeltas[i]);
                     }
                     UI::TableNextColumn();
-                    UI::Text(!cache_Special[i] ? cache_Players[i] : rainbowLoopColorCycle(cache_Players[i], true));
+                    if (cache_Players[i] !is null)
+                        cache_Players[i].DrawInTable();
                 }
             }
 

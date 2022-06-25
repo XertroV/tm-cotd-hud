@@ -18,6 +18,7 @@ class PlayerName {
   private bool _unknownName = false;
   JsonDictDb@ playerNameDb;
   private uint copiedCooldownSince = 0;
+  private int nonce = Math::Rand(-100000000, 100000000);
 
   /* Methods // Mixin: Default Constructor */
   PlayerName(const string &in Name, const string &in Id, bool IsSpecial) {
@@ -73,10 +74,6 @@ class PlayerName {
       : (drawSpecialFlair && IsSpecial) ? rainbowLoopColorCycle(Name, true) : Name;
     UI::Text(_name);
     bool leftClicked = UI::IsItemClicked();
-    bool rightClicked = RightClicked(Id, _inTable);
-
-    if (rightClicked)
-      UI::OpenPopup(Id);
 
     if (leftClicked) {
       copiedCooldownSince = Time::Now;
@@ -84,7 +81,7 @@ class PlayerName {
       trace('Copied: ' + Name + ' ' + Id);
     }
 
-    if (UI::BeginPopup(Id)) {
+    if (UI::BeginPopupContextItem(Id+nonce)) {
       if (UI::MenuItem("Favorite", "", IsSpecial)) {
         if (IsSpecial) RemoveSpecialPlayer(Id);
         else AddSpecialPlayer(Id);

@@ -16,8 +16,7 @@ namespace WAllDivResults {
     string[] cache_Deltas = array<string>();
     string[] cache_DivDeltas = array<string>();
     string[] cache_PlayerDeltas = array<string>();
-    string[] cache_Players = array<string>();
-    bool[] cache_Special = array<bool>();
+    PlayerName@[] cache_Players = array<PlayerName@>();
     uint nPlayers = 0;
     uint nDivs = 0;
     string playerId;
@@ -52,7 +51,6 @@ namespace WAllDivResults {
         cache_DivDeltas.Resize(arraySize);
         cache_PlayerDeltas.Resize(arraySize);
         cache_Players.Resize(arraySize);
-        cache_Special.Resize(arraySize);
         string pid, name, _d;
         bool special, drawDiv;
         uint nDivsDone = 0, i, bestInDiv, thisDiv, playerScore = 0;
@@ -76,8 +74,7 @@ namespace WAllDivResults {
                 cache_Ranks[i] = c_brightBlue + 'Div ' + thisDiv;
                 cache_DivRank[i] = c_brightBlue + '--------';
                 cache_PlayerDeltas[i] = c_brightBlue + '--------';
-                cache_Players[i] = c_brightBlue + _d;
-                cache_Special[i] = false;
+                @cache_Players[i] = PlayerName(c_brightBlue + _d, '', false);
             }
             nDivsDone++;
 
@@ -88,8 +85,7 @@ namespace WAllDivResults {
                 auto gr = ++gRank;
                 auto maxDivRank = thisDiv * 64;
                 pid = match.results[j].participant;
-                name = PersistentData::mapDb.playerNameDb.Get(pid);
-                special = IsSpecialPlayerId(pid);
+                auto player = PlayerName(pid);
                 if (drawDiv) {
                     if (r.IsSome()) {
                         cache_Ranks[i] = '' + gr;
@@ -98,8 +94,7 @@ namespace WAllDivResults {
                         cache_Ranks[i] = '' + maxDivRank;
                         cache_DivRank[i] = '--';
                     }
-                    cache_Players[i] = name;
-                    cache_Special[i] = special;
+                    @cache_Players[i] = player;
                     if (playerFound) {
                         cache_PlayerDeltas[i] = gRank == playerRank ? '' : c_timeOrange + '+' + (gRank - playerRank);
                     }
@@ -203,7 +198,8 @@ namespace WAllDivResults {
                     UI::TableNextColumn();
                     UI::Text(cache_DivRank[i]);
                     UI::TableNextColumn();
-                    UI::Text(!cache_Special[i] ? cache_Players[i] : rainbowLoopColorCycle(cache_Players[i], true));
+                    if (cache_Players[i] !is null)
+                        cache_Players[i].DrawInTable();
                 }
             }
 
