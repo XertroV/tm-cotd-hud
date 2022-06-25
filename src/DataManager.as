@@ -154,6 +154,7 @@ namespace DataManager {
             cotd_TimesForHistogram[i] = 0;
         }
         favoritesTimes.DeleteAll();
+        favoritesOrder = {};
     }
 
     void EnsureCotdStatsReacquired() {
@@ -615,6 +616,10 @@ namespace DataManager {
             }
         }
         if (!setFav) return;
+        SortFavorites();
+    }
+
+    void SortFavorites() {
         string[] favPids = favoritesTimes.GetKeys();
         uint[] ranks = {};
         dictionary@ rankToPid = dictionary();
@@ -642,8 +647,6 @@ namespace DataManager {
             while (!PersistentData::MapTimesCached(cotdLatest_MapId, GetChallengeId())) sleep(1000);
             auto times = PersistentData::GetCotdMapTimes(cotdLatest_MapId, GetChallengeId());
             auto ks = times.j['ranges'].GetKeys();
-            uint[] ranks = {};
-            dictionary@ rankToPid = dictionary();
             for (uint i = 0; i < ks.Length; i++) {
                 auto chunk = times.j['ranges'][ks[i]];
                 for (uint j = 0; j < chunk.Length; j++) {
@@ -652,16 +655,10 @@ namespace DataManager {
                         uint score = chunk[j]['score'];
                         uint rank = chunk[j]['rank'];
                         favoritesTimes[pid] = Time::Format(score) + "|" + rank;
-                        rankToPid['' + rank] = pid;
-                        ranks.InsertLast(rank);
                     }
                 }
             }
-            ranks.SortAsc();
-            favoritesOrder = {};
-            for (uint i = 0; i < ranks.Length; i++) {
-                favoritesOrder.InsertLast(string(rankToPid['' + ranks[i]]));
-            }
+            SortFavorites();
         }
     }
 
