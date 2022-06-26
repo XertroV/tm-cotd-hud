@@ -768,7 +768,7 @@ namespace CotdExplorer {
             UI::Text("Name: " + mapName);
             UI::Text("Mapper: ");
             SetCursorAtItemTopRight();
-            map_author.DrawAsText();
+            map_author.Draw();
             UI::Text("Author Time: " + authorScore);
             DrawMapRecordsOrLoading(mapUid);
             // UI::Text("Map Uid:");
@@ -1385,7 +1385,7 @@ namespace CotdExplorer {
             //     : hl + nameRaw;
             // string pName = hl + nameRaw;
             // UI::Text(pName);
-            PlayerNames::Get(pid).DrawInTable();
+            PlayerNames::Get(pid).Draw();
             if (UI::IsItemClicked()) {
                 trace("Copying to clipboard: " + pid);
                 IO::SetClipboard(pid);
@@ -1496,7 +1496,7 @@ namespace CotdExplorer {
         PlayerName@ name = matchDone
             ? PlayerNames::Get(winner.participant)
             : UnkWinnerPlayerName;
-        DrawAs2Cols("Div " + (match.position + 1), name.DrawInTable);
+        DrawAs2Cols("Div " + (match.position + 1), name.Draw);
         UI::TableNextRow();
         return winner.rank.IsSome();
     }

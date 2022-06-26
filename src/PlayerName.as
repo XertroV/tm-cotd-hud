@@ -8,6 +8,8 @@ namespace PlayerNames {
   }
 }
 
+// todo: refresh player names on download new ones
+
 const uint COOLDOWN_MS = 1250;
 
 class PlayerName {
@@ -54,21 +56,16 @@ class PlayerName {
 
   private bool inTable;
 
-  DrawUiElems@ get_DrawInTable() {
-    inTable = true;
+  DrawUiElems@ get_Draw() {
     return DrawUiElems(_Draw);
   }
 
-  DrawUiElems@ get_DrawAsText() {
-    inTable = false;
-    return DrawUiElems(_Draw);
+  private void _Draw() {
+    _DrawInner();
   }
 
-  void _Draw() {
-    _DrawInner(inTable);
-  }
-
-  void _DrawInner(bool _inTable, bool drawSpecialFlair = true) {
+  void _DrawInner(bool drawSpecialFlair = true) {
+    if (_unknownName) RefreshName();
     string _name = IsCoolingDown
       ? (maniaColorForCooldown(CooldownDelta, COOLDOWN_MS, true) + Name)
       : (drawSpecialFlair && IsSpecial) ? rainbowLoopColorCycle(Name, true) : Name;

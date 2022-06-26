@@ -199,7 +199,7 @@ namespace WAllDivResults {
                     UI::Text(cache_DivRank[i]);
                     UI::TableNextColumn();
                     if (cache_Players[i] !is null)
-                        cache_Players[i].DrawInTable();
+                        cache_Players[i].Draw();
                 }
             }
 

@@ -280,7 +280,7 @@ namespace CotdHud {
                     for (uint i = 0; i < pids.Length; i++) {
                         auto cols = string(DataManager::favoritesTimes[pids[i]]).Split('|', 2);
                         UI::TableNextColumn();
-                        PlayerNames::Get(pids[i])._DrawInner(true, false);
+                        PlayerNames::Get(pids[i])._DrawInner(false);
                         UI::TableNextColumn();
                         UI::Text(cols[1]);
                         UI::TableNextColumn();
@@ -310,7 +310,7 @@ namespace CotdHud {
 
         if (Setting_HudWindowLocked || !UI::IsOverlayShown()) {
             ret |= UI::WindowFlags::NoMove;
-            ret |= UI::WindowFlags::NoInputs;
+            // ret |= UI::WindowFlags::NoInputs;
         }
 
         ret |= UI::WindowFlags::NoCollapse;
