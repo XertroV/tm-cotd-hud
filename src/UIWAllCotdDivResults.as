@@ -7,16 +7,31 @@ namespace WAllDivResults {
         MainWindow();
     }
 
+    class Row {
+        string rank;
+        string divRank;
+        string playerDelta;
+        PlayerName@ player;
+        bool isDivRow;
+        Row(const string &in r, const string &in dr, const string &in pd, PlayerName@ p, bool divRow = false) {
+            rank = r;
+            divRank = dr;
+            playerDelta = pd;
+            @player = p;
+            isDivRow = divRow;
+        }
+    }
+
     string filterName = 'doesnt work yet';
     uint cId;  /* do not set directly */
     uint divShowOnly = 0;  /* do not set directly; 0 for show all divs */
     MapDb@ mapDb;
-    string[] cache_Ranks = array<string>();
-    string[] cache_DivRank = array<string>();
-    string[] cache_Deltas = array<string>();
-    string[] cache_DivDeltas = array<string>();
-    string[] cache_PlayerDeltas = array<string>();
-    PlayerName@[] cache_Players = array<PlayerName@>();
+    Row@[] cache_rows = array<Row@>();
+    Row@[] filtered_rows = array<Row@>();
+    // string[] cache_Ranks = array<string>();
+    // string[] cache_DivRank = array<string>();
+    // string[] cache_PlayerDeltas = array<string>();
+    // PlayerName@[] cache_Players = array<PlayerName@>();
     uint nPlayers = 0;
     uint nDivs = 0;
     string playerId;
@@ -45,12 +60,12 @@ namespace WAllDivResults {
         uint arraySize = divShowOnly == 0
             ? nPlayers + nDivs
             : divShowOnly < nDivs ? 65 : 1 + lastDivN;
-        cache_Ranks.Resize(arraySize);
-        cache_DivRank.Resize(arraySize);
-        cache_Deltas.Resize(arraySize);
-        cache_DivDeltas.Resize(arraySize);
-        cache_PlayerDeltas.Resize(arraySize);
-        cache_Players.Resize(arraySize);
+        cache_rows.Resize(arraySize);
+        filtered_rows.Resize(0);
+        // cache_Ranks.Resize(arraySize);
+        // cache_DivRank.Resize(arraySize);
+        // cache_PlayerDeltas.Resize(arraySize);
+        // cache_Players.Resize(arraySize);
         string pid, name, _d;
         bool special, drawDiv;
         uint nDivsDone = 0, i, bestInDiv, thisDiv, playerScore = 0;
@@ -71,10 +86,11 @@ namespace WAllDivResults {
                     i = 0;
                 /* start of div */
                 _d = "Div " + thisDiv;
-                cache_Ranks[i] = c_brightBlue + 'Div ' + thisDiv;
-                cache_DivRank[i] = c_brightBlue + '--------';
-                cache_PlayerDeltas[i] = c_brightBlue + '--------';
-                @cache_Players[i] = PlayerName(c_brightBlue + _d, '', false);
+                // cache_Ranks[i] = c_brightBlue + 'Div ' + thisDiv;
+                // cache_DivRank[i] = c_brightBlue + '--------';
+                // cache_PlayerDeltas[i] = c_brightBlue + '--------';
+                // @cache_Players[i] = PlayerName(c_brightBlue + _d, '', false);
+                @cache_rows[i] = Row(c_brightBlue + 'Div ' + thisDiv, c_brightBlue + '--------', c_brightBlue + '--------', PlayerName(c_brightBlue + _d, '', false), true);
             }
             nDivsDone++;
 
@@ -87,21 +103,22 @@ namespace WAllDivResults {
                 pid = match.results[j].participant;
                 auto player = PlayerName(pid);
                 if (drawDiv) {
-                    if (r.IsSome()) {
-                        cache_Ranks[i] = '' + gr;
-                        cache_DivRank[i] = ('' + r.GetOr(0xFFFFFFFF));
-                    } else {
-                        cache_Ranks[i] = '' + maxDivRank;
-                        cache_DivRank[i] = '--';
-                    }
-                    @cache_Players[i] = player;
+                    // if (r.IsSome()) {
+                    //     cache_Ranks[i] = '' + gr;
+                    //     cache_DivRank[i] = ('' + r.GetOr(0xFFFFFFFF));
+                    // } else {
+                    //     cache_Ranks[i] = '' + maxDivRank;
+                    //     cache_DivRank[i] = '--';
+                    // }
+                    // @cache_Players[i] = player;
+                    @cache_rows[i] = Row('' + gr, r.IsSome() ? '' + r.GetOr(0xff) : '--', '', player);
                     if (playerFound) {
-                        cache_PlayerDeltas[i] = gRank == playerRank ? '' : c_timeOrange + '+' + (gRank - playerRank);
+                        cache_rows[i].playerDelta = gRank == playerRank ? '' : c_timeOrange + '+' + (gRank - playerRank);
                     }
                     if (pid == playerId) {
                         playerFound = true;
                         playerRank = gRank;
-                        cache_PlayerDeltas[i] = '';
+                        cache_rows[i].playerDelta = '';
                     }
                 }
             }
@@ -120,7 +137,7 @@ namespace WAllDivResults {
                     uint rank = 64 * divIx + j + 1;
                     if (rank >= playerRank) break;
                     if (drawDiv)
-                        cache_PlayerDeltas[i] = rank == playerRank ? '' : c_timeBlue + '-' + (playerRank - rank);
+                        cache_rows[i].playerDelta = rank == playerRank ? '' : c_timeBlue + '-' + (playerRank - rank);
                     i++;
                 }
                 nDivsDone++;
@@ -180,26 +197,27 @@ namespace WAllDivResults {
 
             UI::TableHeadersRow();
 
-            UI::ListClipper Clipper(cache_Ranks.Length);
+            UI::ListClipper Clipper(cache_rows.Length);
             while (Clipper.Step()) {
                 for (int i = Clipper.DisplayStart; i < Clipper.DisplayEnd; i++) {
+                    auto row = cache_rows[i];
+                    if (row is null) break;
                     // if (i % 64 == 0) {
                     //     DrawDivisionMarkerInTable(i / 64 + 1);
                     // }
-
                     UI::TableNextRow();
 
                     UI::TableNextColumn();
-                    UI::Text(cache_Ranks[i]);
+                    UI::Text(row.rank);
                     if (drawPDelta) {
                         UI::TableNextColumn();
-                        UI::Text(cache_PlayerDeltas[i]);
+                        UI::Text(row.playerDelta);
                     }
                     UI::TableNextColumn();
-                    UI::Text(cache_DivRank[i]);
+                    UI::Text(row.divRank);
                     UI::TableNextColumn();
-                    if (cache_Players[i] !is null)
-                        cache_Players[i].Draw();
+                    if (row.player !is null)
+                        row.player.Draw();
                 }
             }
 

@@ -897,6 +897,7 @@ namespace CotdExplorer {
         explChallenge.AsJust(cId);
         explComp.AsJust(compId);
         lastCidDownload = -1; // reset download button
+        lastCompIdDlClick = -1;
         startnew(EnsurePlayerNames); // get player names if we have times
         histToShow = mapUid + "--" + cId; // the histogram to show
         showHistogram = false;
