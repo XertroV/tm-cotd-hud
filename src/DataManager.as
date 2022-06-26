@@ -4,7 +4,6 @@ namespace DataManager {
 
     const uint[] TOP_5 = {1, 2, 3, 4, 5};
 
-    GameInfo@ gi = GameInfo();
     CotdApi@ api;
 
     Debouncer@ debounce = Debouncer();
@@ -98,16 +97,16 @@ namespace DataManager {
     }
 
     void Update(float dt) {
-        isCotd.Set(gi.IsCotdQuali());
+        isCotd.Set(GI::IsCotdQuali());
 
         // probably superfluous
         if (isCotd.v) {
-            cotdLatest_MapId = gi.MapId();
+            cotdLatest_MapId = GI::MapId();
         }
 
         // When we enter a COTD server
         if (isCotd.ChangedToTrue()) {
-            cotdLatest_MapId = gi.MapId();
+            cotdLatest_MapId = GI::MapId();
             _ResetCotdStats();
             startnew(EnsureCotdStatsReacquired);
             startnew(_FullUpdateCotdStatsSeries);
@@ -229,9 +228,9 @@ namespace DataManager {
                 ;
 
             // must be COTD
-            shouldUpdate = shouldUpdate && gi.IsCotdQuali();
+            shouldUpdate = shouldUpdate && GI::IsCotdQuali();
 
-            if (gi.IsCotdQuali() && debounce.CanProceed('log shouldUpdate cotdDivs', loopUpdatePeriodMs) || shouldUpdate)
+            if (GI::IsCotdQuali() && debounce.CanProceed('log shouldUpdate cotdDivs', loopUpdatePeriodMs) || shouldUpdate)
                 dev_logcall("LoopUpdateDivsInCotd", 'shouldUpdate:' + shouldUpdate);
 
             /* Update divs */
@@ -360,7 +359,7 @@ namespace DataManager {
             return;
         }
 
-        cotdLatest_PlayerRank = api.GetPlayerRank(GetChallengeId(), cotdLatest_MapId, gi.PlayersId());
+        cotdLatest_PlayerRank = api.GetPlayerRank(GetChallengeId(), cotdLatest_MapId, GI::PlayersId());
         // trace("[ApiUpdateCotdPlayerRank] from api got: " + Json::Write(cotdLatest_PlayerRank));
         logcall("ApiUpdateCotdPlayerRank", "Done! " + Json::Write(cotdLatest_PlayerRank));
     }
@@ -542,7 +541,7 @@ namespace DataManager {
                 sleep(500);
             } else {
                 uint nPlayers = GetCotdTotalPlayers();
-                if (gi.IsCotdQuali() && nPlayers > 0) {
+                if (GI::IsCotdQuali() && nPlayers > 0) {
                     logcall("CoroLoopSaveAllTimes", "Running now for " + nPlayers + " players.");
                     uint chunkSize = 100;
                     uint timeStamp = Time::Stamp;
@@ -610,7 +609,7 @@ namespace DataManager {
         bool setFav = false;
         for (uint i = 0; i < times.Length; i++) {
             auto time = times[i];
-            if (IsSpecialPlayerId(time.player) && time.player != gi.PlayersId()) {
+            if (IsSpecialPlayerId(time.player) && time.player != GI::PlayersId()) {
                 favoritesTimes[time.player] = Time::Format(time.time) + "|" + time.rank;
                 setFav = true;
             }
@@ -651,7 +650,7 @@ namespace DataManager {
                 auto chunk = times.j['ranges'][ks[i]];
                 for (uint j = 0; j < chunk.Length; j++) {
                     string pid = chunk[j]['player'];
-                    if (IsSpecialPlayerId(pid) && pid != gi.PlayersId()) {
+                    if (IsSpecialPlayerId(pid) && pid != GI::PlayersId()) {
                         uint score = chunk[j]['score'];
                         uint rank = chunk[j]['rank'];
                         favoritesTimes[pid] = Time::Format(score) + "|" + rank;
@@ -683,7 +682,7 @@ namespace DataManager {
     void CoroLoadInitHistogramData() {
         logcall("CoroLoadInitHistogramData", "Init");
         // don't do this if we're in a cotd
-        if (gi.IsCotdQuali()) return;
+        if (GI::IsCotdQuali()) return;
         // wait for cotd data to be available
         while (cotdLatest_MapId == "" || GetChallengeId() == 0 || IsJsonNull(cotdLatest_PlayerRank)) sleep(50);
         logcall("CoroLoadInitHistogramData", "Waiting for map times to be cached...");

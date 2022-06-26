@@ -852,7 +852,6 @@ class CotdTimesReqData {
 }
 
 class MapDb : JsonDb {
-    GameInfo@ gi = GameInfo();
     CotdApi@ api;
     /* outside of MapDb: only do read stuff with these */
     // todo, put behind getters.
@@ -1177,9 +1176,9 @@ class MapDb : JsonDb {
     void _LoopCheckPlayerNamesInGame() {
         logcall("_LoopCheckPlayerNamesInGame", "Starting...");
         while (true) {
-            auto playerInfos = gi.getPlayerInfos();
+            auto playerInfos = GI::getPlayerInfos();
             for (uint i = 0; i < playerInfos.Length; i++) {
-                auto pi = gi.NetPIToTrackmaniaPI(playerInfos[i]);
+                auto pi = GI::NetPIToTrackmaniaPI(playerInfos[i]);
                 if (!playerNameDb.Exists(pi.WebServicesUserId)) {
                     trace("Caching player id -> name: (" + pi.WebServicesUserId + ", " + pi.Name + ")");
                     playerNameDb.Set(pi.WebServicesUserId, pi.Name);

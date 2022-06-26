@@ -1,5 +1,4 @@
-
-class GameInfo {
+namespace GI {
     CTrackMania@ get_app() {
         return GetTmApp();
     }

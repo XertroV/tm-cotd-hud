@@ -1,5 +1,4 @@
 Debouncer@ debounce = Debouncer();
-GameInfo gi = GameInfo();
 
 // todo TOTD times arbitrary ranges:
 // https://live-services.trackmania.nadeo.live/api/token/leaderboard/group/<seasonUid>/map/<mapUid>/top?offset=300&length=15&onlyWorld=true
@@ -779,7 +778,7 @@ namespace CotdExplorer {
                 if (!debounce.CanProceed('play-map-btn', 2000)) {
                     warn("debouncer said we could proceed but then said we can't proceed :(");
                 }
-                gi.GetMainaTitleControlScriptAPI().PlayMap(wstring(string(map.FileUrl)), '', '');
+                GI::GetMainaTitleControlScriptAPI().PlayMap(wstring(string(map.FileUrl)), '', '');
             };
             UI::PopFont();
 

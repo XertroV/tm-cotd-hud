@@ -15,7 +15,6 @@
 //     float timeSinceLastUpdate = 0;
 //     uint[] visibleDivs = {1, 2};
 //     BoolWP@ isCotd = BoolWP(false);
-//     GameInfo@ gi;
 //     CotdApi@ api;
 //     string currMapId;
 //     string cotdMapId;
@@ -29,10 +28,10 @@
 //     }
 
 //     void CheckMapChange() {
-//         auto mid = gi.MapId();
+//         auto mid = GI::MapId();
 //         if (mid != currMapId) { OnMapChange(); }
 //         currMapId = mid;
-//         if (gi.IsCotd()) { cotdMapId = mid; }
+//         if (GI::IsCotd()) { cotdMapId = mid; }
 //     }
 
 //     void UpdateData() {
@@ -75,7 +74,7 @@
 //     }
 
 //     void OnNewPB() {
-//         if (gi.IsCotdQuali()) {
+//         if (GI::IsCotdQuali()) {
 //             UpdateData();
 //         }
 //     }
@@ -94,7 +93,7 @@
 //         float loopMs = 15000;
 //         while (true) {
 //             _skip = Permissions::PlayOnlineCompetition();           // skip if user can't play COTD
-//             _skip = _skip || !gi.IsCotd();                          // skip if we're not in COTD
+//             _skip = _skip || !GI::IsCotd();                          // skip if we're not in COTD
 //             _skip = _skip || (loopMs > timeSinceLastUpdate);        // skip if we updated too recently
 //             if (_skip) {
 //                 sleep(100);

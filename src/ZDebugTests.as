@@ -20,18 +20,16 @@ void DebugTest_JsonWritePrecision() {
 }
 
 void DebugTest_LoadingScreen() {
-    auto gi = GameInfo();
     while (true) {
-        debug("IsLoadingScreen: " + gi.IsLoadingScreen());
+        debug("IsLoadingScreen: " + GI::IsLoadingScreen());
         sleep(100);
     }
     // result: seems to work
 }
 
 void DebugTest_PrintPgUIConfigs() {
-    auto gi = GameInfo();
     while (true) {
-        auto uis = gi.GetPlaygroundUIConfigs();
+        auto uis = GI::GetPlaygroundUIConfigs();
         for (uint i = 0; i < uis.Length; i++) {
             debug("uis["+i+"].UISequence: " + uis[i].UISequence);
         }
@@ -42,16 +40,15 @@ void DebugTest_PrintPgUIConfigs() {
 
 void DebugTest_MonitorActiveUILayers() {
     bool[] activeUiLayers = array<bool>(300);
-    auto gi = GameInfo();
     while(true) {
         // [15] / #20: home screen
-        auto mc = gi.GetMenuCustom();
+        auto mc = GI::GetMenuCustom();
         auto nlayers = mc.UILayers.Length;
         string dbgMsg = "\\$3d8" + "Active UI Layers: ";
         string dbgNewlyVis = "";
         for (uint i = 0; i < activeUiLayers.Length; i++) {
             if (i < nlayers) {
-                auto l = gi.GetUILayer(i);
+                auto l = GI::GetUILayer(i);
                 if (l.IsVisible && !activeUiLayers[i]) {
                     dbgNewlyVis += ", " + i;
                 }
@@ -74,8 +71,7 @@ void DebugTest_MonitorActiveUILayers() {
 
 void ListPlayerInfos() {
     debug(">> ListPlayerInfos");
-    auto gi = GameInfo();
-    auto pis = gi.getPlayerInfos();
+    auto pis = GI::getPlayerInfos();
     for (uint i = 0; i < pis.Length; i++) {
         CTrackManiaPlayerInfo@ pi = cast<CTrackManiaPlayerInfo@>(pis[i]);
         debug("Player Info for: " + pi.Name);

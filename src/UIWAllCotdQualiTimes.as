@@ -33,7 +33,7 @@ namespace WAllTimes {
     }
 
     void PopulateCache() {
-        playerId = DataManager::gi.PlayersId();
+        playerId = GI::PlayersId();
         nPlayers = times.Length;
         // nDivs = uint(Math::Ceil(float(nPlayers) / 64.));
         nDivs = ((nPlayers - 1) >> 6) + 1; // faster and more elegant

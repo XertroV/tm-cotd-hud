@@ -42,6 +42,10 @@ void InitSpecialPlayers() {
             specialPlayerIds.Set(pids[i], true);
         }
     }
+    auto pid = GI::PlayersId();
+    if (!specialPlayerIds.Exists(pid)) {
+        specialPlayerIds.Set(pid, true);
+    }
 }
 
 bool IsSpecialPlayerId(const string &in pid) {

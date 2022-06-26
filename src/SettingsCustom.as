@@ -284,8 +284,6 @@ DEBUG
 
 [SettingsTab name="Debug"]
 void RenderSettingsDebug() {
-    auto gi = DataManager::gi;
-
     TextHeading("Debug Functions");
 
     if (UI::Button("Run ListPlayerInfos")) {
@@ -294,19 +292,19 @@ void RenderSettingsDebug() {
     AddSimpleTooltip("Prints all players' names and userIds to the Openplanet log.");
 
     if (UI::Button("Nod Explorer: Network")) {
-        @_DebugNod = gi.GetNetwork();
+        @_DebugNod = GI::GetNetwork();
         _DebugNodWindow.SetTitle("View Nod: Network");
         _DebugNodWindow.Show();
     }
 
     if (UI::Button("Nod Explorer: Playground")) {
-        @_DebugNod = gi.GetCurrentPlayground();
+        @_DebugNod = GI::GetCurrentPlayground();
         _DebugNodWindow.SetTitle("View Nod: Playground");
         _DebugNodWindow.Show();
     }
 
     if (UI::Button("Nod Explorer: InputPort")) {
-        @_DebugNod = gi.GetInputPort();
+        @_DebugNod = GI::GetInputPort();
         _DebugNodWindow.SetTitle("View Nod: InputPort");
         _DebugNodWindow.Show();
     }
@@ -330,9 +328,9 @@ void TestSaveReplay() {
     // auto b = MwFastBuffer<wstring>();
     // pg2.SendCustomEvent(wstring("playmap-endracemenu-save-replay"), b);
     // pg2.SendCustomEvent(wstring("playmap-endracemenu-save-replay"), b);
-    auto scoreMgr = gi.GetScoreMgr();
-    MwFastBuffer<CGamePlayer@> currPlayers = gi.GetCurrentPlayground().Players;
-    auto g = scoreMgr.Playground_GetPlayerGhost(gi.GetControlledPlayer().ScriptAPI);
+    auto scoreMgr = GI::GetScoreMgr();
+    MwFastBuffer<CGamePlayer@> currPlayers = GI::GetCurrentPlayground().Players;
+    auto g = scoreMgr.Playground_GetPlayerGhost(GI::GetControlledPlayer().ScriptAPI);
     if (g is null) {
         debug("GetPlayerGhost returned null. :(");
     }

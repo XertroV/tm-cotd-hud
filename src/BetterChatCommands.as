@@ -45,17 +45,17 @@ namespace BcCommands {
 
             // Generates {I/We} {was/are/am}
             string pronounTense =
-                DataManager::gi.IsCotdKO()
+                GI::IsCotdKO()
                     ? "We are"
-                    : (DataManager::gi.IsCotdQuali() ? "I am" : "I was");
+                    : (GI::IsCotdQuali() ? "I am" : "I was");
 
             /* Only add this in the KO round -- no need otherwise */
-            if (DataManager::gi.IsCotdKO() && playerDiv > 0) {
+            if (GI::IsCotdKO() && playerDiv > 0) {
                 msg += "$fff | ";
                 msg += "$1e3" + pronounTense + " in Div " + playerDiv + " of " + DataManager::GetCotdTotalDivs();
             }
 
-            if (!DataManager::gi.IsCotdKO() && DataManager::GetCotdTotalDivs() >= 4) {
+            if (!GI::IsCotdKO() && DataManager::GetCotdTotalDivs() >= 4) {
                 /* if we're not in the KO round, set the player div to 4
                  * so that the chat msg will show divs 1-5
                  */

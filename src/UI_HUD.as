@@ -22,8 +22,6 @@ def to_floats(hex: str):
 
 
 namespace CotdHud {
-    GameInfo@ gi = GameInfo();
-
     void Render() {
         if (Setting_ShowHudEvenIfInterfaceHidden) {
             _RenderAll();
@@ -297,8 +295,8 @@ namespace CotdHud {
 
     bool IsVisible() {
         bool ret = false
-            || (Setting_ShowHudInCotdKO && gi.IsCotdKO())
-            || (Setting_ShowHudInCotdQuali && gi.IsCotdQuali())
+            || (Setting_ShowHudInCotdKO && GI::IsCotdKO())
+            || (Setting_ShowHudInCotdQuali && GI::IsCotdQuali())
             || Setting_ShowHudAlways
             ;
         ret = Setting_ShowHud && ret;

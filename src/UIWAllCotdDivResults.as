@@ -51,7 +51,7 @@ namespace WAllDivResults {
 
     void PopulateCache() {
         auto matchIds = mapDb.GetMatchIdsForCotdComp(cId);
-        playerId = DataManager::gi.PlayersId();
+        playerId = GI::PlayersId();
         nDivs = matchIds.Length;
         auto matches = mapDb.matchResultsDb.Get(mapDb.GetRoundIdForCotdComp(cId));
         uint lastDivN = matches.Get(matchIds[nDivs - 1]).results.Length;
