@@ -1497,6 +1497,7 @@ class MapDb : JsonDb {
 
     const array<uint>@ GetMatchIdsForCotdComp(uint compId) {
         auto roundIds = compsToRounds.Get(compId);
+        if (roundIds is null) return {};
         if (roundIds.Length != 1) {
             throw("Should only have 1 round in COTD comps. Had:" + roundIds.Length);
         }
@@ -1510,5 +1511,10 @@ class MapDb : JsonDb {
 
     const uint GetRoundIdForCotdComp(uint compId) {
         return compsToRounds.Get(compId)[0];
+    }
+
+    bool HaveRoundIdForCotdComp(uint compId) {
+        return compsToRounds.Exists(compId)
+            && compsToRounds.Get(compId) !is null;
     }
 }

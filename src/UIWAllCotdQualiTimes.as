@@ -31,14 +31,17 @@ namespace WAllTimes {
     int cId;  /* do not set directly */
     Json::Value[] times;
     Row@[] cache_rows = array<Row@>();
+    dictionary@ pidToRank = dictionary();
     uint nPlayers = 0;
     uint nDivs = 0;
     string playerId;
     bool playerFound = false;
     uint playerRank = 0;
     string cotdTitleStr = "";
+    bool cached = false;
 
     void SetParams(const string &in _mapUid, int _cId) {
+        cached = false;
         mapUid = _mapUid;
         cId = _cId;
         times = PersistentData::GetCotdMapTimesAllJ(mapUid, cId);
@@ -52,6 +55,7 @@ namespace WAllTimes {
         // nDivs = uint(Math::Ceil(float(nPlayers) / 64.));
         nDivs = ((nPlayers - 1) >> 6) + 1; // faster and more elegant
         cache_rows.Resize(nPlayers + nDivs);
+        @pidToRank = dictionary();
         uint bestTime = nPlayers > 0 ? times[0]['score'] : 0;
         string pid, name, _d;
         bool special;
@@ -74,7 +78,9 @@ namespace WAllTimes {
                 bestInDiv = time;
             }
             pid = times[_i]['player'];
-            @cache_rows[i] = Row('' + (_i + 1),
+            uint rank = (_i + 1);
+            pidToRank[pid] = rank;
+            @cache_rows[i] = Row('' + rank,
                 Time::Format(time),
                 time == bestTime ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - bestTime)),
                 time == bestInDiv ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - bestInDiv)),
@@ -103,16 +109,13 @@ namespace WAllTimes {
                 cache_rows[i].playerDelta = playerScore == time ? '' : c_timeBlue + '-' + Time::Format(Math::Abs(playerScore - time));
             }
         }
+        cached = true;
     }
 
-    void CoroDelayedPopulateCache() {
-        // sleep(3000);
-        // PopulateCache();
-        /*
-        todo: check the last time players was updated,
-        and regen player names if it's more recent than
-        the last time we cached the list.
-        */
+    uint GetPlayerRank(const string &in pid) {
+        if (pidToRank.Exists(pid))
+            return uint(pidToRank[pid]);
+        return 0;
     }
 
     void MainWindow() {
@@ -154,7 +157,7 @@ namespace WAllTimes {
             UI::TableSetupColumn("Delta", UI::TableColumnFlags::WidthFixed, 70);
             UI::TableSetupColumn("Div Δ", UI::TableColumnFlags::WidthFixed, 70);
             if (drawPDelta)
-                UI::TableSetupColumn("Self Δ", UI::TableColumnFlags::WidthFixed, 70);
+                UI::TableSetupColumn("Δ vs You", UI::TableColumnFlags::WidthFixed, 70);
             UI::TableSetupColumn("Player", UI::TableColumnFlags::WidthStretch);
 
             UI::TableHeadersRow();

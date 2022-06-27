@@ -9,12 +9,14 @@ namespace WAllDivResults {
 
     class Row {
         string rank;
+        string rankDelta;
         string divRank;
         string playerDelta;
         PlayerName@ player;
         bool isDivRow;
-        Row(const string &in r, const string &in dr, const string &in pd, PlayerName@ p, bool divRow = false) {
+        Row(const string &in r, const string &in rd, const string &in dr, const string &in pd, PlayerName@ p, bool divRow = false) {
             rank = r;
+            rankDelta = rd;
             divRank = dr;
             playerDelta = pd;
             @player = p;
@@ -28,18 +30,16 @@ namespace WAllDivResults {
     MapDb@ mapDb;
     Row@[] cache_rows = array<Row@>();
     Row@[] filtered_rows = array<Row@>();
-    // string[] cache_Ranks = array<string>();
-    // string[] cache_DivRank = array<string>();
-    // string[] cache_PlayerDeltas = array<string>();
-    // PlayerName@[] cache_Players = array<PlayerName@>();
     uint nPlayers = 0;
     uint nDivs = 0;
     string playerId;
     bool playerFound = false;
     uint playerRank = 0;
     string cotdTitleStr = "";
+    bool cached = false;
 
     void SetParams(uint _cId, uint _divShowOnly = 0) {
+        cached = false;
         cId = _cId;
         divShowOnly = _divShowOnly;
         @mapDb = PersistentData::mapDb;
@@ -50,10 +50,15 @@ namespace WAllDivResults {
     }
 
     void PopulateCache() {
-        auto matchIds = mapDb.GetMatchIdsForCotdComp(cId);
+        // wait for all quali times to be cached so that we can do a comparison
+        // of quali rank vs final rank
+        while (!WAllTimes::cached) yield();
+        while (!mapDb.HaveRoundIdForCotdComp(cId)) yield();
+
         playerId = GI::PlayersId();
-        nDivs = matchIds.Length;
         auto matches = mapDb.matchResultsDb.Get(mapDb.GetRoundIdForCotdComp(cId));
+        auto matchIds = mapDb.GetMatchIdsForCotdComp(cId);
+        nDivs = matchIds.Length;
         uint lastDivN = matches.Get(matchIds[nDivs - 1]).results.Length;
         nPlayers = (nDivs - 1) * 64 + lastDivN;
         if (nDivs == 0) nPlayers = 0;
@@ -62,10 +67,6 @@ namespace WAllDivResults {
             : divShowOnly < nDivs ? 65 : 1 + lastDivN;
         cache_rows.Resize(arraySize);
         filtered_rows.Resize(0);
-        // cache_Ranks.Resize(arraySize);
-        // cache_DivRank.Resize(arraySize);
-        // cache_PlayerDeltas.Resize(arraySize);
-        // cache_Players.Resize(arraySize);
         string pid, name, _d;
         bool special, drawDiv;
         uint nDivsDone = 0, i, bestInDiv, thisDiv, playerScore = 0;
@@ -86,11 +87,11 @@ namespace WAllDivResults {
                     i = 0;
                 /* start of div */
                 _d = "Div " + thisDiv;
-                // cache_Ranks[i] = c_brightBlue + 'Div ' + thisDiv;
-                // cache_DivRank[i] = c_brightBlue + '--------';
-                // cache_PlayerDeltas[i] = c_brightBlue + '--------';
-                // @cache_Players[i] = PlayerName(c_brightBlue + _d, '', false);
-                @cache_rows[i] = Row(c_brightBlue + 'Div ' + thisDiv, c_brightBlue + '--------', c_brightBlue + '--------', PlayerName(c_brightBlue + _d, '', false), true);
+                @cache_rows[i] = Row(c_brightBlue + 'Div ' + thisDiv,
+                    c_brightBlue + '------',
+                    c_brightBlue + '--------',
+                    c_brightBlue + '--------',
+                    PlayerName(c_brightBlue + _d, '', false), true);
             }
             nDivsDone++;
 
@@ -102,16 +103,10 @@ namespace WAllDivResults {
                 auto maxDivRank = thisDiv * 64;
                 pid = match.results[j].participant;
                 auto player = PlayerName(pid);
+                auto rankDelta = GetRankDeltaStr(gr, pid);
+                string dr = r.IsSome() ? '' + r.GetOr(0xff) : '--';
                 if (drawDiv) {
-                    // if (r.IsSome()) {
-                    //     cache_Ranks[i] = '' + gr;
-                    //     cache_DivRank[i] = ('' + r.GetOr(0xFFFFFFFF));
-                    // } else {
-                    //     cache_Ranks[i] = '' + maxDivRank;
-                    //     cache_DivRank[i] = '--';
-                    // }
-                    // @cache_Players[i] = player;
-                    @cache_rows[i] = Row('' + gr, r.IsSome() ? '' + r.GetOr(0xff) : '--', '', player);
+                    @cache_rows[i] = Row('' + gr, rankDelta, dr, '', player);
                     if (playerFound) {
                         cache_rows[i].playerDelta = gRank == playerRank ? '' : c_timeOrange + '+' + (gRank - playerRank);
                     }
@@ -143,16 +138,17 @@ namespace WAllDivResults {
                 nDivsDone++;
             }
         }
+
+        cached = true;
     }
 
-    void CoroDelayedPopulateCache() {
-        // sleep(3000);
-        // PopulateCache();
-        /*
-        todo: check the last time players was updated,
-        and regen player names if it's more recent than
-        the last time we cached the list.
-        */
+    const string GetRankDeltaStr(uint gr, const string &in pid) {
+        auto qualiRank = WAllTimes::GetPlayerRank(pid);
+        auto divDelta = int(gr) - int(qualiRank);
+        if (divDelta == 0) return '0';
+        string color = divDelta > 0 ? c_timeOrange + '+' : c_timeBlue;
+        string rd = qualiRank > 0 ? '' + color + divDelta : '??';
+        return rd;
     }
 
     void MainWindow() {
@@ -183,15 +179,16 @@ namespace WAllDivResults {
 
         VPad();
 #endif
-        int cols = 3;
+        int cols = 4;
         if (playerFound) cols++;
         bool drawPDelta = playerFound;
 
         if (UI::BeginTable('div-results', cols, TableFlagsStretch() | UI::TableFlags::ScrollY)) {
             UI::TableSetupScrollFreeze(0, 1);
             UI::TableSetupColumn("Rank", UI::TableColumnFlags::WidthFixed, 50);
+            UI::TableSetupColumn("Rank Δ", UI::TableColumnFlags::WidthFixed, 50);
             if (drawPDelta)
-                UI::TableSetupColumn("Rank Δ", UI::TableColumnFlags::WidthFixed, 50);
+                UI::TableSetupColumn("Δ vs You", UI::TableColumnFlags::WidthFixed, 50);
             UI::TableSetupColumn("Div Rank", UI::TableColumnFlags::WidthFixed, 60);
             UI::TableSetupColumn("Player", UI::TableColumnFlags::WidthStretch);
 
@@ -209,6 +206,8 @@ namespace WAllDivResults {
 
                     UI::TableNextColumn();
                     UI::Text(row.rank);
+                    UI::TableNextColumn();
+                    UI::Text(row.rankDelta);
                     if (drawPDelta) {
                         UI::TableNextColumn();
                         UI::Text(row.playerDelta);

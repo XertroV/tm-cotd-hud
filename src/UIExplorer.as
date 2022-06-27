@@ -151,7 +151,9 @@ namespace CotdExplorer {
 
         /* main body */
 
-        if (cotdYMDMapTree is null || cotdYMDMapTree.GetKeys().Length == 0) {
+        if (!mapDb.Initialized) {
+            _RenderDbLoading();
+        } else if (cotdYMDMapTree is null || cotdYMDMapTree.GetKeys().Length == 0) {
             _RenderExplorerLoading();
         } else {
             _RenderExplorerCotdSelection();
@@ -212,8 +214,12 @@ namespace CotdExplorer {
 
     /* General UI components */
 
+    void _RenderDbLoading() {
+        UI::Text("Loading DB from disk...");
+    }
+
     void _RenderExplorerLoading() {
-        UI::Text("Loading Initial Data...");
+        UI::Text("Syncing Initial Data...");
     }
 
     const string ResetIcon =
@@ -907,6 +913,8 @@ namespace CotdExplorer {
         }
         w_AllCotdQualiTimes.Hide(); // hide all times window if it's still around from a previous COTD
         w_AllCotdDivResults.Hide();
+        WAllTimes::SetParams(mapUid, cId);
+        WAllDivResults::SetParams(compId);
     }
 
     void EnsurePlayerNames() {
@@ -1052,7 +1060,7 @@ namespace CotdExplorer {
         auto mapInfo = CotdTreeYMD();
         string mapUid = mapInfo.mapUid;
         // string seasonUid = mapInfo.seasonUid;
-        bool gotRounds = mapDb.compsToRounds.Exists(compId);
+        bool gotRounds = mapDb.HaveRoundIdForCotdComp(compId);
         bool gotMatches = false, gotMatchResults = false;
         if (gotRounds) {
             auto round1 = mapDb.roundsDb.Get(mapDb.compsToRounds.Get(compId)[0]);
@@ -1279,10 +1287,7 @@ namespace CotdExplorer {
 
             UI::TableNextColumn();
             if (UI::Button((w_AllCotdQualiTimes.IsVisible() ? "Hide" : "Show") + " All Times")) {
-                WAllTimes::SetParams(mapUid, cId);
                 w_AllCotdQualiTimes.Toggle();
-                /* update the cache in a few seconds to account for getting player names if we needed to. */
-                startnew(WAllTimes::CoroDelayedPopulateCache);
             }
 
             UI::EndTable();
@@ -1406,6 +1411,7 @@ namespace CotdExplorer {
             for (uint i = 0; i < matchIds.Length; i++) {
                 UI::TableNextColumn();
                 if (UI::Button("Div " + (i + 1), vec2(58, 26))) {
+                    warn("Todo: implement as filter");
                     WAllDivResults::SetParams(compId, i + 1);
                     w_AllCotdDivResults.Show();
                 }
@@ -1458,7 +1464,6 @@ namespace CotdExplorer {
             UI::TableNextColumn();
             UI::AlignTextToFramePadding();
             if (UI::Button("Show All Results")) {
-                WAllDivResults::SetParams(compId, 0);
                 w_AllCotdDivResults.Show();
             }
             UI::TableNextRow();
