@@ -2,7 +2,9 @@ dictionary@ SPECIAL_PLAYER_IDS = {
     { "0a2d1bc0-4aaa-4374-b2db-3d561bdab1c9", true }, // xertrov
     { "2740dfa4-dd5f-4696-b010-c1fca43a791c", true }, // Chips
     { "7398eeb6-9b4e-44b8-a7a1-a2149955ac70", true }, // Miss
-    { "d320a237-1b0a-4069-af83-f2c09fbf042e", true }, // AR_Mudda -- for 3x COTD wins on the same TOTD
+    { "d320a237-1b0a-4069-af83-f2c09fbf042e", true }, // AR_Mudda -- for 3x COTD wins on the same TOTD // 2021-08-22
+    { "a4615959-2ccb-4264-8de1-108cfce42585", true }, // Acide. 2021-12-28
+    { "e3ff2309-bc24-414a-b9f1-81954236c34b", true }, // Lars 2022-06-26
 #if DEV
     { "bd45204c-80f1-4809-b983-38b3f0ffc1ef", true }, // wirtual, useful for testing
     { "d46fb45d-d422-47c9-9785-67270a311e25", true }, // elconn
@@ -14,7 +16,6 @@ dictionary@ SPECIAL_PLAYER_IDS = {
     { "da4642f9-6acf-43fe-88b6-b120ff1308ba", true }, // Scrapie98
     { "fb678553-f730-442a-a035-dfc50f4a5b7b", true }, // Mime
     { "0c857beb-fd95-4449-a669-21fb310cacae", true }, // Carl Jr
-    { "e3ff2309-bc24-414a-b9f1-81954236c34b", true }, // Lars
     { "bfcf62ff-0f9e-40aa-b924-11b9c70b8a09", true }, // Majijej
     { "65341b56-1625-4df2-8fb4-ad7145c03c34", true }, // Micka
     { "d7c02452-7333-49df-8a31-4cf932475007", true }, // Sophie

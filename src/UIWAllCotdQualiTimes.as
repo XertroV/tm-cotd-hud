@@ -48,7 +48,6 @@ namespace WAllTimes {
         cached = false;
         mapUid = _mapUid;
         cId = _cId;
-        times = PersistentData::GetCotdMapTimesAllJ(mapUid, cId);
         cotdTitleStr = CotdExplorer::_ExplorerCotdTitleStr();
         SetFilter(filter);
         startnew(PopulateCache);
@@ -68,6 +67,8 @@ namespace WAllTimes {
     }
 
     void PopulateCache() {
+        while (!PersistentData::MapTimesCached(mapUid, cId)) yield();
+        times = PersistentData::GetCotdMapTimesAllJ(mapUid, cId);
         playerId = GI::PlayersId();
         nPlayers = times.Length;
         // nDivs = uint(Math::Ceil(float(nPlayers) / 64.));
