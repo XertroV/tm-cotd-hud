@@ -234,15 +234,6 @@ namespace GI {
 
     string MapId() {
         auto rm = app.RootMap;
-#if DEV
-        int now = Time::get_Now();
-        if ((now % 1000) < 100) {
-            // trace("[MapId()," + now + "] rm is null: " + (rm is null));
-            if (rm !is null) {
-                // trace("[MapId()," + now + "] rm.IdName: " + rm.IdName);
-            }
-        }
-#endif
         return (rm is null) ? "" : rm.IdName;
     }
 

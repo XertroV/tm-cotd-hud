@@ -7,16 +7,30 @@ namespace WAllTimes {
         MainWindow();
     }
 
+    class Row {
+        string rank;
+        string time;
+        string delta;
+        string divDelta;
+        string playerDelta;
+        PlayerName@ player;
+        bool isDivRow;
+        Row(const string &in r, const string &in t, const string &in d, const string &in dd, const string &in pd, PlayerName@ p, bool divRow = false) {
+            rank = r;
+            time = t;
+            delta = d;
+            divDelta = dd;
+            playerDelta = pd;
+            @player = p;
+            isDivRow = divRow;
+        }
+    }
+
     string filterName = 'doesnt work yet';
     string mapUid;  /* do not set directly */
     int cId;  /* do not set directly */
     Json::Value[] times;
-    string[] cache_Ranks = array<string>();
-    string[] cache_Times = array<string>();
-    string[] cache_Deltas = array<string>();
-    string[] cache_DivDeltas = array<string>();
-    string[] cache_PlayerDeltas = array<string>();
-    PlayerName@[] cache_Players = array<PlayerName@>();
+    Row@[] cache_rows = array<Row@>();
     uint nPlayers = 0;
     uint nDivs = 0;
     string playerId;
@@ -37,12 +51,7 @@ namespace WAllTimes {
         nPlayers = times.Length;
         // nDivs = uint(Math::Ceil(float(nPlayers) / 64.));
         nDivs = ((nPlayers - 1) >> 6) + 1; // faster and more elegant
-        cache_Ranks.Resize(nPlayers + nDivs);
-        cache_Times.Resize(nPlayers + nDivs);
-        cache_Deltas.Resize(nPlayers + nDivs);
-        cache_DivDeltas.Resize(nPlayers + nDivs);
-        cache_PlayerDeltas.Resize(nPlayers + nDivs);
-        cache_Players.Resize(nPlayers + nDivs);
+        cache_rows.Resize(nPlayers + nDivs);
         uint bestTime = nPlayers > 0 ? times[0]['score'] : 0;
         string pid, name, _d;
         bool special;
@@ -59,30 +68,26 @@ namespace WAllTimes {
             if (_i % 64 == 0) {
                 thisDiv = uint(Math::Ceil(float(_i) / 64. + 1));
                 _d = "Div " + thisDiv;
-                cache_Ranks[i] = c_brightBlue + 'Div ' + thisDiv;
-                cache_Times[i] = c_brightBlue + '------------';
-                cache_Deltas[i] = c_brightBlue + '------------';
-                cache_DivDeltas[i] = c_brightBlue + '------------';
-                cache_PlayerDeltas[i] = c_brightBlue + '------------';
-                @cache_Players[i] = PlayerName(c_brightBlue + _d, '', false);
+                @cache_rows[i] = Row(c_brightBlue + 'Div ' + thisDiv, c_brightBlue + '------------', c_brightBlue + '------------', c_brightBlue + '------------', c_brightBlue + '------------', PlayerName(c_brightBlue + _d, '', false));
                 nDivsDone++;
                 i = _i + nDivsDone;
                 bestInDiv = time;
             }
-            cache_Ranks[i] = '' + (_i + 1);
-            cache_Times[i] = Time::Format(time);
-            cache_Deltas[i] = time == bestTime ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - bestTime));
-            cache_DivDeltas[i] = time == bestInDiv ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - bestInDiv));
             pid = times[_i]['player'];
-            @cache_Players[i] = PlayerName(pid);  // don't get cached player name here -- right click breaks
+            @cache_rows[i] = Row('' + (_i + 1),
+                Time::Format(time),
+                time == bestTime ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - bestTime)),
+                time == bestInDiv ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - bestInDiv)),
+                '',
+                PlayerName(pid));  // don't get cached player name here -- right click breaks
             if (playerFound) {
-                cache_PlayerDeltas[i] = time == playerScore ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - playerScore));
+                cache_rows[i].playerDelta = time == playerScore ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - playerScore));
             }
             if (pid == playerId) {
                 playerFound = true;
                 playerScore = time;
                 playerRank = _i + 1;
-                cache_PlayerDeltas[i] = '';
+                cache_rows[i].playerDelta = '';
             }
         }
 
@@ -95,7 +100,7 @@ namespace WAllTimes {
                     nDivsDone++;
                     i = _i + nDivsDone;
                 }
-                cache_PlayerDeltas[i] = playerScore == time ? '' : c_timeBlue + '-' + Time::Format(Math::Abs(playerScore - time));
+                cache_rows[i].playerDelta = playerScore == time ? '' : c_timeBlue + '-' + Time::Format(Math::Abs(playerScore - time));
             }
         }
     }
@@ -154,30 +159,29 @@ namespace WAllTimes {
 
             UI::TableHeadersRow();
 
-            UI::ListClipper Clipper(cache_Ranks.Length);
+            UI::ListClipper Clipper(cache_rows.Length);
             while (Clipper.Step()) {
                 for (int i = Clipper.DisplayStart; i < Clipper.DisplayEnd; i++) {
-                    // if (i % 64 == 0) {
-                    //     DrawDivisionMarkerInTable(i / 64 + 1);
-                    // }
+                    auto row = cache_rows[i];
+                    if (row is null) break;
 
                     UI::TableNextRow();
 
                     UI::TableNextColumn();
-                    UI::Text(cache_Ranks[i]);
+                    UI::Text(row.rank);
                     UI::TableNextColumn();
-                    UI::Text(cache_Times[i]);
+                    UI::Text(row.time);
                     UI::TableNextColumn();
-                    UI::Text(cache_Deltas[i]);
+                    UI::Text(row.delta);
                     UI::TableNextColumn();
-                    UI::Text(cache_DivDeltas[i]);
+                    UI::Text(row.divDelta);
                     if (drawPDelta) {
                         UI::TableNextColumn();
-                        UI::Text(cache_PlayerDeltas[i]);
+                        UI::Text(row.playerDelta);
                     }
                     UI::TableNextColumn();
-                    if (cache_Players[i] !is null)
-                        cache_Players[i].Draw();
+                    if (row.player !is null)
+                        row.player.Draw();
                 }
             }
 
