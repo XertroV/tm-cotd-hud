@@ -62,7 +62,7 @@ void TextBigStrong(const string &in t) {
     UI::PopFont();
 }
 
-void TextHeading(string t, bool withLine = true, DrawUiElems@ func = null) {
+void TextHeading(const string &in t, bool withLine = true, DrawUiElems@ func = null) {
     VPad();
     UI::PushFont(headingFont);
     UI::AlignTextToFramePadding();
@@ -74,6 +74,12 @@ void TextHeading(string t, bool withLine = true, DrawUiElems@ func = null) {
     }
     if (withLine) UI::Separator();
     VPad();
+}
+
+void TextSubheading(const string &in t) {
+    UI::PushFont(subheadingFont);
+    UI::Text(t);
+    UI::PopFont();
 }
 
 void TextBigHeading(string t, bool withLine = false) {

@@ -23,10 +23,11 @@ class PlayerName {
   private int nonce = Math::Rand(-100000000, 100000000);
 
   /* Methods // Mixin: Default Constructor */
-  PlayerName(const string &in Name, const string &in Id, bool IsSpecial) {
+  PlayerName(const string &in Name, const string &in Id, bool IsSpecial, bool unknown = false) {
     this._Name = Name;
     this._Id = Id;
     this._IsSpecial = IsSpecial;
+    _unknownName = unknown;
   }
 
   PlayerName(const string &in Id) {
@@ -70,6 +71,8 @@ class PlayerName {
       ? (maniaColorForCooldown(CooldownDelta, COOLDOWN_MS, true) + Name)
       : (drawSpecialFlair && IsSpecial) ? rainbowLoopColorCycle(Name, true) : Name;
     UI::Text(_name);
+    // only draw stuff for known players for hereon out
+    if (_unknownName) return;
     bool leftClicked = UI::IsItemClicked();
 
     if (leftClicked) {

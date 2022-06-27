@@ -10,14 +10,16 @@ namespace WAllTimes {
     class Row {
         string rank;
         string time;
+        uint div;
         string delta;
         string divDelta;
         string playerDelta;
         PlayerName@ player;
         bool isDivRow;
-        Row(const string &in r, const string &in t, const string &in d, const string &in dd, const string &in pd, PlayerName@ p, bool divRow = false) {
+        Row(const string &in r, const string &in t, uint _div, const string &in d, const string &in dd, const string &in pd, PlayerName@ p, bool divRow = false) {
             rank = r;
             time = t;
+            div = _div;
             delta = d;
             divDelta = dd;
             playerDelta = pd;
@@ -31,6 +33,7 @@ namespace WAllTimes {
     int cId;  /* do not set directly */
     Json::Value[] times;
     Row@[] cache_rows = array<Row@>();
+    Row@[] filtered_rows = array<Row@>();
     dictionary@ pidToRank = dictionary();
     uint nPlayers = 0;
     uint nDivs = 0;
@@ -39,14 +42,29 @@ namespace WAllTimes {
     uint playerRank = 0;
     string cotdTitleStr = "";
     bool cached = false;
+    FilterAll@ filter;
 
-    void SetParams(const string &in _mapUid, int _cId) {
+    void SetParams(const string &in _mapUid, int _cId, FilterAll@ filter = null) {
         cached = false;
         mapUid = _mapUid;
         cId = _cId;
         times = PersistentData::GetCotdMapTimesAllJ(mapUid, cId);
         cotdTitleStr = CotdExplorer::_ExplorerCotdTitleStr();
+        SetFilter(filter);
         startnew(PopulateCache);
+    }
+
+    void SetFilter(FilterAll@ f = null) {
+        if (f is null) {
+            @f = FilterAll();
+        }
+        if (f != filter) {
+            @filter = f;
+            PopulateFiltered();
+            cotdTitleStr = CotdExplorer::_ExplorerCotdTitleStr();
+            if (f.f_div > 0)
+                cotdTitleStr = CotdExplorer::_ExplorerCotdTitleStr() + " | Div " + f.f_div;
+        }
     }
 
     void PopulateCache() {
@@ -72,7 +90,13 @@ namespace WAllTimes {
             if (_i % 64 == 0) {
                 thisDiv = uint(Math::Ceil(float(_i) / 64. + 1));
                 _d = "Div " + thisDiv;
-                @cache_rows[i] = Row(c_brightBlue + 'Div ' + thisDiv, c_brightBlue + '------------', c_brightBlue + '------------', c_brightBlue + '------------', c_brightBlue + '------------', PlayerName(c_brightBlue + _d, '', false));
+                @cache_rows[i] = Row(c_brightBlue + 'Div ' + thisDiv,
+                    c_brightBlue + '------------',
+                    thisDiv,
+                    c_brightBlue + '------------',
+                    c_brightBlue + '------------',
+                    c_brightBlue + '------------',
+                    PlayerName(c_brightBlue + _d, '', false, true), true);
                 nDivsDone++;
                 i = _i + nDivsDone;
                 bestInDiv = time;
@@ -82,6 +106,7 @@ namespace WAllTimes {
             pidToRank[pid] = rank;
             @cache_rows[i] = Row('' + rank,
                 Time::Format(time),
+                thisDiv,
                 time == bestTime ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - bestTime)),
                 time == bestInDiv ? '' : c_timeOrange + '+' + Time::Format(Math::Abs(time - bestInDiv)),
                 '',
@@ -109,7 +134,19 @@ namespace WAllTimes {
                 cache_rows[i].playerDelta = playerScore == time ? '' : c_timeBlue + '-' + Time::Format(Math::Abs(playerScore - time));
             }
         }
+
+        PopulateFiltered();
         cached = true;
+    }
+
+    void PopulateFiltered() {
+        filtered_rows.Resize(0);
+        for (uint i = 0; i < cache_rows.Length; i++) {
+            auto row = cache_rows[i];
+            if (filter.MatchPlayerName(row.player) && filter.MatchDiv(row.div)) {
+                filtered_rows.InsertLast(row);
+            }
+        }
     }
 
     uint GetPlayerRank(const string &in pid) {
@@ -132,20 +169,14 @@ namespace WAllTimes {
 
         VPad();
 
-#if DEV
-        if (UI::BeginTable('qualiy-times-filters', 2, TableFlagsStretch())) {
-
-            UI::TableNextColumn();
-            UI::AlignTextToFramePadding();
-            UI::Text('Filter Name:');
-            UI::TableNextColumn();
-            filterName = UI::InputText('', filterName);
-
-            UI::EndTable();
+        if (UI::Button('Refresh Data')) {
+            startnew(PopulateCache);
         }
 
+        SetFilter(DrawFilterAllTable('cotd-div-all-res-filter', filter, nDivs));
+
         VPad();
-#endif
+
         int cols = 5;
         if (playerFound) cols++;
         bool drawPDelta = playerFound;
@@ -162,10 +193,10 @@ namespace WAllTimes {
 
             UI::TableHeadersRow();
 
-            UI::ListClipper Clipper(cache_rows.Length);
+            UI::ListClipper Clipper(filtered_rows.Length);
             while (Clipper.Step()) {
                 for (int i = Clipper.DisplayStart; i < Clipper.DisplayEnd; i++) {
-                    auto row = cache_rows[i];
+                    auto row = filtered_rows[i];
                     if (row is null) break;
 
                     UI::TableNextRow();
@@ -192,9 +223,5 @@ namespace WAllTimes {
         }
 
         UI::End();
-    }
-
-    void OnFilterName() {
-
     }
 }

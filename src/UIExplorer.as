@@ -1280,10 +1280,8 @@ namespace CotdExplorer {
             UI::BeginTable('cotd-times-and-show-all', 2, TableFlagsStretchSame());
 
             UI::TableNextColumn();
-            UI::PushFont(subheadingFont);
             UI::AlignTextToFramePadding();
-            UI::Text("Top Times:");
-            UI::PopFont();
+            TextSubheading("Top Times:");
 
             UI::TableNextColumn();
             if (UI::Button((w_AllCotdQualiTimes.IsVisible() ? "Hide" : "Show") + " All Times")) {
@@ -1411,8 +1409,7 @@ namespace CotdExplorer {
             for (uint i = 0; i < matchIds.Length; i++) {
                 UI::TableNextColumn();
                 if (UI::Button("Div " + (i + 1), vec2(58, 26))) {
-                    warn("Todo: implement as filter");
-                    WAllDivResults::SetParams(compId, i + 1);
+                    WAllDivResults::SetParams(compId, FilterAll('', i + 1));
                     w_AllCotdDivResults.Show();
                 }
                 UI::Dummy(vec2(0,0));
