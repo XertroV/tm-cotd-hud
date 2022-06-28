@@ -179,6 +179,7 @@ namespace WAllDivResults {
         VPad();
 
         if (UI::Button('Refresh Data')) {
+            startnew(WAllTimes::PopulateCache);
             startnew(PopulateCache);
         }
 

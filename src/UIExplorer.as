@@ -1392,24 +1392,7 @@ namespace CotdExplorer {
         // todo player name
         string pid = row[3];
         if (pid.Length > 10) {
-            // bool nameExists = mapDb.playerNameDb.Exists(pid);
-            // string hl = CooldownHLColor(pid, nameExists ? "" : "\\$a42");
-            // string nameRaw = nameExists ? mapDb.playerNameDb.Get(pid) : "?? " + pid.Split('-')[0];
-            // string pName = IsSpecialPlayerId(pid)
-            //     ? rainbowLoopColorCycle(nameRaw, true)
-            //     : hl + nameRaw;
-            // string pName = hl + nameRaw;
-            // UI::Text(pName);
             PlayerNames::Get(pid).Draw();
-            if (UI::IsItemClicked()) {
-                trace("Copying to clipboard: " + pid);
-                IO::SetClipboard(pid);
-                lastCopiedPid = pid;
-                copiedCooldownSince = Time::Now;
-            }
-            if (!mapDb.playerNameDb.Exists(pid)) {
-                AddSimpleTooltip("Player Name for this ID not found. Click to copy the ID.");
-            }
         }
         UI::TableNextRow();
     }
@@ -1474,6 +1457,7 @@ namespace CotdExplorer {
             UI::TableNextColumn();
             UI::AlignTextToFramePadding();
             if (UI::Button("Show All Results")) {
+                startnew(WAllTimes::PopulateCache);
                 WAllDivResults::SetParams(compId);
                 w_AllCotdDivResults.Show();
             }
@@ -1517,21 +1501,12 @@ namespace CotdExplorer {
         return winner.rank.IsSome();
     }
 
-    // const string RenderPlayerNameFromId(const string &in pid) {
-    //     PlayerName@ name = PlayerNames::Get(pid);
-    //     string name = mapDb.playerNameDb.Exists(pid) ? mapDb.playerNameDb.Get(pid) : "?? " + pid.SubStr(0, 8);
-    //     return _RenderPlayerName(name, IsSpecialPlayerId(pid));
-    // }
-
-    // const string _RenderPlayerName(const string &in name, bool isSpecial) {
-    //     return isSpecial ? rainbowLoopColorCycle(name, true) : name;
-    // }
 
     int lastCompIdDlClick = -1;
     void _DrawCompRoundMatchesStatus(uint compId, bool gotRounds, bool gotMatches, bool gotMatchResults) {
         if (gotMatchResults) {
             UI::Text("All results data downloaded for: " + compId);
-        } else if (lastCompIdDlClick == int(compId)) {
+        } else if (gotRounds || lastCompIdDlClick == int(compId)) {
             if (gotMatches) {
                 UI::Text("Downloaded rounds info.");
                 UI::Text("Downloaded matches info.");

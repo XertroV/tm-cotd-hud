@@ -1468,8 +1468,13 @@ class MapDb : JsonDb {
         if (c > 0) playerNameQDb.Persist();
     }
 
-    void QueueCompRoundsGet(const uint[] &in comps) {
-        roundsQDb.PutQueueEntries(ArrayOfUintToJs(comps));
+    void QueueCompRoundsGet(const uint[] &in comps, bool force = false) {
+        auto _comps = array<uint>();
+        for (uint i = 0; i < comps.Length; i++) {
+            if (force || !HaveRoundIdForCotdComp(comps[i]))
+                _comps.InsertLast(comps[i]);
+        }
+        roundsQDb.PutQueueEntries(ArrayOfUintToJs(_comps));
     }
 
     void QueueCompRoundMatchesGet(const uint[] &in rounds) {
