@@ -908,11 +908,11 @@ namespace CotdExplorer {
         startnew(EnsurePlayerNames); // get player names if we have times
 
         // lastCidDownload = -1; // reset download button
-        // lastCompIdDlClick = -1;
         mapDb.QueueMapChallengeTimesGet(mapUid, cId);
         lastCidDownload = cId;
         mapDb.QueueCompRoundsGet({compId});
-        lastCompIdDlClick = int(compId);
+        // lastCompIdDlClick = int(compId);
+        lastCompIdDlClick = -1;
 
         histToShow = mapUid + "--" + cId; // the histogram to show
         showHistogram = false;
