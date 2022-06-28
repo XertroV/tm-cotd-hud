@@ -816,6 +816,10 @@ namespace CotdExplorer {
 
     void _RenderExplorerTotd() {
         auto mapInfo = CotdTreeYMD();
+        if (mapInfo is null) {
+            UI::Text("Waiting for map info...");
+            return;
+        }
         DrawTotdMapInfoTable(mapDb.GetMap(mapInfo.mapUid), mapInfo.seasonUid, SelectedCotdDateStr());
         PaddedSep();
         /* either select cup or draw cup info */
@@ -901,9 +905,15 @@ namespace CotdExplorer {
         explCup.AsJust(cotdNum); // selection params
         explChallenge.AsJust(cId);
         explComp.AsJust(compId);
-        lastCidDownload = -1; // reset download button
-        lastCompIdDlClick = -1;
         startnew(EnsurePlayerNames); // get player names if we have times
+
+        // lastCidDownload = -1; // reset download button
+        // lastCompIdDlClick = -1;
+        mapDb.QueueMapChallengeTimesGet(mapUid, cId);
+        lastCidDownload = cId;
+        mapDb.QueueCompRoundsGet({compId});
+        lastCompIdDlClick = int(compId);
+
         histToShow = mapUid + "--" + cId; // the histogram to show
         showHistogram = false;
         histUpperRank = highRankFilter = 99999; // rank filter defaults
@@ -911,6 +921,7 @@ namespace CotdExplorer {
         if (PersistentData::MapTimesCached(mapUid, cId)) {
             startnew(_GenHistogramData); // proactively generate histograms where data is available
         }
+
         w_AllCotdQualiTimes.Hide(); // hide all times window if it's still around from a previous COTD
         w_AllCotdDivResults.Hide();
         WAllTimes::SetParams(mapUid, cId);
@@ -1285,6 +1296,7 @@ namespace CotdExplorer {
 
             UI::TableNextColumn();
             if (UI::Button((w_AllCotdQualiTimes.IsVisible() ? "Hide" : "Show") + " All Times")) {
+                WAllTimes::SetParams(mapUid, cId);
                 w_AllCotdQualiTimes.Toggle();
             }
 
@@ -1409,6 +1421,7 @@ namespace CotdExplorer {
             for (uint i = 0; i < matchIds.Length; i++) {
                 UI::TableNextColumn();
                 if (UI::Button("Div " + (i + 1), vec2(58, 26))) {
+                    startnew(WAllTimes::PopulateCache);  // recache all times so that rank deltas work
                     WAllDivResults::SetParams(compId, FilterAll('', i + 1));
                     w_AllCotdDivResults.Show();
                 }
@@ -1461,6 +1474,7 @@ namespace CotdExplorer {
             UI::TableNextColumn();
             UI::AlignTextToFramePadding();
             if (UI::Button("Show All Results")) {
+                WAllDivResults::SetParams(compId);
                 w_AllCotdDivResults.Show();
             }
             UI::TableNextRow();
@@ -1532,12 +1546,20 @@ namespace CotdExplorer {
             }
         } else if (UI::Button("Download Matches Data")) {
             DownloadComp(compId);
+            startnew(OnDownloadedComp);
         }
     }
 
     void DownloadComp(uint compId) {
         lastCompIdDlClick = int(compId);
         mapDb.QueueCompRoundsGet({compId});
+    }
+
+    void OnDownloadedComp() {
+        sleep(1000); // allow enough time for things to happen
+        // todo: wait for downloads and then regen results
+        // todo: why not download both quali times and div results when someone selectes a cup #?
+        // todo: like that makes sense, what else where they going to do?
     }
 
     void RedownloadRounds(uint compId) {

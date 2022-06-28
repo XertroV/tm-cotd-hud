@@ -74,6 +74,7 @@ namespace WAllTimes {
         // nDivs = uint(Math::Ceil(float(nPlayers) / 64.));
         nDivs = ((nPlayers - 1) >> 6) + 1; // faster and more elegant
         cache_rows.Resize(nPlayers + nDivs);
+        filtered_rows.Resize(0);
         @pidToRank = dictionary();
         uint bestTime = nPlayers > 0 ? times[0]['score'] : 0;
         string pid, name, _d;
@@ -160,7 +161,7 @@ namespace WAllTimes {
         if (!w_AllCotdQualiTimes.IsVisible()) return;
 
         if (w_AllCotdQualiTimes.IsAppearing()) {
-            UI::SetNextWindowSize(540, 980, UI::Cond::Always);
+            UI::SetNextWindowSize(560, 980, UI::Cond::Always);
         }
 
         UI::Begin(w_AllCotdQualiTimes.title, w_AllCotdQualiTimes.visible.v);
@@ -178,7 +179,7 @@ namespace WAllTimes {
 
         VPad();
 
-        int cols = 5;
+        int cols = 6;
         if (playerFound) cols++;
         bool drawPDelta = playerFound;
 
@@ -191,6 +192,7 @@ namespace WAllTimes {
             if (drawPDelta)
                 UI::TableSetupColumn("Δ vs You", UI::TableColumnFlags::WidthFixed, 70);
             UI::TableSetupColumn("Player", UI::TableColumnFlags::WidthStretch);
+            UI::TableSetupColumn("Div", UI::TableColumnFlags::WidthFixed, 40);
 
             UI::TableHeadersRow();
 
@@ -217,6 +219,8 @@ namespace WAllTimes {
                     UI::TableNextColumn();
                     if (row.player !is null)
                         row.player.Draw();
+                    UI::TableNextColumn();
+                    UI::Text('' + row.div);
                 }
             }
 

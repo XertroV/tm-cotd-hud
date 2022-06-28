@@ -36,6 +36,8 @@ class PlayerName {
     if (playerNameDb is null || !playerNameDb.Exists(Id)) {
       this._Name = "?? " + Id.SubStr(0, 8);
       this._unknownName = true;
+      if (PersistentData::mapDb !is null)
+        PersistentData::mapDb.QueuePlayerNameGet(Id);
     } else {
       this._Name = playerNameDb.Get(Id);
       this._IsSpecial = IsSpecialPlayerId(Id);

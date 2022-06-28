@@ -107,9 +107,20 @@ namespace PersistentData {
         return folder_MapTimes + "/" + uid + "--" + cotdSuffix + ".json";
     }
 
+    dictionary@ mapTimesCached_Cache = dictionary();
+
     bool MapTimesCached(const string &in uid, int cId) {
         string key = uid + "--" + cId;
-        return MAP_COTD_TIMES_JBOX.Exists(key) || IO::FileExists(MapTimesPath(uid, "" + cId));
+        if (mapTimesCached_Cache.Exists(key)) return true; // once this is true it should never be false again
+        bool gotJson = MAP_COTD_TIMES_JBOX.Exists(key)
+            || IO::FileExists(MapTimesPath(uid, "" + cId));
+        if (!gotJson) return false;
+        auto jb = GetCotdMapTimes(uid, cId);
+        if (IsJsonNull(jb.j) || IsJsonNull(jb.j['ranges']) || jb.j['ranges'].GetType() != Json::Type::Object || jb.j['ranges'].Length == 0)
+            return false;
+        // cached that we've cached this uid--cid
+        mapTimesCached_Cache[key] = true;
+        return true;
     }
 
     /* cotd qualifying times */
@@ -998,6 +1009,7 @@ class MapDb : JsonDb {
     }
 
     void _DownloadNextThumb() {
+        if (thumbQDb.IsEmpty()) return;
         string tnUrl = thumbQDb.GetQueueItemNow();
         if (!PersistentData::ThumbnailCached(tnUrl)) {
             PersistentData::DownloadThumbnail(tnUrl);
@@ -1252,7 +1264,13 @@ class MapDb : JsonDb {
         int maxId = -1;
         while (true) {
             if (compsDb.Exists('1')) return; // we're done the historical scan at this point
-            auto comps = Competitions(api.GetCompetitions(length, offset));
+            auto resp = api.GetCompetitions(length, offset);
+            if (IsJsonNull(resp)) {
+                warn("api.GetCompetitions(" + length + ", " + offset + ") returned Json null!");
+                sleep(500);
+                continue;
+            }
+            auto comps = Competitions(resp);
             if (offset == 0) maxId = comps[0].id;
             if (int(offset) > maxId) throw('should exit before this');
             for (uint j = 0; j < comps.Length; j++) {
@@ -1516,5 +1534,11 @@ class MapDb : JsonDb {
     bool HaveRoundIdForCotdComp(uint compId) {
         return compsToRounds.Exists(compId)
             && compsToRounds.Get(compId) !is null;
+    }
+
+    bool HaveMatchIdsForCotdComp(uint compId) {
+        return HaveRoundIdForCotdComp(compId)
+            && roundsToMatches.Exists(GetRoundIdForCotdComp(compId))
+            && roundsToMatches.Get(GetRoundIdForCotdComp(compId)) !is null;
     }
 }

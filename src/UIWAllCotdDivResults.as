@@ -67,6 +67,7 @@ namespace WAllDivResults {
         // of quali rank vs final rank
         while (!WAllTimes::cached) yield();
         while (!mapDb.HaveRoundIdForCotdComp(cId)) yield();
+        while (!mapDb.HaveMatchIdsForCotdComp(cId)) yield();
 
         playerId = GI::PlayersId();
         auto matches = mapDb.matchResultsDb.Get(mapDb.GetRoundIdForCotdComp(cId));
@@ -77,6 +78,7 @@ namespace WAllDivResults {
         if (nDivs == 0) nPlayers = 0;
         uint arraySize = nPlayers + nDivs;
         cache_rows.Resize(arraySize);
+        filtered_rows.Resize(0);
         string pid, name, _d;
         bool special, drawDiv;
         uint nDivsDone = 0, i, bestInDiv, thisDiv, playerScore = 0;
@@ -184,7 +186,7 @@ namespace WAllDivResults {
 
         VPad();
 
-        int cols = 4;
+        int cols = 5;
         if (playerFound) cols++;
         bool drawPDelta = playerFound;
 
@@ -196,6 +198,7 @@ namespace WAllDivResults {
                 UI::TableSetupColumn("Δ vs You", UI::TableColumnFlags::WidthFixed, 50);
             UI::TableSetupColumn("Div Rank", UI::TableColumnFlags::WidthFixed, 60);
             UI::TableSetupColumn("Player", UI::TableColumnFlags::WidthStretch);
+            UI::TableSetupColumn("Div", UI::TableColumnFlags::WidthFixed, 40);
 
             UI::TableHeadersRow();
 
@@ -222,6 +225,8 @@ namespace WAllDivResults {
                     UI::TableNextColumn();
                     if (row.player !is null)
                         row.player.Draw();
+                    UI::TableNextColumn();
+                    UI::Text('' + row.div);
                 }
             }
 
