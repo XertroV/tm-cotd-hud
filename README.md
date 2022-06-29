@@ -60,6 +60,7 @@ This plugin will use a lot of disk space, relatively speaking. Especially over t
 - ✅ bug: long cotds break (b/c nplayers==0 for so long?)
 - ✅ bug: when loading cotd hud data and times are queued to be cached: the hud does not reload after they have been cached.
 - ✅ quali rank vs div rank delta (a value of +-64 for each player showing improvement or not in ranking)
+- 🟦 Browse players / favorites
 
 ### first release
 

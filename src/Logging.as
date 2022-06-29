@@ -10,8 +10,12 @@ enum LogLevel {
 LogLevel Setting_LogLevel = LogLevel::Warn;
 
 void debug(const string &in text) {
+    log_debug(c_debug + text);
+}
+
+void log_debug(const string &in msg) {
     if (Setting_LogLevel >= LogLevel::Debug)
-        print(c_debug + text);
+        print(msg);
 }
 
 void log_dev(const string &in text) {
@@ -47,5 +51,23 @@ void trace_dev(const string &in msg) {
 void log_trace(const string &in msg) {
     if (Setting_LogLevel >= LogLevel::Trace) {
         trace(msg);
+    }
+}
+
+void log_info(const string &in msg) {
+    if (Setting_LogLevel >= LogLevel::Info) {
+        print(msg);
+    }
+}
+
+void log_warn(const string &in msg) {
+    if (Setting_LogLevel >= LogLevel::Warn) {
+        warn(msg);
+    }
+}
+
+void log_error(const string &in msg) {
+    if (Setting_LogLevel >= LogLevel::Error) {
+        error(msg);
     }
 }
