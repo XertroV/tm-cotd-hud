@@ -177,6 +177,11 @@ namespace CotdExplorer {
         }
     }
 
+    void SoftRefreshCotdTreeFromDb() {
+        if (histDb !is null)
+            @cotdYMDMapTree = histDb.GetCotdYearMonthDayMapTree();
+    }
+
 #if RELEASE
     const uint SlowlyGetAllMapData_InitSleep = 60 * 1000;
     const uint SlowlyGetAllMapData_LoopSleep = 180 * 1000;
@@ -535,6 +540,7 @@ namespace CotdExplorer {
 
     void OnSelectedYear(int year) {
         explYear.AsJust(year);
+        SoftRefreshCotdTreeFromDb();
     }
 
     void _RenderExplorerCotdMonthSelection() {
@@ -578,6 +584,7 @@ namespace CotdExplorer {
            coroutine to ensure we have all the map data.
         */
         explMonth.AsJust(month);
+        SoftRefreshCotdTreeFromDb();
         startnew(EnsureMapDataForCurrMonth);
         // startnew(LoadThumbTexturesForCurrMonth);  // idk if this is worth it
     }

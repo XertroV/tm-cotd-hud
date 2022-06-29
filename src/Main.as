@@ -20,12 +20,16 @@ void Main() {
     TestColors();
 #endif
 
+    log_trace("Main: Awaiting EULA");
     AwaitEula();
+    log_trace("Main: AwaitEula complete.");
 
     // note: not sure if this includes standard or just club -- do we need club?
+    NadeoServices::AddAudience("NadeoClubServices");
     while (!NadeoServices::IsAuthenticated("NadeoClubServices")) {
         yield();
     }
+    log_trace("Main: awaited NadeoServices::IsAuthenticated('NadeoClubServices')");
 
     // auto c = Challenge::FromRowString("");
 
