@@ -26,6 +26,7 @@ pluginSources=( 'src' )
 for pluginSrc in ${pluginSources[@]}; do
   # if we don't have `dos2unix` below then we need to add `\r` to the `tr -d`
   PLUGIN_PRETTY_NAME="$(cat ./info.toml | dos2unix | grep '^name' | cut -f 2 -d '=' | tr -d '\"\r' | sed 's/^[ ]*//')"
+  PLUGIN_VERSION="$(cat ./info.toml | dos2unix | grep '^version' | cut -f 2 -d '=' | tr -d '\"\r' | sed 's/^[ ]*//')"
 
   # prelim stuff
   case $_build_mode in
@@ -53,7 +54,7 @@ for pluginSrc in ${pluginSources[@]}; do
   _colortext16 green "✅ Output file/folder name: ${PLUGIN_NAME}"
 
   BUILD_NAME=$PLUGIN_NAME-$(date +%s).zip
-  RELEASE_NAME=$PLUGIN_NAME-latest.op
+  RELEASE_NAME=$PLUGIN_NAME-$PLUGIN_VERSION.op
   PLUGINS_DIR=${PLUGINS_DIR:-$HOME/win/OpenplanetNext/Plugins}
   PLUGIN_DEV_LOC=$PLUGINS_DIR/$PLUGIN_NAME
   PLUGIN_RELEASE_LOC=$PLUGINS_DIR/$RELEASE_NAME

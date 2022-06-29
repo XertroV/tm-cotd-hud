@@ -72,3 +72,10 @@ This plugin will use a lot of disk space, relatively speaking. Especially over t
 - remove info.toml
 - remove log_trace from codegensupport.as
 - sed: `/shared //`
+
+### wizard stuff
+
+* log level
+* hud preferences
+* histogram
+* bg downloads
