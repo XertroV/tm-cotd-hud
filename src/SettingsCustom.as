@@ -293,20 +293,17 @@ void RenderSettingsDebug() {
 
     if (UI::Button("Nod Explorer: Network")) {
         @_DebugNod = GI::GetNetwork();
-        _DebugNodWindow.SetTitle("View Nod: Network");
-        _DebugNodWindow.Show();
+        // _DebugNodWindow.SetTitle("View Nod: Network");
+        // _DebugNodWindow.Show();
+        ExploreNod("Network", GI::GetNetwork());
     }
 
-    if (UI::Button("Nod Explorer: Playground")) {
-        @_DebugNod = GI::GetCurrentPlayground();
-        _DebugNodWindow.SetTitle("View Nod: Playground");
-        _DebugNodWindow.Show();
+    if (UI::Button("Nod Explorer: CurrentPlayground")) {
+        ExploreNod("CurrentPlayground", GI::GetCurrentPlayground());
     }
 
     if (UI::Button("Nod Explorer: InputPort")) {
-        @_DebugNod = GI::GetInputPort();
-        _DebugNodWindow.SetTitle("View Nod: InputPort");
-        _DebugNodWindow.Show();
+        ExploreNod("InputPort", GI::GetInputPort());
     }
 
     // if (UI::Button("Load Replay (TEST)")) {

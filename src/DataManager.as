@@ -355,7 +355,7 @@ namespace DataManager {
         /* if we updated in last 1500ms wait for obj to be not null and return */
         if (!debounce.CanProceed('getCotdPlayerRank', 1500)) {
             while (IsJsonNull(cotdLatest_PlayerRank)) { yield(); }
-            logcall("ApiUpdateCotdPlayerRank", "debounced and waited for cotdLatest_PlayerRank to be non-null");
+            logcall_trace("ApiUpdateCotdPlayerRank", "debounced and waited for cotdLatest_PlayerRank to be non-null");
             return;
         }
 
@@ -706,7 +706,7 @@ namespace DataManager {
             int pRank = 101;
             if (cotdLatest_PlayerRank["records"].Length > 0)
                 pRank = cotdLatest_PlayerRank["records"][0]["rank"];
-            logcall("RegenHistogramData", "Regenerating, player rank: " + pRank);
+            logcall_trace("RegenHistogramData", "Regenerating, player rank: " + pRank);
             // adjust player's rank down 50 so that we get (-150, +50) times
             pRank = Math::Max(51, pRank) - 50;
             // if (pRank <= 150) {

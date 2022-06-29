@@ -9,6 +9,9 @@ namespace WDebugNod {
             UI::Begin(w.title, w.visible.v);
             if (_DebugNod !is null) {
                 UI::NodTree(_DebugNod);
+                // if (_DebugNod.BaseType) {
+                //     UI::NodTree(_DebugNod.BaseType);
+                // }
             } else {
                 UI::Text("\\$f00" + "Nod is null -- nothing to show.\nClose this window before trying to view this Nod again.");
             }
@@ -16,5 +19,16 @@ namespace WDebugNod {
             UI::PopStyleVar();
         }
         w.Done();
+    }
+
+    void DumpProperties(const Reflection::MwClassInfo@ c) {
+        print("Type: " + c.Name);
+        auto members = c.Members;
+        for (uint i = 0; i < members.Length; i++) {
+            print("Member: " + members[i].Name);
+        }
+        if (c.BaseType !is null) {
+            DumpProperties(c.BaseType);
+        }
     }
 }

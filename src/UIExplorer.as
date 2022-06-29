@@ -1491,6 +1491,7 @@ namespace CotdExplorer {
     bool DrawDivResultsRowForMatch(uint roundId, uint matchId) {
         auto match = mapDb.matchesDb.Get(matchId);
         auto mResults = mapDb.matchResultsDb.Get(roundId).Get(matchId);
+        if (mResults is null) return false;
         auto winner = mResults.results[0];
         bool matchDone = winner.rank.IsSome();
         PlayerName@ name = matchDone

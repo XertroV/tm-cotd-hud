@@ -157,10 +157,15 @@ namespace WAllDivResults {
 
     const string GetRankDeltaStr(uint gr, const string &in pid) {
         auto qualiRank = WAllTimes::GetPlayerRank(pid);
+        // todo: race condition!?
+        if (qualiRank == 0) {
+            yield();
+            qualiRank = WAllTimes::GetPlayerRank(pid);
+        }
         auto divDelta = int(gr) - int(qualiRank);
         if (divDelta == 0) return '0';
         string color = divDelta > 0 ? c_timeOrange + '+' : c_timeBlue;
-        string rd = qualiRank > 0 ? '' + color + divDelta : '??';
+        string rd = qualiRank > 0 ? color + divDelta : '??';
         return rd;
     }
 

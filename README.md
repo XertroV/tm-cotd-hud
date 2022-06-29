@@ -1,6 +1,6 @@
 # COTD HUD
 
-Shows division info + times histogram during qualifier, and allows browsing of past COTDs along with full results, graphs, and some utilities.
+Shows division cutoffs + favorited players' times + histogram during qualifier, and allows browsing of past COTD qualifier and division results, along with some utilities.
 You can also 'favorite' other players to see their current qualifying time, *live*, during the qualifying round.
 
 This is a beta release. Things might break. (You can reload the plugin from the developer menu if need be.)
@@ -23,8 +23,8 @@ This plugin will use a lot of disk space, relatively speaking. Especially over t
     - ✅ UI selection layout / styles
     - ✅ Draw Histogram (qualis)
     - ✅ Division browser
-    - 🟦 Search user in a COTD quali list
-    - 🟦 Other quali list filters
+    - ✅ Search user in a COTD quali list
+    - ✅ Other quali list filters
     - 🟦 Search user all COTDs
     - ✅ (optional, default:off) sync all cotd quali times in bg
     - ✅ "Play this map" button
@@ -40,7 +40,7 @@ This plugin will use a lot of disk space, relatively speaking. Especially over t
   - ✅ Show who's playing this COTD and their times
   - 🟦 BChat integration (`/track-cotd @XertroV`) (or `/add-cotd-friend`)
   - ✅ Highlight the player in historical/explorer UI
-  - 🟦 Browse or view players in COTD + one-click add-as-friend
+  - 🟦 (live) Browse or view players in COTD + one-click add-as-friend
 - ✅ Cache Player ID data (like name)
 - ✅ Optimization: check current COTD data and don't re-request times unnecessarily -- should be cached once the COTD qualis are over.
 - ✅ Optimization -- like above but for division cutoffs
@@ -61,12 +61,6 @@ This plugin will use a lot of disk space, relatively speaking. Especially over t
 - ✅ bug: when loading cotd hud data and times are queued to be cached: the hud does not reload after they have been cached.
 - ✅ quali rank vs div rank delta (a value of +-64 for each player showing improvement or not in ranking)
 - 🟦 Browse players / favorites
-
-### first release
-
-- ✅ ensure downloading COTD snapshot rankings is behind an option
-- ✅ wizard v0 -- mostly to warn about alpha grade software. if anything breaks at the start of COTD use Developer > Reload Plugin > COTD HUD
-
 
 ### updating external generated code
 

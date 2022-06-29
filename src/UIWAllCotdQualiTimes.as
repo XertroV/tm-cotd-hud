@@ -88,7 +88,6 @@ namespace WAllTimes {
                 lastBreak = Time::Now;
             }
             i = _i + nDivsDone;
-            if (IsJsonNull(times[_i])) continue;
             time = uint(times[_i]['score']);
             if (_i % 64 == 0) {
                 thisDiv = uint(Math::Ceil(float(_i) / 64. + 1));

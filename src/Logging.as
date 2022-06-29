@@ -25,6 +25,10 @@ void log_dev(const string &in text) {
 }
 
 void logcall(const string &in caller, const string &in text) {
+    log_info(c_mid_grey + "[" + c_debug + caller + c_mid_grey + "] " + text);
+}
+
+void logcall_trace(const string &in caller, const string &in text) {
     log_trace(c_mid_grey + "[" + c_debug + caller + c_mid_grey + "] " + text);
 }
 
