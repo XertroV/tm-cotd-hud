@@ -1,4 +1,4 @@
-shared class Competition {
+class Competition {
   /* Properties // Mixin: Default Properties */
   private uint _id;
   private uint _startDate;
@@ -12,7 +12,7 @@ shared class Competition {
   private MaybeOfString@ _region;
   private MaybeOfString@ _description;
   private MaybeOfUint@ _registrationStart;
-  
+
   /* Methods // Mixin: Default Constructor */
   Competition(uint id, uint startDate, uint endDate, MaybeOfUint@ matchesGenerationDate, uint nbPlayers, uint leaderboardId, const string &in name, const string &in liveId, const string &in creator, MaybeOfString@ region, MaybeOfString@ description, MaybeOfUint@ registrationStart) {
     this._id = id;
@@ -28,7 +28,7 @@ shared class Competition {
     @this._description = description;
     @this._registrationStart = registrationStart;
   }
-  
+
   /* Methods // Mixin: ToFrom JSON Object */
   Competition(const Json::Value &in j) {
     try {
@@ -48,7 +48,7 @@ shared class Competition {
       OnFromJsonError(j);
     }
   }
-  
+
   Json::Value ToJson() {
     Json::Value j = Json::Object();
     j["id"] = _id;
@@ -65,68 +65,68 @@ shared class Competition {
     j["registrationStart"] = _registrationStart.ToJson();
     return j;
   }
-  
+
   void OnFromJsonError(const Json::Value &in j) const {
     warn('Parsing json failed: ' + Json::Write(j));
     throw('Failed to parse JSON: ' + getExceptionInfo());
   }
-  
+
   /* Methods // Mixin: Getters */
   uint get_id() const {
     return this._id;
   }
-  
+
   uint get_startDate() const {
     return this._startDate;
   }
-  
+
   uint get_endDate() const {
     return this._endDate;
   }
-  
+
   MaybeOfUint@ get_matchesGenerationDate() const {
     return this._matchesGenerationDate;
   }
-  
+
   uint get_nbPlayers() const {
     return this._nbPlayers;
   }
-  
+
   uint get_leaderboardId() const {
     return this._leaderboardId;
   }
-  
+
   const string get_name() const {
     return this._name;
   }
-  
+
   const string get_liveId() const {
     return this._liveId;
   }
-  
+
   const string get_creator() const {
     return this._creator;
   }
-  
+
   MaybeOfString@ get_region() const {
     return this._region;
   }
-  
+
   MaybeOfString@ get_description() const {
     return this._description;
   }
-  
+
   MaybeOfUint@ get_registrationStart() const {
     return this._registrationStart;
   }
-  
+
   /* Methods // Mixin: ToString */
   const string ToString() {
     return 'Competition('
       + string::Join({'id=' + '' + id, 'startDate=' + '' + startDate, 'endDate=' + '' + endDate, 'matchesGenerationDate=' + matchesGenerationDate.ToString(), 'nbPlayers=' + '' + nbPlayers, 'leaderboardId=' + '' + leaderboardId, 'name=' + name, 'liveId=' + liveId, 'creator=' + creator, 'region=' + region.ToString(), 'description=' + description.ToString(), 'registrationStart=' + registrationStart.ToString()}, ', ')
       + ')';
   }
-  
+
   /* Methods // Mixin: Op Eq */
   bool opEquals(const Competition@ &in other) {
     if (other is null) {
@@ -147,7 +147,7 @@ shared class Competition {
       && _registrationStart == other.registrationStart
       ;
   }
-  
+
   /* Methods // Mixin: Row Serialization */
   const string ToRowString() {
     string ret = "";
@@ -165,7 +165,7 @@ shared class Competition {
     ret += TRS_WrapString(_registrationStart.ToRowString()) + ",";
     return ret;
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -174,7 +174,7 @@ shared class Competition {
     }
     return ret;
   }
-  
+
   /* Methods // Mixin: ToFromBuffer */
   void WriteToBuffer(Buffer@ &in buf) {
     buf.Write(_id);
@@ -190,7 +190,7 @@ shared class Competition {
     _description.WriteToBuffer(buf);
     _registrationStart.WriteToBuffer(buf);
   }
-  
+
   uint CountBufBytes() {
     uint bytes = 0;
     bytes += 4;
@@ -207,7 +207,7 @@ shared class Competition {
     bytes += _registrationStart.CountBufBytes();
     return bytes;
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
@@ -216,7 +216,7 @@ shared class Competition {
 
 namespace _Competition {
   /* Namespace // Mixin: Row Serialization */
-  shared Competition@ FromRowString(const string &in str) {
+  Competition@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -358,15 +358,15 @@ namespace _Competition {
     MaybeOfUint@ registrationStart = _MaybeOfUint::FromRowString(chunk);
     return Competition(id, startDate, endDate, matchesGenerationDate, nbPlayers, leaderboardId, name, liveId, creator, region, description, registrationStart);
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
+
   /* Namespace // Mixin: ToFromBuffer */
-  shared Competition@ ReadFromBuffer(Buffer@ &in buf) {
+  Competition@ ReadFromBuffer(Buffer@ &in buf) {
     /* Parse field: id of type: uint */
     uint id = buf.ReadUInt32();
     /* Parse field: startDate of type: uint */
@@ -393,8 +393,8 @@ namespace _Competition {
     MaybeOfUint@ registrationStart = _MaybeOfUint::ReadFromBuffer(buf);
     return Competition(id, startDate, endDate, matchesGenerationDate, nbPlayers, leaderboardId, name, liveId, creator, region, description, registrationStart);
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }

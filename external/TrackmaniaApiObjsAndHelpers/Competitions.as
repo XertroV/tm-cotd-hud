@@ -1,12 +1,12 @@
-shared class Competitions {
+class Competitions {
   /* Properties // Mixin: Default Properties */
   private array<Competition@> _comps;
-  
+
   /* Methods // Mixin: Default Constructor */
   Competitions(const Competition@[] &in comps) {
     this._comps = comps;
   }
-  
+
   /* Methods // Mixin: ToFrom JSON Object */
   Competitions(const Json::Value &in j) {
     try {
@@ -18,7 +18,7 @@ shared class Competitions {
       OnFromJsonError(j);
     }
   }
-  
+
   Json::Value ToJson() {
     Json::Value _tmp_comps = Json::Array();
     for (uint i = 0; i < _comps.Length; i++) {
@@ -27,24 +27,24 @@ shared class Competitions {
     }
     return _tmp_comps;
   }
-  
+
   void OnFromJsonError(const Json::Value &in j) const {
     warn('Parsing json failed: ' + Json::Write(j));
     throw('Failed to parse JSON: ' + getExceptionInfo());
   }
-  
+
   /* Methods // Mixin: Getters */
   const Competition@[]@ get_comps() const {
     return this._comps;
   }
-  
+
   /* Methods // Mixin: ToString */
   const string ToString() {
     return 'Competitions('
       + string::Join({'comps=' + TS_Array_Competition(comps)}, ', ')
       + ')';
   }
-  
+
   private const string TS_Array_Competition(const array<Competition@> &in arr) {
     string ret = '{';
     for (uint i = 0; i < arr.Length; i++) {
@@ -53,7 +53,7 @@ shared class Competitions {
     }
     return ret + '}';
   }
-  
+
   /* Methods // Mixin: Op Eq */
   bool opEquals(const Competitions@ &in other) {
     if (other is null) {
@@ -70,14 +70,14 @@ shared class Competitions {
       && _tmp_arrEq_comps
       ;
   }
-  
+
   /* Methods // Mixin: Row Serialization */
   const string ToRowString() {
     string ret = "";
     ret += TRS_WrapString(TRS_Array_Competition(_comps)) + ",";
     return ret;
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -86,7 +86,7 @@ shared class Competitions {
     }
     return ret;
   }
-  
+
   private const string TRS_Array_Competition(const array<Competition@> &in arr) {
     string ret = '';
     for (uint i = 0; i < arr.Length; i++) {
@@ -94,23 +94,23 @@ shared class Competitions {
     }
     return ret;
   }
-  
+
   /* Methods // Mixin: ToFromBuffer */
   void WriteToBuffer(Buffer@ &in buf) {
     WTB_Array_Competition(buf, _comps);
   }
-  
+
   uint CountBufBytes() {
     uint bytes = 0;
     bytes += CBB_Array_Competition(_comps);
     return bytes;
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
   }
-  
+
   void WTB_Array_Competition(Buffer@ &in buf, const array<Competition@> &in arr) {
     buf.Write(uint(arr.Length));
     for (uint ix = 0; ix < arr.Length; ix++) {
@@ -118,7 +118,7 @@ shared class Competitions {
       el.WriteToBuffer(buf);
     }
   }
-  
+
   uint CBB_Array_Competition(const array<Competition@> &in arr) {
     uint bytes = 4;
     for (uint ix = 0; ix < arr.Length; ix++) {
@@ -127,20 +127,20 @@ shared class Competitions {
     }
     return bytes;
   }
-  
+
   /* Methods // Mixin: ArrayProxy */
   Competition@ opIndex(uint ix) const {
     return _comps[ix];
   }
-  
+
   uint get_Length() const {
     return _comps.Length;
   }
-  
+
   bool IsEmpty() const {
     return _comps.IsEmpty();
   }
-  
+
   void InsertLast(Competition@ v) {
     _comps.InsertLast(v);
   }
@@ -148,7 +148,7 @@ shared class Competitions {
 
 namespace _Competitions {
   /* Namespace // Mixin: Row Serialization */
-  shared Competitions@ FromRowString(const string &in str) {
+  Competitions@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -167,8 +167,8 @@ namespace _Competitions {
     array<Competition@> comps = FRS_Array_Competition(chunk);
     return Competitions(comps);
   }
-  
-  shared const array<Competition@>@ FRS_Array_Competition(const string &in str) {
+
+  const array<Competition@>@ FRS_Array_Competition(const string &in str) {
     array<Competition@> ret = array<Competition@>(0);
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
@@ -189,26 +189,26 @@ namespace _Competitions {
     }
     return ret;
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
+
   /* Namespace // Mixin: ToFromBuffer */
-  shared Competitions@ ReadFromBuffer(Buffer@ &in buf) {
+  Competitions@ ReadFromBuffer(Buffer@ &in buf) {
     /* Parse field: comps of type: array<Competition@> */
     array<Competition@> comps = RFB_Array_Competition(buf);
     return Competitions(comps);
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }
-  
-  shared const array<Competition@>@ RFB_Array_Competition(Buffer@ &in buf) {
+
+  const array<Competition@>@ RFB_Array_Competition(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     array<Competition@> arr = array<Competition@>(len);
     for (uint i = 0; i < arr.Length; i++) {

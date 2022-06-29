@@ -33,7 +33,7 @@ class TmIoApi {
     }
 
     // string CachedOr(const string &in key, const string _default) {
-    //     trace("[TmIoApi] cache get: " + key);
+    //     log_trace("[TmIoApi] cache get: " + key);
     //     string _r = "";
     //     return this.cache.Get(key, _r) ? _r : _default;
     // }
@@ -49,7 +49,7 @@ class TmIoApi {
             warn("[GetR] API Paths should start with '/'!");
             throw("[GetR] API Paths should start with '/'!");
         }
-        trace("[TmIoApi.GetR] " + path);
+        log_trace("[TmIoApi.GetR] " + path);
         auto req = Req();
         req.Method = Net::HttpMethod::Get;
         req.Url = this.BASEURL + path;
@@ -57,7 +57,7 @@ class TmIoApi {
     }
 
     Json::Value RunR(Net::HttpRequest@ req) {
-        trace("[TmIoApi] Requesting: " + req.Url);
+        log_trace("[TmIoApi] Requesting: " + req.Url);
         req.Start();
         while (!req.Finished()) { yield(); }
         return Json::Parse(req.String());

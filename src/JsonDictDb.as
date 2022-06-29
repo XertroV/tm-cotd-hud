@@ -42,7 +42,7 @@ class JsonDictDb {
                 file.Read(1); // should be ,
                 pname = file.ReadLine();
                 d[pid] = pname;
-                // trace("player name: " + Get(pid));
+                // log_trace("player name: " + Get(pid));
             }
             uint end = Time::Now;
             trace_benchmark('DictDb._InitialPopulation ' + csvPath, end - start);

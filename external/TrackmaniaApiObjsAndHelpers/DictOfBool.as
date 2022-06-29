@@ -1,22 +1,29 @@
-shared class DictOfBool {
+class DictOfBool {
   /* Properties // Mixin: Default Properties */
   private dictionary@ _d;
-  
+
   /* Properties // Mixin: Dict Backing */
-  
+
   /* Methods // Mixin: Dict Backing */
   DictOfBool() {
     @_d = dictionary();
   }
-  
+
   private const string K(const string &in key) const {
     return key;
   }
-  
+
   bool Get(const string &in key) const {
     return bool(_d[K(key)]);
   }
-  
+
+  bool GetOr(const string &in key, bool value) const {
+    if (Exists(key)) {
+      return Get(key);
+    }
+    return value;
+  }
+
   const bool[]@ GetMany(const string[] &in keys) const {
     array<bool> ret = {};
     for (uint i = 0; i < keys.Length; i++) {
@@ -25,16 +32,16 @@ shared class DictOfBool {
     }
     return ret;
   }
-  
-  
+
+
   void Set(const string &in key, bool value) {
     _d[K(key)] = value;
   }
-  
+
   bool Exists(const string &in key) {
     return _d.Exists(K(key));
   }
-  
+
   uint CountExists(const string[] &in keys) {
     uint ret = 0;
     for (uint i = 0; i < keys.Length; i++) {
@@ -43,15 +50,15 @@ shared class DictOfBool {
     }
     return ret;
   }
-  
+
   array<string>@ GetKeys() const {
     return _d.GetKeys();
   }
-  
+
   _DictOfBool::KvPair@ GetItem(const string &in key) const {
     return _DictOfBool::KvPair(key, Get(key));
   }
-  
+
   array<_DictOfBool::KvPair@>@ GetItems() const {
     array<_DictOfBool::KvPair@> ret = array<_DictOfBool::KvPair@>(GetSize());
     array<string> keys = GetKeys();
@@ -61,19 +68,19 @@ shared class DictOfBool {
     }
     return ret;
   }
-  
+
   bool opIndex(const string &in key) {
     return Get(key);
   }
-  
+
   uint GetSize() const {
     return _d.GetSize();
   }
-  
+
   bool Delete(const string &in key) {
     return _d.Delete(K(key));
   }
-  
+
   void DeleteAll() {
     _d.DeleteAll();
   }
@@ -81,33 +88,33 @@ shared class DictOfBool {
 
 namespace _DictOfBool {
   /* Namespace // Mixin: Dict Backing */
-  shared class KvPair {
+  class KvPair {
     /* Properties // Mixin: Default Properties */
     private string _key;
     private bool _val;
-    
+
     /* Methods // Mixin: Default Constructor */
     KvPair(const string &in key, bool val) {
       this._key = key;
       this._val = val;
     }
-    
+
     /* Methods // Mixin: Getters */
     const string get_key() const {
       return this._key;
     }
-    
+
     bool get_val() const {
       return this._val;
     }
-    
+
     /* Methods // Mixin: ToString */
     const string ToString() {
       return 'KvPair('
         + string::Join({'key=' + key, 'val=' + '' + val}, ', ')
         + ')';
     }
-    
+
     /* Methods // Mixin: Op Eq */
     bool opEquals(const KvPair@ &in other) {
       if (other is null) {
@@ -118,7 +125,7 @@ namespace _DictOfBool {
         && _val == other.val
         ;
     }
-    
+
     /* Methods // Mixin: Row Serialization */
     const string ToRowString() {
       string ret = "";
@@ -126,7 +133,7 @@ namespace _DictOfBool {
       ret += '' + _val + ",";
       return ret;
     }
-    
+
     private const string TRS_WrapString(const string &in s) {
       string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
       string ret = '(' + _s.Length + ':' + _s + ')';
@@ -135,29 +142,29 @@ namespace _DictOfBool {
       }
       return ret;
     }
-    
+
     /* Methods // Mixin: ToFromBuffer */
     void WriteToBuffer(Buffer@ &in buf) {
       WTB_LP_String(buf, _key);
       buf.Write(uint8(_val ? 1 : 0));
     }
-    
+
     uint CountBufBytes() {
       uint bytes = 0;
       bytes += 4 + _key.Length;
       bytes += 1;
       return bytes;
     }
-    
+
     void WTB_LP_String(Buffer@ &in buf, const string &in s) {
       buf.Write(uint(s.Length));
       buf.Write(s);
     }
   }
-  
+
   namespace _KvPair {
     /* Namespace // Mixin: Row Serialization */
-    shared KvPair@ FromRowString(const string &in str) {
+    KvPair@ FromRowString(const string &in str) {
       string chunk = '', remainder = str;
       array<string> tmp = array<string>(2);
       uint chunkLen = 0;
@@ -185,23 +192,23 @@ namespace _DictOfBool {
       bool val = ('true' == chunk.ToLower());
       return KvPair(key, val);
     }
-    
-    shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+    void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
       if (sample != expected) {
         throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
       }
     }
-    
+
     /* Namespace // Mixin: ToFromBuffer */
-    shared KvPair@ ReadFromBuffer(Buffer@ &in buf) {
+    KvPair@ ReadFromBuffer(Buffer@ &in buf) {
       /* Parse field: key of type: string */
       string key = RFB_LP_String(buf);
       /* Parse field: val of type: bool */
       bool val = buf.ReadUInt8() > 0;
       return KvPair(key, val);
     }
-    
-    shared const string RFB_LP_String(Buffer@ &in buf) {
+
+    const string RFB_LP_String(Buffer@ &in buf) {
       uint len = buf.ReadUInt32();
       return buf.ReadString(len);
     }

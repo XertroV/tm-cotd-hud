@@ -1,4 +1,4 @@
-shared class CompRound {
+class CompRound {
   /* Properties // Mixin: Default Properties */
   private uint _id;
   private uint _qualifierChallengeId;
@@ -11,7 +11,7 @@ shared class CompRound {
   private string _leaderboardComputeType;
   private MaybeOfString@ _teamLeaderboardComputeType;
   private string _matchScoreDirection;
-  
+
   /* Methods // Mixin: Default Constructor */
   CompRound(uint id, uint qualifierChallengeId, uint position, uint nbMatches, uint startDate, uint endDate, const string &in name, const string &in status, const string &in leaderboardComputeType, MaybeOfString@ teamLeaderboardComputeType, const string &in matchScoreDirection) {
     this._id = id;
@@ -26,7 +26,7 @@ shared class CompRound {
     @this._teamLeaderboardComputeType = teamLeaderboardComputeType;
     this._matchScoreDirection = matchScoreDirection;
   }
-  
+
   /* Methods // Mixin: ToFrom JSON Object */
   CompRound(const Json::Value &in j) {
     try {
@@ -45,7 +45,7 @@ shared class CompRound {
       OnFromJsonError(j);
     }
   }
-  
+
   Json::Value ToJson() {
     Json::Value j = Json::Object();
     j["id"] = _id;
@@ -61,64 +61,64 @@ shared class CompRound {
     j["matchScoreDirection"] = _matchScoreDirection;
     return j;
   }
-  
+
   void OnFromJsonError(const Json::Value &in j) const {
     warn('Parsing json failed: ' + Json::Write(j));
     throw('Failed to parse JSON: ' + getExceptionInfo());
   }
-  
+
   /* Methods // Mixin: Getters */
   uint get_id() const {
     return this._id;
   }
-  
+
   uint get_qualifierChallengeId() const {
     return this._qualifierChallengeId;
   }
-  
+
   uint get_position() const {
     return this._position;
   }
-  
+
   uint get_nbMatches() const {
     return this._nbMatches;
   }
-  
+
   uint get_startDate() const {
     return this._startDate;
   }
-  
+
   uint get_endDate() const {
     return this._endDate;
   }
-  
+
   const string get_name() const {
     return this._name;
   }
-  
+
   const string get_status() const {
     return this._status;
   }
-  
+
   const string get_leaderboardComputeType() const {
     return this._leaderboardComputeType;
   }
-  
+
   MaybeOfString@ get_teamLeaderboardComputeType() const {
     return this._teamLeaderboardComputeType;
   }
-  
+
   const string get_matchScoreDirection() const {
     return this._matchScoreDirection;
   }
-  
+
   /* Methods // Mixin: ToString */
   const string ToString() {
     return 'CompRound('
       + string::Join({'id=' + '' + id, 'qualifierChallengeId=' + '' + qualifierChallengeId, 'position=' + '' + position, 'nbMatches=' + '' + nbMatches, 'startDate=' + '' + startDate, 'endDate=' + '' + endDate, 'name=' + name, 'status=' + status, 'leaderboardComputeType=' + leaderboardComputeType, 'teamLeaderboardComputeType=' + teamLeaderboardComputeType.ToString(), 'matchScoreDirection=' + matchScoreDirection}, ', ')
       + ')';
   }
-  
+
   /* Methods // Mixin: Op Eq */
   bool opEquals(const CompRound@ &in other) {
     if (other is null) {
@@ -138,7 +138,7 @@ shared class CompRound {
       && _matchScoreDirection == other.matchScoreDirection
       ;
   }
-  
+
   /* Methods // Mixin: Row Serialization */
   const string ToRowString() {
     string ret = "";
@@ -155,7 +155,7 @@ shared class CompRound {
     ret += TRS_WrapString(_matchScoreDirection) + ",";
     return ret;
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -164,7 +164,7 @@ shared class CompRound {
     }
     return ret;
   }
-  
+
   /* Methods // Mixin: ToFromBuffer */
   void WriteToBuffer(Buffer@ &in buf) {
     buf.Write(_id);
@@ -179,7 +179,7 @@ shared class CompRound {
     _teamLeaderboardComputeType.WriteToBuffer(buf);
     WTB_LP_String(buf, _matchScoreDirection);
   }
-  
+
   uint CountBufBytes() {
     uint bytes = 0;
     bytes += 4;
@@ -195,7 +195,7 @@ shared class CompRound {
     bytes += 4 + _matchScoreDirection.Length;
     return bytes;
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
@@ -204,7 +204,7 @@ shared class CompRound {
 
 namespace _CompRound {
   /* Namespace // Mixin: Row Serialization */
-  shared CompRound@ FromRowString(const string &in str) {
+  CompRound@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -329,15 +329,15 @@ namespace _CompRound {
     string matchScoreDirection = chunk;
     return CompRound(id, qualifierChallengeId, position, nbMatches, startDate, endDate, name, status, leaderboardComputeType, teamLeaderboardComputeType, matchScoreDirection);
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
+
   /* Namespace // Mixin: ToFromBuffer */
-  shared CompRound@ ReadFromBuffer(Buffer@ &in buf) {
+  CompRound@ ReadFromBuffer(Buffer@ &in buf) {
     /* Parse field: id of type: uint */
     uint id = buf.ReadUInt32();
     /* Parse field: qualifierChallengeId of type: uint */
@@ -362,8 +362,8 @@ namespace _CompRound {
     string matchScoreDirection = RFB_LP_String(buf);
     return CompRound(id, qualifierChallengeId, position, nbMatches, startDate, endDate, name, status, leaderboardComputeType, teamLeaderboardComputeType, matchScoreDirection);
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }

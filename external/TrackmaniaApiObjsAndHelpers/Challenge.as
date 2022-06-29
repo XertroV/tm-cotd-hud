@@ -1,4 +1,4 @@
-shared class Challenge {
+class Challenge {
   /* Properties // Mixin: Default Properties */
   private uint _id;
   private string _uid;
@@ -6,7 +6,7 @@ shared class Challenge {
   private uint _startDate;
   private uint _endDate;
   private uint _leaderboardId;
-  
+
   /* Methods // Mixin: Default Constructor */
   Challenge(uint id, const string &in uid, const string &in name, uint startDate, uint endDate, uint leaderboardId) {
     this._id = id;
@@ -16,7 +16,7 @@ shared class Challenge {
     this._endDate = endDate;
     this._leaderboardId = leaderboardId;
   }
-  
+
   /* Methods // Mixin: ToFrom JSON Object */
   Challenge(const Json::Value &in j) {
     try {
@@ -30,7 +30,7 @@ shared class Challenge {
       OnFromJsonError(j);
     }
   }
-  
+
   Json::Value ToJson() {
     Json::Value j = Json::Object();
     j["id"] = _id;
@@ -41,44 +41,44 @@ shared class Challenge {
     j["leaderboardId"] = _leaderboardId;
     return j;
   }
-  
+
   void OnFromJsonError(const Json::Value &in j) const {
     warn('Parsing json failed: ' + Json::Write(j));
     throw('Failed to parse JSON: ' + getExceptionInfo());
   }
-  
+
   /* Methods // Mixin: Getters */
   uint get_id() const {
     return this._id;
   }
-  
+
   const string get_uid() const {
     return this._uid;
   }
-  
+
   const string get_name() const {
     return this._name;
   }
-  
+
   uint get_startDate() const {
     return this._startDate;
   }
-  
+
   uint get_endDate() const {
     return this._endDate;
   }
-  
+
   uint get_leaderboardId() const {
     return this._leaderboardId;
   }
-  
+
   /* Methods // Mixin: ToString */
   const string ToString() {
     return 'Challenge('
       + string::Join({'id=' + '' + id, 'uid=' + uid, 'name=' + name, 'startDate=' + '' + startDate, 'endDate=' + '' + endDate, 'leaderboardId=' + '' + leaderboardId}, ', ')
       + ')';
   }
-  
+
   /* Methods // Mixin: Op Eq */
   bool opEquals(const Challenge@ &in other) {
     if (other is null) {
@@ -93,7 +93,7 @@ shared class Challenge {
       && _leaderboardId == other.leaderboardId
       ;
   }
-  
+
   /* Methods // Mixin: Row Serialization */
   const string ToRowString() {
     string ret = "";
@@ -105,7 +105,7 @@ shared class Challenge {
     ret += '' + _leaderboardId + ",";
     return ret;
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -114,7 +114,7 @@ shared class Challenge {
     }
     return ret;
   }
-  
+
   /* Methods // Mixin: ToFromBuffer */
   void WriteToBuffer(Buffer@ &in buf) {
     buf.Write(_id);
@@ -124,7 +124,7 @@ shared class Challenge {
     buf.Write(_endDate);
     buf.Write(_leaderboardId);
   }
-  
+
   uint CountBufBytes() {
     uint bytes = 0;
     bytes += 4;
@@ -135,7 +135,7 @@ shared class Challenge {
     bytes += 4;
     return bytes;
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
@@ -144,7 +144,7 @@ shared class Challenge {
 
 namespace _Challenge {
   /* Namespace // Mixin: Row Serialization */
-  shared Challenge@ FromRowString(const string &in str) {
+  Challenge@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -212,15 +212,15 @@ namespace _Challenge {
     uint leaderboardId = Text::ParseInt(chunk);
     return Challenge(id, uid, name, startDate, endDate, leaderboardId);
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
+
   /* Namespace // Mixin: ToFromBuffer */
-  shared Challenge@ ReadFromBuffer(Buffer@ &in buf) {
+  Challenge@ ReadFromBuffer(Buffer@ &in buf) {
     /* Parse field: id of type: uint */
     uint id = buf.ReadUInt32();
     /* Parse field: uid of type: string */
@@ -235,8 +235,8 @@ namespace _Challenge {
     uint leaderboardId = buf.ReadUInt32();
     return Challenge(id, uid, name, startDate, endDate, leaderboardId);
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }

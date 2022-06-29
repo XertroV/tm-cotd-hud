@@ -1371,7 +1371,7 @@ namespace CotdExplorer {
         string hl = CooldownHLColor(key, defaultColor, true);
         UI::TextWrapped(hl + label);
         if (UI::IsItemClicked()) {
-            trace("Copying to clipboard: " + toCopy);
+            log_trace("Copying to clipboard: " + toCopy);
             IO::SetClipboard(toCopy);
             lastCopiedPid = key;
             copiedCooldownSince = Time::Now;

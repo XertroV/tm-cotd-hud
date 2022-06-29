@@ -65,3 +65,10 @@ This plugin will use a lot of disk space, relatively speaking. Especially over t
 
 - ✅ ensure downloading COTD snapshot rankings is behind an option
 - ✅ wizard v0 -- mostly to warn about alpha grade software. if anything breaks at the start of COTD use Developer > Reload Plugin > COTD HUD
+
+
+### updating external generated code
+
+- remove info.toml
+- remove log_trace from codegensupport.as
+- sed: `/shared //`

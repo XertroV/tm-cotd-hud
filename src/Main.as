@@ -83,7 +83,7 @@ void RenderMainMenu() {
 
 void OnSettingsChanged() {
     if (!EulaAccepted()) return;
-    trace("Main.OnSettingsChanged");
+    log_trace("Main.OnSettingsChanged");
     DataManager::OnSettingsChanged();
     CotdHud::OnSettingsChanged();
     CotdExplorer::OnSettingsChanged();

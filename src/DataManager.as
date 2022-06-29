@@ -360,7 +360,7 @@ namespace DataManager {
         }
 
         cotdLatest_PlayerRank = api.GetPlayerRank(GetChallengeId(), cotdLatest_MapId, GI::PlayersId());
-        // trace("[ApiUpdateCotdPlayerRank] from api got: " + Json::Write(cotdLatest_PlayerRank));
+        // log_trace("[ApiUpdateCotdPlayerRank] from api got: " + Json::Write(cotdLatest_PlayerRank));
         logcall("ApiUpdateCotdPlayerRank", "Done! " + Json::Write(cotdLatest_PlayerRank));
     }
 
@@ -408,7 +408,7 @@ namespace DataManager {
 
     /* set active div rows based on player rank, settings, etc */
     void RenewActiveDivs() {
-        trace("RenewActiveDivs");
+        log_trace("RenewActiveDivs");
         // while (divRows[0] is null) { yield(); }
         if (Setting_HudShowAllDivs) {
             cotd_ActiveDivRows = array<uint>(99);
@@ -469,7 +469,7 @@ namespace DataManager {
 
         auto logpre = "CoroUpdateDivFromQ(" + _div + ") | ";
 #if DEV
-        // trace(logpre + "Got div.");
+        // log_trace(logpre + "Got div.");
 #endif
 
         auto _row = divRows[_div - 1];
@@ -481,7 +481,7 @@ namespace DataManager {
             _row.timeMs = MAX_DIV_TIME;
             _row.visible = false;
         } else {
-            trace(logpre + "got div w/ " + GetCotdTotalPlayers() + " total players");
+            log_trace(logpre + "got div w/ " + GetCotdTotalPlayers() + " total players");
             // we can get a time for this div
             Json::Value res;
             if (_div * 64 > GetCotdTotalPlayers()) {
@@ -490,7 +490,7 @@ namespace DataManager {
             } else {
                 res = api.GetCutoffForDiv(GetChallengeId(), cotdLatest_MapId, _div);
             }
-            // trace(logpre + " res: " + Json::Write(res));
+            // log_trace(logpre + " res: " + Json::Write(res));
             /* note: res[0]["score"] and res[0]["time"] appear to be identical */
             if (res.GetType() == Json::Type::Array) {
                 _row.timeMs = (res.Length == 0) ? MAX_DIV_TIME : res[0]["score"];
@@ -501,7 +501,7 @@ namespace DataManager {
 
         _row.lastUpdateDone = Time::get_Now();
         if (_row.timeMs < MAX_DIV_TIME)
-            trace(logpre + _row.ToString());
+            log_trace(logpre + _row.ToString());
     }
 
     void CoroUpdatePlayerDiv() {
@@ -721,7 +721,7 @@ namespace DataManager {
             int minR = pRank - 100;
             int maxR = pRank + 99;
             cotd_HistogramMinMaxRank = int2(minR, maxR);
-            trace("RegenHistogramData: min: " + minR + " max: " + maxR);
+            log_trace("RegenHistogramData: min: " + minR + " max: " + maxR);
             uint[] hd = array<uint>(200);
             for (uint i = 0; i < 200 && minR + i < 10000; i++) {
                 hd[i] = cotd_TimesForHistogram[minR-1 + i];
@@ -744,7 +744,7 @@ namespace DataManager {
             yield();
         }
         q_divsToUpdate[q_divsToUpdate_End] = _div;
-        // trace("PutDivToUpdateInQ: " + _div + " (at ix=" + q_divsToUpdate_End + ")");
+        // log_trace("PutDivToUpdateInQ: " + _div + " (at ix=" + q_divsToUpdate_End + ")");
         q_divsToUpdate_End = (q_divsToUpdate_End + 1) % Q_SIZE;
     }
 

@@ -1,11 +1,11 @@
-shared class CompRoundMatch {
+class CompRoundMatch {
   /* Properties // Mixin: Default Properties */
   private uint _id;
   private uint _position;
   private bool _isCompleted;
   private string _name;
   private string _clubMatchLiveId;
-  
+
   /* Methods // Mixin: Default Constructor */
   CompRoundMatch(uint id, uint position, bool isCompleted, const string &in name, const string &in clubMatchLiveId) {
     this._id = id;
@@ -14,7 +14,7 @@ shared class CompRoundMatch {
     this._name = name;
     this._clubMatchLiveId = clubMatchLiveId;
   }
-  
+
   /* Methods // Mixin: ToFrom JSON Object */
   CompRoundMatch(const Json::Value &in j) {
     try {
@@ -27,7 +27,7 @@ shared class CompRoundMatch {
       OnFromJsonError(j);
     }
   }
-  
+
   Json::Value ToJson() {
     Json::Value j = Json::Object();
     j["id"] = _id;
@@ -37,40 +37,40 @@ shared class CompRoundMatch {
     j["clubMatchLiveId"] = _clubMatchLiveId;
     return j;
   }
-  
+
   void OnFromJsonError(const Json::Value &in j) const {
     warn('Parsing json failed: ' + Json::Write(j));
     throw('Failed to parse JSON: ' + getExceptionInfo());
   }
-  
+
   /* Methods // Mixin: Getters */
   uint get_id() const {
     return this._id;
   }
-  
+
   uint get_position() const {
     return this._position;
   }
-  
+
   bool get_isCompleted() const {
     return this._isCompleted;
   }
-  
+
   const string get_name() const {
     return this._name;
   }
-  
+
   const string get_clubMatchLiveId() const {
     return this._clubMatchLiveId;
   }
-  
+
   /* Methods // Mixin: ToString */
   const string ToString() {
     return 'CompRoundMatch('
       + string::Join({'id=' + '' + id, 'position=' + '' + position, 'isCompleted=' + '' + isCompleted, 'name=' + name, 'clubMatchLiveId=' + clubMatchLiveId}, ', ')
       + ')';
   }
-  
+
   /* Methods // Mixin: Op Eq */
   bool opEquals(const CompRoundMatch@ &in other) {
     if (other is null) {
@@ -84,7 +84,7 @@ shared class CompRoundMatch {
       && _clubMatchLiveId == other.clubMatchLiveId
       ;
   }
-  
+
   /* Methods // Mixin: Row Serialization */
   const string ToRowString() {
     string ret = "";
@@ -95,7 +95,7 @@ shared class CompRoundMatch {
     ret += TRS_WrapString(_clubMatchLiveId) + ",";
     return ret;
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -104,7 +104,7 @@ shared class CompRoundMatch {
     }
     return ret;
   }
-  
+
   /* Methods // Mixin: ToFromBuffer */
   void WriteToBuffer(Buffer@ &in buf) {
     buf.Write(_id);
@@ -113,7 +113,7 @@ shared class CompRoundMatch {
     WTB_LP_String(buf, _name);
     WTB_LP_String(buf, _clubMatchLiveId);
   }
-  
+
   uint CountBufBytes() {
     uint bytes = 0;
     bytes += 4;
@@ -123,7 +123,7 @@ shared class CompRoundMatch {
     bytes += 4 + _clubMatchLiveId.Length;
     return bytes;
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
@@ -132,7 +132,7 @@ shared class CompRoundMatch {
 
 namespace _CompRoundMatch {
   /* Namespace // Mixin: Row Serialization */
-  shared CompRoundMatch@ FromRowString(const string &in str) {
+  CompRoundMatch@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -191,15 +191,15 @@ namespace _CompRoundMatch {
     string clubMatchLiveId = chunk;
     return CompRoundMatch(id, position, isCompleted, name, clubMatchLiveId);
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
+
   /* Namespace // Mixin: ToFromBuffer */
-  shared CompRoundMatch@ ReadFromBuffer(Buffer@ &in buf) {
+  CompRoundMatch@ ReadFromBuffer(Buffer@ &in buf) {
     /* Parse field: id of type: uint */
     uint id = buf.ReadUInt32();
     /* Parse field: position of type: uint */
@@ -212,8 +212,8 @@ namespace _CompRoundMatch {
     string clubMatchLiveId = RFB_LP_String(buf);
     return CompRoundMatch(id, position, isCompleted, name, clubMatchLiveId);
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }

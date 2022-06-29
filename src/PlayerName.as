@@ -80,7 +80,7 @@ class PlayerName {
     if (leftClicked) {
       copiedCooldownSince = Time::Now;
       IO::SetClipboard(Name + ' ' + Id);
-      trace('Copied: ' + Name + ' ' + Id);
+      log_trace('Copied: ' + Name + ' ' + Id);
     }
 
     if (UI::BeginPopupContextItem(Id+nonce)) {

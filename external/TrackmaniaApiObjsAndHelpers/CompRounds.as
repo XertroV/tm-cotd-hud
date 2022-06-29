@@ -1,12 +1,12 @@
-shared class CompRounds {
+class CompRounds {
   /* Properties // Mixin: Default Properties */
   private array<CompRound@> _rounds;
-  
+
   /* Methods // Mixin: Default Constructor */
   CompRounds(const CompRound@[] &in rounds) {
     this._rounds = rounds;
   }
-  
+
   /* Methods // Mixin: ToFrom JSON Object */
   CompRounds(const Json::Value &in j) {
     try {
@@ -18,7 +18,7 @@ shared class CompRounds {
       OnFromJsonError(j);
     }
   }
-  
+
   Json::Value ToJson() {
     Json::Value _tmp_rounds = Json::Array();
     for (uint i = 0; i < _rounds.Length; i++) {
@@ -27,24 +27,24 @@ shared class CompRounds {
     }
     return _tmp_rounds;
   }
-  
+
   void OnFromJsonError(const Json::Value &in j) const {
     warn('Parsing json failed: ' + Json::Write(j));
     throw('Failed to parse JSON: ' + getExceptionInfo());
   }
-  
+
   /* Methods // Mixin: Getters */
   const CompRound@[]@ get_rounds() const {
     return this._rounds;
   }
-  
+
   /* Methods // Mixin: ToString */
   const string ToString() {
     return 'CompRounds('
       + string::Join({'rounds=' + TS_Array_CompRound(rounds)}, ', ')
       + ')';
   }
-  
+
   private const string TS_Array_CompRound(const array<CompRound@> &in arr) {
     string ret = '{';
     for (uint i = 0; i < arr.Length; i++) {
@@ -53,7 +53,7 @@ shared class CompRounds {
     }
     return ret + '}';
   }
-  
+
   /* Methods // Mixin: Op Eq */
   bool opEquals(const CompRounds@ &in other) {
     if (other is null) {
@@ -70,14 +70,14 @@ shared class CompRounds {
       && _tmp_arrEq_rounds
       ;
   }
-  
+
   /* Methods // Mixin: Row Serialization */
   const string ToRowString() {
     string ret = "";
     ret += TRS_WrapString(TRS_Array_CompRound(_rounds)) + ",";
     return ret;
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -86,7 +86,7 @@ shared class CompRounds {
     }
     return ret;
   }
-  
+
   private const string TRS_Array_CompRound(const array<CompRound@> &in arr) {
     string ret = '';
     for (uint i = 0; i < arr.Length; i++) {
@@ -94,23 +94,23 @@ shared class CompRounds {
     }
     return ret;
   }
-  
+
   /* Methods // Mixin: ToFromBuffer */
   void WriteToBuffer(Buffer@ &in buf) {
     WTB_Array_CompRound(buf, _rounds);
   }
-  
+
   uint CountBufBytes() {
     uint bytes = 0;
     bytes += CBB_Array_CompRound(_rounds);
     return bytes;
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
   }
-  
+
   void WTB_Array_CompRound(Buffer@ &in buf, const array<CompRound@> &in arr) {
     buf.Write(uint(arr.Length));
     for (uint ix = 0; ix < arr.Length; ix++) {
@@ -118,7 +118,7 @@ shared class CompRounds {
       el.WriteToBuffer(buf);
     }
   }
-  
+
   uint CBB_Array_CompRound(const array<CompRound@> &in arr) {
     uint bytes = 4;
     for (uint ix = 0; ix < arr.Length; ix++) {
@@ -127,20 +127,20 @@ shared class CompRounds {
     }
     return bytes;
   }
-  
+
   /* Methods // Mixin: ArrayProxy */
   CompRound@ opIndex(uint ix) const {
     return _rounds[ix];
   }
-  
+
   uint get_Length() const {
     return _rounds.Length;
   }
-  
+
   bool IsEmpty() const {
     return _rounds.IsEmpty();
   }
-  
+
   void InsertLast(CompRound@ v) {
     _rounds.InsertLast(v);
   }
@@ -148,7 +148,7 @@ shared class CompRounds {
 
 namespace _CompRounds {
   /* Namespace // Mixin: Row Serialization */
-  shared CompRounds@ FromRowString(const string &in str) {
+  CompRounds@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -167,8 +167,8 @@ namespace _CompRounds {
     array<CompRound@> rounds = FRS_Array_CompRound(chunk);
     return CompRounds(rounds);
   }
-  
-  shared const array<CompRound@>@ FRS_Array_CompRound(const string &in str) {
+
+  const array<CompRound@>@ FRS_Array_CompRound(const string &in str) {
     array<CompRound@> ret = array<CompRound@>(0);
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
@@ -189,26 +189,26 @@ namespace _CompRounds {
     }
     return ret;
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
+
   /* Namespace // Mixin: ToFromBuffer */
-  shared CompRounds@ ReadFromBuffer(Buffer@ &in buf) {
+  CompRounds@ ReadFromBuffer(Buffer@ &in buf) {
     /* Parse field: rounds of type: array<CompRound@> */
     array<CompRound@> rounds = RFB_Array_CompRound(buf);
     return CompRounds(rounds);
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }
-  
-  shared const array<CompRound@>@ RFB_Array_CompRound(Buffer@ &in buf) {
+
+  const array<CompRound@>@ RFB_Array_CompRound(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     array<CompRound@> arr = array<CompRound@>(len);
     for (uint i = 0; i < arr.Length; i++) {

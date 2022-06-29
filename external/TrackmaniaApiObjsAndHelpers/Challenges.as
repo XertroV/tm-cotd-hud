@@ -1,12 +1,12 @@
-shared class Challenges {
+class Challenges {
   /* Properties // Mixin: Default Properties */
   private array<Challenge@> _challenges;
-  
+
   /* Methods // Mixin: Default Constructor */
   Challenges(const Challenge@[] &in challenges) {
     this._challenges = challenges;
   }
-  
+
   /* Methods // Mixin: ToFrom JSON Object */
   Challenges(const Json::Value &in j) {
     try {
@@ -18,7 +18,7 @@ shared class Challenges {
       OnFromJsonError(j);
     }
   }
-  
+
   Json::Value ToJson() {
     Json::Value _tmp_challenges = Json::Array();
     for (uint i = 0; i < _challenges.Length; i++) {
@@ -27,24 +27,24 @@ shared class Challenges {
     }
     return _tmp_challenges;
   }
-  
+
   void OnFromJsonError(const Json::Value &in j) const {
     warn('Parsing json failed: ' + Json::Write(j));
     throw('Failed to parse JSON: ' + getExceptionInfo());
   }
-  
+
   /* Methods // Mixin: Getters */
   const Challenge@[]@ get_challenges() const {
     return this._challenges;
   }
-  
+
   /* Methods // Mixin: ToString */
   const string ToString() {
     return 'Challenges('
       + string::Join({'challenges=' + TS_Array_Challenge(challenges)}, ', ')
       + ')';
   }
-  
+
   private const string TS_Array_Challenge(const array<Challenge@> &in arr) {
     string ret = '{';
     for (uint i = 0; i < arr.Length; i++) {
@@ -53,7 +53,7 @@ shared class Challenges {
     }
     return ret + '}';
   }
-  
+
   /* Methods // Mixin: Op Eq */
   bool opEquals(const Challenges@ &in other) {
     if (other is null) {
@@ -70,14 +70,14 @@ shared class Challenges {
       && _tmp_arrEq_challenges
       ;
   }
-  
+
   /* Methods // Mixin: Row Serialization */
   const string ToRowString() {
     string ret = "";
     ret += TRS_WrapString(TRS_Array_Challenge(_challenges)) + ",";
     return ret;
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -86,7 +86,7 @@ shared class Challenges {
     }
     return ret;
   }
-  
+
   private const string TRS_Array_Challenge(const array<Challenge@> &in arr) {
     string ret = '';
     for (uint i = 0; i < arr.Length; i++) {
@@ -94,23 +94,23 @@ shared class Challenges {
     }
     return ret;
   }
-  
+
   /* Methods // Mixin: ToFromBuffer */
   void WriteToBuffer(Buffer@ &in buf) {
     WTB_Array_Challenge(buf, _challenges);
   }
-  
+
   uint CountBufBytes() {
     uint bytes = 0;
     bytes += CBB_Array_Challenge(_challenges);
     return bytes;
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
   }
-  
+
   void WTB_Array_Challenge(Buffer@ &in buf, const array<Challenge@> &in arr) {
     buf.Write(uint(arr.Length));
     for (uint ix = 0; ix < arr.Length; ix++) {
@@ -118,7 +118,7 @@ shared class Challenges {
       el.WriteToBuffer(buf);
     }
   }
-  
+
   uint CBB_Array_Challenge(const array<Challenge@> &in arr) {
     uint bytes = 4;
     for (uint ix = 0; ix < arr.Length; ix++) {
@@ -127,20 +127,20 @@ shared class Challenges {
     }
     return bytes;
   }
-  
+
   /* Methods // Mixin: ArrayProxy */
   Challenge@ opIndex(uint ix) const {
     return _challenges[ix];
   }
-  
+
   uint get_Length() const {
     return _challenges.Length;
   }
-  
+
   bool IsEmpty() const {
     return _challenges.IsEmpty();
   }
-  
+
   void InsertLast(Challenge@ v) {
     _challenges.InsertLast(v);
   }
@@ -148,7 +148,7 @@ shared class Challenges {
 
 namespace _Challenges {
   /* Namespace // Mixin: Row Serialization */
-  shared Challenges@ FromRowString(const string &in str) {
+  Challenges@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -167,8 +167,8 @@ namespace _Challenges {
     array<Challenge@> challenges = FRS_Array_Challenge(chunk);
     return Challenges(challenges);
   }
-  
-  shared const array<Challenge@>@ FRS_Array_Challenge(const string &in str) {
+
+  const array<Challenge@>@ FRS_Array_Challenge(const string &in str) {
     array<Challenge@> ret = array<Challenge@>(0);
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
@@ -189,26 +189,26 @@ namespace _Challenges {
     }
     return ret;
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
+
   /* Namespace // Mixin: ToFromBuffer */
-  shared Challenges@ ReadFromBuffer(Buffer@ &in buf) {
+  Challenges@ ReadFromBuffer(Buffer@ &in buf) {
     /* Parse field: challenges of type: array<Challenge@> */
     array<Challenge@> challenges = RFB_Array_Challenge(buf);
     return Challenges(challenges);
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }
-  
-  shared const array<Challenge@>@ RFB_Array_Challenge(Buffer@ &in buf) {
+
+  const array<Challenge@>@ RFB_Array_Challenge(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     array<Challenge@> arr = array<Challenge@>(len);
     for (uint i = 0; i < arr.Length; i++) {

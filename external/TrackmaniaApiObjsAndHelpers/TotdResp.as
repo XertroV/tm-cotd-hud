@@ -1,16 +1,16 @@
-shared class TotdResp {
+class TotdResp {
   /* Properties // Mixin: Default Properties */
   private array<TotdMonth@> _monthList;
   private uint _itemCount;
   private uint _nextRequestTimestamp;
-  
+
   /* Methods // Mixin: Default Constructor */
   TotdResp(const TotdMonth@[] &in monthList, uint itemCount, uint nextRequestTimestamp) {
     this._monthList = monthList;
     this._itemCount = itemCount;
     this._nextRequestTimestamp = nextRequestTimestamp;
   }
-  
+
   /* Methods // Mixin: ToFrom JSON Object */
   TotdResp(const Json::Value &in j) {
     try {
@@ -24,7 +24,7 @@ shared class TotdResp {
       OnFromJsonError(j);
     }
   }
-  
+
   Json::Value ToJson() {
     Json::Value j = Json::Object();
     Json::Value _tmp_monthList = Json::Array();
@@ -37,32 +37,32 @@ shared class TotdResp {
     j["nextRequestTimestamp"] = _nextRequestTimestamp;
     return j;
   }
-  
+
   void OnFromJsonError(const Json::Value &in j) const {
     warn('Parsing json failed: ' + Json::Write(j));
     throw('Failed to parse JSON: ' + getExceptionInfo());
   }
-  
+
   /* Methods // Mixin: Getters */
   const TotdMonth@[]@ get_monthList() const {
     return this._monthList;
   }
-  
+
   uint get_itemCount() const {
     return this._itemCount;
   }
-  
+
   uint get_nextRequestTimestamp() const {
     return this._nextRequestTimestamp;
   }
-  
+
   /* Methods // Mixin: ToString */
   const string ToString() {
     return 'TotdResp('
       + string::Join({'monthList=' + TS_Array_TotdMonth(monthList), 'itemCount=' + '' + itemCount, 'nextRequestTimestamp=' + '' + nextRequestTimestamp}, ', ')
       + ')';
   }
-  
+
   private const string TS_Array_TotdMonth(const array<TotdMonth@> &in arr) {
     string ret = '{';
     for (uint i = 0; i < arr.Length; i++) {
@@ -71,7 +71,7 @@ shared class TotdResp {
     }
     return ret + '}';
   }
-  
+
   /* Methods // Mixin: Op Eq */
   bool opEquals(const TotdResp@ &in other) {
     if (other is null) {
@@ -90,7 +90,7 @@ shared class TotdResp {
       && _nextRequestTimestamp == other.nextRequestTimestamp
       ;
   }
-  
+
   /* Methods // Mixin: Row Serialization */
   const string ToRowString() {
     string ret = "";
@@ -99,7 +99,7 @@ shared class TotdResp {
     ret += '' + _nextRequestTimestamp + ",";
     return ret;
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -108,7 +108,7 @@ shared class TotdResp {
     }
     return ret;
   }
-  
+
   private const string TRS_Array_TotdMonth(const array<TotdMonth@> &in arr) {
     string ret = '';
     for (uint i = 0; i < arr.Length; i++) {
@@ -116,14 +116,14 @@ shared class TotdResp {
     }
     return ret;
   }
-  
+
   /* Methods // Mixin: ToFromBuffer */
   void WriteToBuffer(Buffer@ &in buf) {
     WTB_Array_TotdMonth(buf, _monthList);
     buf.Write(_itemCount);
     buf.Write(_nextRequestTimestamp);
   }
-  
+
   uint CountBufBytes() {
     uint bytes = 0;
     bytes += CBB_Array_TotdMonth(_monthList);
@@ -131,12 +131,12 @@ shared class TotdResp {
     bytes += 4;
     return bytes;
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
   }
-  
+
   void WTB_Array_TotdMonth(Buffer@ &in buf, const array<TotdMonth@> &in arr) {
     buf.Write(uint(arr.Length));
     for (uint ix = 0; ix < arr.Length; ix++) {
@@ -144,7 +144,7 @@ shared class TotdResp {
       el.WriteToBuffer(buf);
     }
   }
-  
+
   uint CBB_Array_TotdMonth(const array<TotdMonth@> &in arr) {
     uint bytes = 4;
     for (uint ix = 0; ix < arr.Length; ix++) {
@@ -157,7 +157,7 @@ shared class TotdResp {
 
 namespace _TotdResp {
   /* Namespace // Mixin: Row Serialization */
-  shared TotdResp@ FromRowString(const string &in str) {
+  TotdResp@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -194,8 +194,8 @@ namespace _TotdResp {
     uint nextRequestTimestamp = Text::ParseInt(chunk);
     return TotdResp(monthList, itemCount, nextRequestTimestamp);
   }
-  
-  shared const array<TotdMonth@>@ FRS_Array_TotdMonth(const string &in str) {
+
+  const array<TotdMonth@>@ FRS_Array_TotdMonth(const string &in str) {
     array<TotdMonth@> ret = array<TotdMonth@>(0);
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
@@ -216,15 +216,15 @@ namespace _TotdResp {
     }
     return ret;
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
+
   /* Namespace // Mixin: ToFromBuffer */
-  shared TotdResp@ ReadFromBuffer(Buffer@ &in buf) {
+  TotdResp@ ReadFromBuffer(Buffer@ &in buf) {
     /* Parse field: monthList of type: array<TotdMonth@> */
     array<TotdMonth@> monthList = RFB_Array_TotdMonth(buf);
     /* Parse field: itemCount of type: uint */
@@ -233,13 +233,13 @@ namespace _TotdResp {
     uint nextRequestTimestamp = buf.ReadUInt32();
     return TotdResp(monthList, itemCount, nextRequestTimestamp);
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }
-  
-  shared const array<TotdMonth@>@ RFB_Array_TotdMonth(Buffer@ &in buf) {
+
+  const array<TotdMonth@>@ RFB_Array_TotdMonth(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     array<TotdMonth@> arr = array<TotdMonth@>(len);
     for (uint i = 0; i < arr.Length; i++) {

@@ -1,12 +1,12 @@
-shared class ChallengeTimes {
+class ChallengeTimes {
   /* Properties // Mixin: Default Properties */
   private array<ChallengeTime@> _times;
-  
+
   /* Methods // Mixin: Default Constructor */
   ChallengeTimes(const ChallengeTime@[] &in times) {
     this._times = times;
   }
-  
+
   /* Methods // Mixin: ToFrom JSON Object */
   ChallengeTimes(const Json::Value &in j) {
     try {
@@ -18,7 +18,7 @@ shared class ChallengeTimes {
       OnFromJsonError(j);
     }
   }
-  
+
   Json::Value ToJson() {
     Json::Value _tmp_times = Json::Array();
     for (uint i = 0; i < _times.Length; i++) {
@@ -27,24 +27,24 @@ shared class ChallengeTimes {
     }
     return _tmp_times;
   }
-  
+
   void OnFromJsonError(const Json::Value &in j) const {
     warn('Parsing json failed: ' + Json::Write(j));
     throw('Failed to parse JSON: ' + getExceptionInfo());
   }
-  
+
   /* Methods // Mixin: Getters */
   const ChallengeTime@[]@ get_times() const {
     return this._times;
   }
-  
+
   /* Methods // Mixin: ToString */
   const string ToString() {
     return 'ChallengeTimes('
       + string::Join({'times=' + TS_Array_ChallengeTime(times)}, ', ')
       + ')';
   }
-  
+
   private const string TS_Array_ChallengeTime(const array<ChallengeTime@> &in arr) {
     string ret = '{';
     for (uint i = 0; i < arr.Length; i++) {
@@ -53,7 +53,7 @@ shared class ChallengeTimes {
     }
     return ret + '}';
   }
-  
+
   /* Methods // Mixin: Op Eq */
   bool opEquals(const ChallengeTimes@ &in other) {
     if (other is null) {
@@ -70,14 +70,14 @@ shared class ChallengeTimes {
       && _tmp_arrEq_times
       ;
   }
-  
+
   /* Methods // Mixin: Row Serialization */
   const string ToRowString() {
     string ret = "";
     ret += TRS_WrapString(TRS_Array_ChallengeTime(_times)) + ",";
     return ret;
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -86,7 +86,7 @@ shared class ChallengeTimes {
     }
     return ret;
   }
-  
+
   private const string TRS_Array_ChallengeTime(const array<ChallengeTime@> &in arr) {
     string ret = '';
     for (uint i = 0; i < arr.Length; i++) {
@@ -94,23 +94,23 @@ shared class ChallengeTimes {
     }
     return ret;
   }
-  
+
   /* Methods // Mixin: ToFromBuffer */
   void WriteToBuffer(Buffer@ &in buf) {
     WTB_Array_ChallengeTime(buf, _times);
   }
-  
+
   uint CountBufBytes() {
     uint bytes = 0;
     bytes += CBB_Array_ChallengeTime(_times);
     return bytes;
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
   }
-  
+
   void WTB_Array_ChallengeTime(Buffer@ &in buf, const array<ChallengeTime@> &in arr) {
     buf.Write(uint(arr.Length));
     for (uint ix = 0; ix < arr.Length; ix++) {
@@ -118,7 +118,7 @@ shared class ChallengeTimes {
       el.WriteToBuffer(buf);
     }
   }
-  
+
   uint CBB_Array_ChallengeTime(const array<ChallengeTime@> &in arr) {
     uint bytes = 4;
     for (uint ix = 0; ix < arr.Length; ix++) {
@@ -127,20 +127,20 @@ shared class ChallengeTimes {
     }
     return bytes;
   }
-  
+
   /* Methods // Mixin: ArrayProxy */
   ChallengeTime@ opIndex(uint ix) const {
     return _times[ix];
   }
-  
+
   uint get_Length() const {
     return _times.Length;
   }
-  
+
   bool IsEmpty() const {
     return _times.IsEmpty();
   }
-  
+
   void InsertLast(ChallengeTime@ v) {
     _times.InsertLast(v);
   }
@@ -148,7 +148,7 @@ shared class ChallengeTimes {
 
 namespace _ChallengeTimes {
   /* Namespace // Mixin: Row Serialization */
-  shared ChallengeTimes@ FromRowString(const string &in str) {
+  ChallengeTimes@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -167,8 +167,8 @@ namespace _ChallengeTimes {
     array<ChallengeTime@> times = FRS_Array_ChallengeTime(chunk);
     return ChallengeTimes(times);
   }
-  
-  shared const array<ChallengeTime@>@ FRS_Array_ChallengeTime(const string &in str) {
+
+  const array<ChallengeTime@>@ FRS_Array_ChallengeTime(const string &in str) {
     array<ChallengeTime@> ret = array<ChallengeTime@>(0);
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
@@ -189,26 +189,26 @@ namespace _ChallengeTimes {
     }
     return ret;
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
+
   /* Namespace // Mixin: ToFromBuffer */
-  shared ChallengeTimes@ ReadFromBuffer(Buffer@ &in buf) {
+  ChallengeTimes@ ReadFromBuffer(Buffer@ &in buf) {
     /* Parse field: times of type: array<ChallengeTime@> */
     array<ChallengeTime@> times = RFB_Array_ChallengeTime(buf);
     return ChallengeTimes(times);
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }
-  
-  shared const array<ChallengeTime@>@ RFB_Array_ChallengeTime(Buffer@ &in buf) {
+
+  const array<ChallengeTime@>@ RFB_Array_ChallengeTime(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     array<ChallengeTime@> arr = array<ChallengeTime@>(len);
     for (uint i = 0; i < arr.Length; i++) {

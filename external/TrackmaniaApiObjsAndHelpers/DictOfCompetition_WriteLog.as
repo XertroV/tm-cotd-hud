@@ -1,25 +1,32 @@
-shared class DictOfCompetition_WriteLog {
+class DictOfCompetition_WriteLog {
   /* Properties // Mixin: Default Properties */
   private dictionary@ _d;
-  
+
   /* Properties // Mixin: Dict Backing */
   private string _logPath;
   private bool _initialized = false;
-  
+
   /* Methods // Mixin: Dict Backing */
   DictOfCompetition_WriteLog(const string &in logDir, const string &in logFile) {
     @_d = dictionary();
     InitLog(logDir, logFile);
   }
-  
+
   private const string K(const string &in key) const {
     return key;
   }
-  
+
   Competition@ Get(const string &in key) const {
     return cast<Competition@>(_d[K(key)]);
   }
-  
+
+  Competition@ GetOr(const string &in key, Competition@ value) const {
+    if (Exists(key)) {
+      return Get(key);
+    }
+    return value;
+  }
+
   const Competition@[]@ GetMany(const string[] &in keys) const {
     array<Competition@> ret = {};
     for (uint i = 0; i < keys.Length; i++) {
@@ -28,17 +35,17 @@ shared class DictOfCompetition_WriteLog {
     }
     return ret;
   }
-  
-  
+
+
   void Set(const string &in key, Competition@ value) {
     @_d[K(key)] = value;
     WriteOnSet(key, value);
   }
-  
+
   bool Exists(const string &in key) {
     return _d.Exists(K(key));
   }
-  
+
   uint CountExists(const string[] &in keys) {
     uint ret = 0;
     for (uint i = 0; i < keys.Length; i++) {
@@ -47,15 +54,15 @@ shared class DictOfCompetition_WriteLog {
     }
     return ret;
   }
-  
+
   array<string>@ GetKeys() const {
     return _d.GetKeys();
   }
-  
+
   _DictOfCompetition_WriteLog::KvPair@ GetItem(const string &in key) const {
     return _DictOfCompetition_WriteLog::KvPair(key, Get(key));
   }
-  
+
   array<_DictOfCompetition_WriteLog::KvPair@>@ GetItems() const {
     array<_DictOfCompetition_WriteLog::KvPair@> ret = array<_DictOfCompetition_WriteLog::KvPair@>(GetSize());
     array<string> keys = GetKeys();
@@ -65,28 +72,28 @@ shared class DictOfCompetition_WriteLog {
     }
     return ret;
   }
-  
+
   Competition@ opIndex(const string &in key) {
     return Get(key);
   }
-  
+
   uint GetSize() const {
     return _d.GetSize();
   }
-  
+
   bool Delete(const string &in key) {
     return _d.Delete(K(key));
   }
-  
+
   void DeleteAll() {
     WriteLogOnResetAll();
     _d.DeleteAll();
   }
-  
+
   /* Dict Optional: Write Log = True */
   private void InitLog(const string &in logDir, const string &in logFile) {
     _logPath = logDir + '/' + logFile;
-    trace('DictOfCompetition_WriteLog dir: ' + logDir + ' | logFile: ' + logFile);
+    log_trace('DictOfCompetition_WriteLog dir: ' + logDir + ' | logFile: ' + logFile);
     if (logDir.Length == 0) {
       throw('Invalid path: ' + _logPath);
     }
@@ -95,7 +102,7 @@ shared class DictOfCompetition_WriteLog {
     }
     LoadWriteLogFromDisk();
   }
-  
+
   private void LoadWriteLogFromDisk() {
     if (IO::FileExists(_logPath)) {
       uint start = Time::Now;
@@ -106,7 +113,7 @@ shared class DictOfCompetition_WriteLog {
         auto kv = _DictOfCompetition_WriteLog::_KvPair::ReadFromBuffer(fb);
         @_d[K(kv.key)] = kv.val;
       }
-      trace('\\$a4fDictOfCompetition_WriteLog\\$777 loaded \\$a4f' + GetSize() + '\\$777 entries from: \\$a4f' + _logPath + '\\$777 in \\$a4f' + (Time::Now - start) + ' ms\\$777.');
+      log_trace('\\$a4fDictOfCompetition_WriteLog\\$777 loaded \\$a4f' + GetSize() + '\\$777 entries from: \\$a4f' + _logPath + '\\$777 in \\$a4f' + (Time::Now - start) + ' ms\\$777.');
       f.Close();
     } else {
       IO::File f(_logPath, IO::FileMode::Write);
@@ -114,17 +121,17 @@ shared class DictOfCompetition_WriteLog {
     }
     _initialized = true;
   }
-  
+
   bool get_Initialized() {
     return _initialized;
   }
-  
+
   void AwaitInitialized() {
     while (!_initialized) {
       yield();
     }
   }
-  
+
   private void WriteOnSet(const string &in key, Competition@ value) {
     _DictOfCompetition_WriteLog::KvPair@ p = _DictOfCompetition_WriteLog::KvPair(key, value);
     Buffer@ buf = Buffer();
@@ -134,7 +141,7 @@ shared class DictOfCompetition_WriteLog {
     f.Write(buf._buf);
     f.Close();
   }
-  
+
   private void WriteLogOnResetAll() {
     IO::File f(_logPath, IO::FileMode::Write);
     f.Write('');
@@ -144,33 +151,33 @@ shared class DictOfCompetition_WriteLog {
 
 namespace _DictOfCompetition_WriteLog {
   /* Namespace // Mixin: Dict Backing */
-  shared class KvPair {
+  class KvPair {
     /* Properties // Mixin: Default Properties */
     private string _key;
     private Competition@ _val;
-    
+
     /* Methods // Mixin: Default Constructor */
     KvPair(const string &in key, Competition@ val) {
       this._key = key;
       @this._val = val;
     }
-    
+
     /* Methods // Mixin: Getters */
     const string get_key() const {
       return this._key;
     }
-    
+
     Competition@ get_val() const {
       return this._val;
     }
-    
+
     /* Methods // Mixin: ToString */
     const string ToString() {
       return 'KvPair('
         + string::Join({'key=' + key, 'val=' + val.ToString()}, ', ')
         + ')';
     }
-    
+
     /* Methods // Mixin: Op Eq */
     bool opEquals(const KvPair@ &in other) {
       if (other is null) {
@@ -181,7 +188,7 @@ namespace _DictOfCompetition_WriteLog {
         && _val == other.val
         ;
     }
-    
+
     /* Methods // Mixin: Row Serialization */
     const string ToRowString() {
       string ret = "";
@@ -189,7 +196,7 @@ namespace _DictOfCompetition_WriteLog {
       ret += TRS_WrapString(_val.ToRowString()) + ",";
       return ret;
     }
-    
+
     private const string TRS_WrapString(const string &in s) {
       string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
       string ret = '(' + _s.Length + ':' + _s + ')';
@@ -198,29 +205,29 @@ namespace _DictOfCompetition_WriteLog {
       }
       return ret;
     }
-    
+
     /* Methods // Mixin: ToFromBuffer */
     void WriteToBuffer(Buffer@ &in buf) {
       WTB_LP_String(buf, _key);
       _val.WriteToBuffer(buf);
     }
-    
+
     uint CountBufBytes() {
       uint bytes = 0;
       bytes += 4 + _key.Length;
       bytes += _val.CountBufBytes();
       return bytes;
     }
-    
+
     void WTB_LP_String(Buffer@ &in buf, const string &in s) {
       buf.Write(uint(s.Length));
       buf.Write(s);
     }
   }
-  
+
   namespace _KvPair {
     /* Namespace // Mixin: Row Serialization */
-    shared KvPair@ FromRowString(const string &in str) {
+    KvPair@ FromRowString(const string &in str) {
       string chunk = '', remainder = str;
       array<string> tmp = array<string>(2);
       uint chunkLen = 0;
@@ -252,23 +259,23 @@ namespace _DictOfCompetition_WriteLog {
       Competition@ val = _Competition::FromRowString(chunk);
       return KvPair(key, val);
     }
-    
-    shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+    void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
       if (sample != expected) {
         throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
       }
     }
-    
+
     /* Namespace // Mixin: ToFromBuffer */
-    shared KvPair@ ReadFromBuffer(Buffer@ &in buf) {
+    KvPair@ ReadFromBuffer(Buffer@ &in buf) {
       /* Parse field: key of type: string */
       string key = RFB_LP_String(buf);
       /* Parse field: val of type: Competition@ */
       Competition@ val = _Competition::ReadFromBuffer(buf);
       return KvPair(key, val);
     }
-    
-    shared const string RFB_LP_String(Buffer@ &in buf) {
+
+    const string RFB_LP_String(Buffer@ &in buf) {
       uint len = buf.ReadUInt32();
       return buf.ReadString(len);
     }

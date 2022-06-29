@@ -1,10 +1,10 @@
-shared class MatchResult {
+class MatchResult {
   /* Properties // Mixin: Default Properties */
   private MaybeOfUint@ _rank;
   private MaybeOfUint@ _score;
   private string _participant;
   private string _zone;
-  
+
   /* Methods // Mixin: Default Constructor */
   MatchResult(MaybeOfUint@ rank, MaybeOfUint@ score, const string &in participant, const string &in zone) {
     @this._rank = rank;
@@ -12,7 +12,7 @@ shared class MatchResult {
     this._participant = participant;
     this._zone = zone;
   }
-  
+
   /* Methods // Mixin: ToFrom JSON Object */
   MatchResult(const Json::Value &in j) {
     try {
@@ -24,7 +24,7 @@ shared class MatchResult {
       OnFromJsonError(j);
     }
   }
-  
+
   Json::Value ToJson() {
     Json::Value j = Json::Object();
     j["rank"] = _rank.ToJson();
@@ -33,36 +33,36 @@ shared class MatchResult {
     j["zone"] = _zone;
     return j;
   }
-  
+
   void OnFromJsonError(const Json::Value &in j) const {
     warn('Parsing json failed: ' + Json::Write(j));
     throw('Failed to parse JSON: ' + getExceptionInfo());
   }
-  
+
   /* Methods // Mixin: Getters */
   MaybeOfUint@ get_rank() const {
     return this._rank;
   }
-  
+
   MaybeOfUint@ get_score() const {
     return this._score;
   }
-  
+
   const string get_participant() const {
     return this._participant;
   }
-  
+
   const string get_zone() const {
     return this._zone;
   }
-  
+
   /* Methods // Mixin: ToString */
   const string ToString() {
     return 'MatchResult('
       + string::Join({'rank=' + rank.ToString(), 'score=' + score.ToString(), 'participant=' + participant, 'zone=' + zone}, ', ')
       + ')';
   }
-  
+
   /* Methods // Mixin: Op Eq */
   bool opEquals(const MatchResult@ &in other) {
     if (other is null) {
@@ -75,7 +75,7 @@ shared class MatchResult {
       && _zone == other.zone
       ;
   }
-  
+
   /* Methods // Mixin: Row Serialization */
   const string ToRowString() {
     string ret = "";
@@ -85,7 +85,7 @@ shared class MatchResult {
     ret += TRS_WrapString(_zone) + ",";
     return ret;
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -94,7 +94,7 @@ shared class MatchResult {
     }
     return ret;
   }
-  
+
   /* Methods // Mixin: ToFromBuffer */
   void WriteToBuffer(Buffer@ &in buf) {
     _rank.WriteToBuffer(buf);
@@ -102,7 +102,7 @@ shared class MatchResult {
     WTB_LP_String(buf, _participant);
     WTB_LP_String(buf, _zone);
   }
-  
+
   uint CountBufBytes() {
     uint bytes = 0;
     bytes += _rank.CountBufBytes();
@@ -111,7 +111,7 @@ shared class MatchResult {
     bytes += 4 + _zone.Length;
     return bytes;
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
@@ -120,7 +120,7 @@ shared class MatchResult {
 
 namespace _MatchResult {
   /* Namespace // Mixin: Row Serialization */
-  shared MatchResult@ FromRowString(const string &in str) {
+  MatchResult@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -178,15 +178,15 @@ namespace _MatchResult {
     string zone = chunk;
     return MatchResult(rank, score, participant, zone);
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
+
   /* Namespace // Mixin: ToFromBuffer */
-  shared MatchResult@ ReadFromBuffer(Buffer@ &in buf) {
+  MatchResult@ ReadFromBuffer(Buffer@ &in buf) {
     /* Parse field: rank of type: MaybeOfUint@ */
     MaybeOfUint@ rank = _MaybeOfUint::ReadFromBuffer(buf);
     /* Parse field: score of type: MaybeOfUint@ */
@@ -197,8 +197,8 @@ namespace _MatchResult {
     string zone = RFB_LP_String(buf);
     return MatchResult(rank, score, participant, zone);
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }

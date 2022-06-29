@@ -1,4 +1,4 @@
-shared class TmMap {
+class TmMap {
   /* Properties // Mixin: Default Properties */
   private string _Id;
   private string _Uid;
@@ -18,7 +18,7 @@ shared class TmMap {
   private string _Type;
   private string _FileUrl;
   private string _ThumbnailUrl;
-  
+
   /* Methods // Mixin: Default Constructor */
   TmMap(const string &in Id, const string &in Uid, const string &in Name, const string &in FileName, uint AuthorScore, uint GoldScore, uint SilverScore, uint BronzeScore, const string &in AuthorDisplayName, const string &in AuthorAccountId, const string &in AuthorWebServicesUserId, const string &in SubmitterAccountId, const string &in SubmitterWebServicesUserId, const string &in Style, uint TimeStamp, const string &in Type, const string &in FileUrl, const string &in ThumbnailUrl) {
     this._Id = Id;
@@ -40,7 +40,7 @@ shared class TmMap {
     this._FileUrl = FileUrl;
     this._ThumbnailUrl = ThumbnailUrl;
   }
-  
+
   /* Methods // Mixin: ToFrom JSON Object */
   TmMap(const Json::Value &in j) {
     try {
@@ -66,7 +66,7 @@ shared class TmMap {
       OnFromJsonError(j);
     }
   }
-  
+
   Json::Value ToJson() {
     Json::Value j = Json::Object();
     j["Id"] = _Id;
@@ -89,92 +89,92 @@ shared class TmMap {
     j["ThumbnailUrl"] = _ThumbnailUrl;
     return j;
   }
-  
+
   void OnFromJsonError(const Json::Value &in j) const {
     warn('Parsing json failed: ' + Json::Write(j));
     throw('Failed to parse JSON: ' + getExceptionInfo());
   }
-  
+
   /* Methods // Mixin: Getters */
   const string get_Id() const {
     return this._Id;
   }
-  
+
   const string get_Uid() const {
     return this._Uid;
   }
-  
+
   const string get_Name() const {
     return this._Name;
   }
-  
+
   const string get_FileName() const {
     return this._FileName;
   }
-  
+
   uint get_AuthorScore() const {
     return this._AuthorScore;
   }
-  
+
   uint get_GoldScore() const {
     return this._GoldScore;
   }
-  
+
   uint get_SilverScore() const {
     return this._SilverScore;
   }
-  
+
   uint get_BronzeScore() const {
     return this._BronzeScore;
   }
-  
+
   const string get_AuthorDisplayName() const {
     return this._AuthorDisplayName;
   }
-  
+
   const string get_AuthorAccountId() const {
     return this._AuthorAccountId;
   }
-  
+
   const string get_AuthorWebServicesUserId() const {
     return this._AuthorWebServicesUserId;
   }
-  
+
   const string get_SubmitterAccountId() const {
     return this._SubmitterAccountId;
   }
-  
+
   const string get_SubmitterWebServicesUserId() const {
     return this._SubmitterWebServicesUserId;
   }
-  
+
   const string get_Style() const {
     return this._Style;
   }
-  
+
   uint get_TimeStamp() const {
     return this._TimeStamp;
   }
-  
+
   const string get_Type() const {
     return this._Type;
   }
-  
+
   const string get_FileUrl() const {
     return this._FileUrl;
   }
-  
+
   const string get_ThumbnailUrl() const {
     return this._ThumbnailUrl;
   }
-  
+
   /* Methods // Mixin: ToString */
   const string ToString() {
     return 'TmMap('
       + string::Join({'Id=' + Id, 'Uid=' + Uid, 'Name=' + Name, 'FileName=' + FileName, 'AuthorScore=' + '' + AuthorScore, 'GoldScore=' + '' + GoldScore, 'SilverScore=' + '' + SilverScore, 'BronzeScore=' + '' + BronzeScore, 'AuthorDisplayName=' + AuthorDisplayName, 'AuthorAccountId=' + AuthorAccountId, 'AuthorWebServicesUserId=' + AuthorWebServicesUserId, 'SubmitterAccountId=' + SubmitterAccountId, 'SubmitterWebServicesUserId=' + SubmitterWebServicesUserId, 'Style=' + Style, 'TimeStamp=' + '' + TimeStamp, 'Type=' + Type, 'FileUrl=' + FileUrl, 'ThumbnailUrl=' + ThumbnailUrl}, ', ')
       + ')';
   }
-  
+
   /* Methods // Mixin: Op Eq */
   bool opEquals(const TmMap@ &in other) {
     if (other is null) {
@@ -201,7 +201,7 @@ shared class TmMap {
       && _ThumbnailUrl == other.ThumbnailUrl
       ;
   }
-  
+
   /* Methods // Mixin: Row Serialization */
   const string ToRowString() {
     string ret = "";
@@ -225,7 +225,7 @@ shared class TmMap {
     ret += TRS_WrapString(_ThumbnailUrl) + ",";
     return ret;
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -234,7 +234,7 @@ shared class TmMap {
     }
     return ret;
   }
-  
+
   /* Methods // Mixin: ToFromBuffer */
   void WriteToBuffer(Buffer@ &in buf) {
     WTB_LP_String(buf, _Id);
@@ -256,7 +256,7 @@ shared class TmMap {
     WTB_LP_String(buf, _FileUrl);
     WTB_LP_String(buf, _ThumbnailUrl);
   }
-  
+
   uint CountBufBytes() {
     uint bytes = 0;
     bytes += 4 + _Id.Length;
@@ -279,12 +279,12 @@ shared class TmMap {
     bytes += 4 + _ThumbnailUrl.Length;
     return bytes;
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
   }
-  
+
   /* Methods // Mixin: From Game Object: CNadeoServicesMap */
   TmMap(CNadeoServicesMap@ &in gameObj) {
     this._Id = gameObj.Id;
@@ -310,7 +310,7 @@ shared class TmMap {
 
 namespace _TmMap {
   /* Namespace // Mixin: Row Serialization */
-  shared TmMap@ FromRowString(const string &in str) {
+  TmMap@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -530,15 +530,15 @@ namespace _TmMap {
     string ThumbnailUrl = chunk;
     return TmMap(Id, Uid, Name, FileName, AuthorScore, GoldScore, SilverScore, BronzeScore, AuthorDisplayName, AuthorAccountId, AuthorWebServicesUserId, SubmitterAccountId, SubmitterWebServicesUserId, Style, TimeStamp, Type, FileUrl, ThumbnailUrl);
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
+
   /* Namespace // Mixin: ToFromBuffer */
-  shared TmMap@ ReadFromBuffer(Buffer@ &in buf) {
+  TmMap@ ReadFromBuffer(Buffer@ &in buf) {
     /* Parse field: Id of type: string */
     string Id = RFB_LP_String(buf);
     /* Parse field: Uid of type: string */
@@ -577,8 +577,8 @@ namespace _TmMap {
     string ThumbnailUrl = RFB_LP_String(buf);
     return TmMap(Id, Uid, Name, FileName, AuthorScore, GoldScore, SilverScore, BronzeScore, AuthorDisplayName, AuthorAccountId, AuthorWebServicesUserId, SubmitterAccountId, SubmitterWebServicesUserId, Style, TimeStamp, Type, FileUrl, ThumbnailUrl);
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }

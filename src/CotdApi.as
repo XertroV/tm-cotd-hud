@@ -201,7 +201,7 @@ class CotdApi {
 }
 
 Json::Value FetchClubEndpoint(const string &in route) {
-    trace("[FetchClubEndpoint] Requesting: " + route);
+    log_trace("[FetchClubEndpoint] Requesting: " + route);
     while (!NadeoServices::IsAuthenticated("NadeoClubServices")) { yield(); }
     auto req = NadeoServices::Get("NadeoClubServices", route);
     req.Start();
@@ -211,7 +211,7 @@ Json::Value FetchClubEndpoint(const string &in route) {
 
 
 Json::Value FetchLiveEndpoint(const string &in route) {
-    trace("[FetchLiveEndpoint] Requesting: " + route);
+    log_trace("[FetchLiveEndpoint] Requesting: " + route);
     while (!NadeoServices::IsAuthenticated("NadeoLiveServices")) { yield(); }
     auto req = NadeoServices::Get("NadeoLiveServices", route);
     req.Start();
@@ -220,7 +220,7 @@ Json::Value FetchLiveEndpoint(const string &in route) {
 }
 
 Json::Value FetchCoreEndpoint(const string &in authToken, const string &in route) {
-    trace("[FetchCoreEndpoint] Requesting: " + route);
+    log_trace("[FetchCoreEndpoint] Requesting: " + route);
     // while (!NadeoServices::IsAuthenticated("NadeoServices")) { yield(); }
     // auto req = NadeoServices::Get("NadeoServices", route);
     auto req = Net::HttpRequest();

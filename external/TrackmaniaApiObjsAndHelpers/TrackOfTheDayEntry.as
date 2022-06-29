@@ -1,4 +1,4 @@
-shared class TrackOfTheDayEntry {
+class TrackOfTheDayEntry {
   /* Properties // Mixin: Default Properties */
   private uint _campaignId;
   private string _mapUid;
@@ -7,7 +7,7 @@ shared class TrackOfTheDayEntry {
   private string _seasonUid;
   private uint _startTimestamp;
   private uint _endTimestamp;
-  
+
   /* Methods // Mixin: Default Constructor */
   TrackOfTheDayEntry(uint campaignId, const string &in mapUid, uint day, uint monthDay, const string &in seasonUid, uint startTimestamp, uint endTimestamp) {
     this._campaignId = campaignId;
@@ -18,7 +18,7 @@ shared class TrackOfTheDayEntry {
     this._startTimestamp = startTimestamp;
     this._endTimestamp = endTimestamp;
   }
-  
+
   /* Methods // Mixin: ToFrom JSON Object */
   TrackOfTheDayEntry(const Json::Value &in j) {
     try {
@@ -33,7 +33,7 @@ shared class TrackOfTheDayEntry {
       OnFromJsonError(j);
     }
   }
-  
+
   Json::Value ToJson() {
     Json::Value j = Json::Object();
     j["campaignId"] = _campaignId;
@@ -45,48 +45,48 @@ shared class TrackOfTheDayEntry {
     j["endTimestamp"] = _endTimestamp;
     return j;
   }
-  
+
   void OnFromJsonError(const Json::Value &in j) const {
     warn('Parsing json failed: ' + Json::Write(j));
     throw('Failed to parse JSON: ' + getExceptionInfo());
   }
-  
+
   /* Methods // Mixin: Getters */
   uint get_campaignId() const {
     return this._campaignId;
   }
-  
+
   const string get_mapUid() const {
     return this._mapUid;
   }
-  
+
   uint get_day() const {
     return this._day;
   }
-  
+
   uint get_monthDay() const {
     return this._monthDay;
   }
-  
+
   const string get_seasonUid() const {
     return this._seasonUid;
   }
-  
+
   uint get_startTimestamp() const {
     return this._startTimestamp;
   }
-  
+
   uint get_endTimestamp() const {
     return this._endTimestamp;
   }
-  
+
   /* Methods // Mixin: ToString */
   const string ToString() {
     return 'TrackOfTheDayEntry('
       + string::Join({'campaignId=' + '' + campaignId, 'mapUid=' + mapUid, 'day=' + '' + day, 'monthDay=' + '' + monthDay, 'seasonUid=' + seasonUid, 'startTimestamp=' + '' + startTimestamp, 'endTimestamp=' + '' + endTimestamp}, ', ')
       + ')';
   }
-  
+
   /* Methods // Mixin: Op Eq */
   bool opEquals(const TrackOfTheDayEntry@ &in other) {
     if (other is null) {
@@ -102,7 +102,7 @@ shared class TrackOfTheDayEntry {
       && _endTimestamp == other.endTimestamp
       ;
   }
-  
+
   /* Methods // Mixin: Row Serialization */
   const string ToRowString() {
     string ret = "";
@@ -115,7 +115,7 @@ shared class TrackOfTheDayEntry {
     ret += '' + _endTimestamp + ",";
     return ret;
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -124,7 +124,7 @@ shared class TrackOfTheDayEntry {
     }
     return ret;
   }
-  
+
   /* Methods // Mixin: ToFromBuffer */
   void WriteToBuffer(Buffer@ &in buf) {
     buf.Write(_campaignId);
@@ -135,7 +135,7 @@ shared class TrackOfTheDayEntry {
     buf.Write(_startTimestamp);
     buf.Write(_endTimestamp);
   }
-  
+
   uint CountBufBytes() {
     uint bytes = 0;
     bytes += 4;
@@ -147,7 +147,7 @@ shared class TrackOfTheDayEntry {
     bytes += 4;
     return bytes;
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
@@ -156,7 +156,7 @@ shared class TrackOfTheDayEntry {
 
 namespace _TrackOfTheDayEntry {
   /* Namespace // Mixin: Row Serialization */
-  shared TrackOfTheDayEntry@ FromRowString(const string &in str) {
+  TrackOfTheDayEntry@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -233,15 +233,15 @@ namespace _TrackOfTheDayEntry {
     uint endTimestamp = Text::ParseInt(chunk);
     return TrackOfTheDayEntry(campaignId, mapUid, day, monthDay, seasonUid, startTimestamp, endTimestamp);
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
+
   /* Namespace // Mixin: ToFromBuffer */
-  shared TrackOfTheDayEntry@ ReadFromBuffer(Buffer@ &in buf) {
+  TrackOfTheDayEntry@ ReadFromBuffer(Buffer@ &in buf) {
     /* Parse field: campaignId of type: uint */
     uint campaignId = buf.ReadUInt32();
     /* Parse field: mapUid of type: string */
@@ -258,8 +258,8 @@ namespace _TrackOfTheDayEntry {
     uint endTimestamp = buf.ReadUInt32();
     return TrackOfTheDayEntry(campaignId, mapUid, day, monthDay, seasonUid, startTimestamp, endTimestamp);
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }

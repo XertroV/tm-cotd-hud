@@ -271,7 +271,7 @@ namespace DbSync {
  */
 
 // not sure why this doesn't work:
-// external shared class DictOfTrackOfTheDayEntry_WriteLog;
+// external class DictOfTrackOfTheDayEntry_WriteLog;
 
 class HistoryDb : JsonDb {
     CotdApi@ api;
@@ -502,7 +502,7 @@ class HistoryDb : JsonDb {
                     if (!challengesDb.Exists(id)) {
                         challengesDb.Set(id, c);
                     } else {
-                        trace("[SyncChallenges] Skipping challenge " + id + " since it's already in the DB.");
+                        log_trace("[SyncChallenges] Skipping challenge " + id + " since it's already in the DB.");
                     }
                 }
                 chs['items'] = Json::Value();
@@ -556,7 +556,7 @@ class HistoryDb : JsonDb {
         if (DbSync::IsUpkeep(sd)) {
             int td = Time::Stamp - ChallengesSdUpdatedAt();
             if (td > 15*60) {
-                trace("[ChallengeSyncUpkeep] Checking for updated challenges. (td=" + td + ")");
+                log_trace("[ChallengeSyncUpkeep] Checking for updated challenges. (td=" + td + ")");
                 auto latestCs = api.GetChallenges(1);
                 if (latestCs.GetType() != Json::Type::Array) {
                     // something went wrong, sleep and try again.
@@ -567,10 +567,10 @@ class HistoryDb : JsonDb {
                 auto latestC = latestCs[0];
                 int newMaxId = latestC['id'];
                 int oldMaxId = sd['state']['maxId'];
-                trace("[ChallengeSyncUpkeep] challenge latest IDs >> old: " + oldMaxId + ", new: " + newMaxId);
+                log_trace("[ChallengeSyncUpkeep] challenge latest IDs >> old: " + oldMaxId + ", new: " + newMaxId);
                 if (newMaxId > oldMaxId) {
                     /* in prog */
-                    trace("[ChallengeSyncUpkeep] triggering in-progress sync");
+                    log_trace("[ChallengeSyncUpkeep] triggering in-progress sync");
                     sd = GenChallengesInProgSyncData(newMaxId);
                     sd['state']['length'] = (newMaxId - oldMaxId + 1) * 2;
                 } else {
@@ -594,12 +594,12 @@ class HistoryDb : JsonDb {
         while (true) {
             toSleepSecs = 60;
             sd = TotdMapsSyncData();
-            trace("[TotdMapsSync] Loop Start. SD: " + Json::Write(sd));
+            log_trace("[TotdMapsSync] Loop Start. SD: " + Json::Write(sd));
             if (DbSync::IsInProg(sd)) {
                 uint nextReqTs = _SyncTotdMapsUpdateFromApi(false);
                 sd = DbSync::Gen(DbSync::UPKEEP);
                 sd['state']['updateAfter'] = "" + nextReqTs;
-                trace("[TotdMapsSync] Done InProg. SD: " + Json::Write(sd));
+                log_trace("[TotdMapsSync] Done InProg. SD: " + Json::Write(sd));
                 SetTotdMapsSyncData(sd);
             }
             if (DbSync::IsWaiting(sd)) {
@@ -615,7 +615,7 @@ class HistoryDb : JsonDb {
                     toSleepSecs = Math::Max(1, onlyAfter - Time::Stamp);
                 }
             }
-            trace("[SyncLoopTotdMaps] Sleeping for " + toSleepSecs + " seconds. SD: " + Json::Write(sd));
+            log_trace("[SyncLoopTotdMaps] Sleeping for " + toSleepSecs + " seconds. SD: " + Json::Write(sd));
             sleep(toSleepSecs * 1000);
         }
     }
@@ -749,7 +749,7 @@ class CotdIndexDb : JsonDb {
                     data.j['ymdToCotdChallenges'][ymd[0]] = year;
                 }
             } else {
-                trace("[AddChallenge] skipping challenge with name: " + name);
+                log_trace("[AddChallenge] skipping challenge with name: " + name);
             }
         }
         SetMaxId(id);
@@ -1192,7 +1192,7 @@ class MapDb : JsonDb {
             for (uint i = 0; i < playerInfos.Length; i++) {
                 auto pi = GI::NetPIToTrackmaniaPI(playerInfos[i]);
                 if (!playerNameDb.Exists(pi.WebServicesUserId)) {
-                    trace("Caching player id -> name: (" + pi.WebServicesUserId + ", " + pi.Name + ")");
+                    log_trace("Caching player id -> name: (" + pi.WebServicesUserId + ", " + pi.Name + ")");
                     playerNameDb.Set(pi.WebServicesUserId, pi.Name);
                     yield();  // lazy instead of making a list of keys and vals
                 }
@@ -1434,7 +1434,7 @@ class MapDb : JsonDb {
             timesQDb.PutQueueEntry(obj);
             logcall("QueueMapChallengeTimesGet", "queued " + challengeId);
         } else {
-            trace("QueueMapChallengeTimesGet skipping cached challenge " + challengeId);
+            log_trace("QueueMapChallengeTimesGet skipping cached challenge " + challengeId);
         }
     }
 

@@ -1,10 +1,10 @@
-shared class MatchResults {
+class MatchResults {
   /* Properties // Mixin: Default Properties */
   private uint _roundPosition;
   private string _matchLiveId;
   private string _scoreUnit;
   private array<MatchResult@> _results;
-  
+
   /* Methods // Mixin: Default Constructor */
   MatchResults(uint roundPosition, const string &in matchLiveId, const string &in scoreUnit, const MatchResult@[] &in results) {
     this._roundPosition = roundPosition;
@@ -12,7 +12,7 @@ shared class MatchResults {
     this._scoreUnit = scoreUnit;
     this._results = results;
   }
-  
+
   /* Methods // Mixin: ToFrom JSON Object */
   MatchResults(const Json::Value &in j) {
     try {
@@ -27,7 +27,7 @@ shared class MatchResults {
       OnFromJsonError(j);
     }
   }
-  
+
   Json::Value ToJson() {
     Json::Value j = Json::Object();
     j["roundPosition"] = _roundPosition;
@@ -41,36 +41,36 @@ shared class MatchResults {
     j["results"] = _tmp_results;
     return j;
   }
-  
+
   void OnFromJsonError(const Json::Value &in j) const {
     warn('Parsing json failed: ' + Json::Write(j));
     throw('Failed to parse JSON: ' + getExceptionInfo());
   }
-  
+
   /* Methods // Mixin: Getters */
   uint get_roundPosition() const {
     return this._roundPosition;
   }
-  
+
   const string get_matchLiveId() const {
     return this._matchLiveId;
   }
-  
+
   const string get_scoreUnit() const {
     return this._scoreUnit;
   }
-  
+
   const MatchResult@[]@ get_results() const {
     return this._results;
   }
-  
+
   /* Methods // Mixin: ToString */
   const string ToString() {
     return 'MatchResults('
       + string::Join({'roundPosition=' + '' + roundPosition, 'matchLiveId=' + matchLiveId, 'scoreUnit=' + scoreUnit, 'results=' + TS_Array_MatchResult(results)}, ', ')
       + ')';
   }
-  
+
   private const string TS_Array_MatchResult(const array<MatchResult@> &in arr) {
     string ret = '{';
     for (uint i = 0; i < arr.Length; i++) {
@@ -79,7 +79,7 @@ shared class MatchResults {
     }
     return ret + '}';
   }
-  
+
   /* Methods // Mixin: Op Eq */
   bool opEquals(const MatchResults@ &in other) {
     if (other is null) {
@@ -99,7 +99,7 @@ shared class MatchResults {
       && _tmp_arrEq_results
       ;
   }
-  
+
   /* Methods // Mixin: Row Serialization */
   const string ToRowString() {
     string ret = "";
@@ -109,7 +109,7 @@ shared class MatchResults {
     ret += TRS_WrapString(TRS_Array_MatchResult(_results)) + ",";
     return ret;
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -118,7 +118,7 @@ shared class MatchResults {
     }
     return ret;
   }
-  
+
   private const string TRS_Array_MatchResult(const array<MatchResult@> &in arr) {
     string ret = '';
     for (uint i = 0; i < arr.Length; i++) {
@@ -126,7 +126,7 @@ shared class MatchResults {
     }
     return ret;
   }
-  
+
   /* Methods // Mixin: ToFromBuffer */
   void WriteToBuffer(Buffer@ &in buf) {
     buf.Write(_roundPosition);
@@ -134,7 +134,7 @@ shared class MatchResults {
     WTB_LP_String(buf, _scoreUnit);
     WTB_Array_MatchResult(buf, _results);
   }
-  
+
   uint CountBufBytes() {
     uint bytes = 0;
     bytes += 4;
@@ -143,12 +143,12 @@ shared class MatchResults {
     bytes += CBB_Array_MatchResult(_results);
     return bytes;
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
   }
-  
+
   void WTB_Array_MatchResult(Buffer@ &in buf, const array<MatchResult@> &in arr) {
     buf.Write(uint(arr.Length));
     for (uint ix = 0; ix < arr.Length; ix++) {
@@ -156,7 +156,7 @@ shared class MatchResults {
       el.WriteToBuffer(buf);
     }
   }
-  
+
   uint CBB_Array_MatchResult(const array<MatchResult@> &in arr) {
     uint bytes = 4;
     for (uint ix = 0; ix < arr.Length; ix++) {
@@ -169,7 +169,7 @@ shared class MatchResults {
 
 namespace _MatchResults {
   /* Namespace // Mixin: Row Serialization */
-  shared MatchResults@ FromRowString(const string &in str) {
+  MatchResults@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -223,8 +223,8 @@ namespace _MatchResults {
     array<MatchResult@> results = FRS_Array_MatchResult(chunk);
     return MatchResults(roundPosition, matchLiveId, scoreUnit, results);
   }
-  
-  shared const array<MatchResult@>@ FRS_Array_MatchResult(const string &in str) {
+
+  const array<MatchResult@>@ FRS_Array_MatchResult(const string &in str) {
     array<MatchResult@> ret = array<MatchResult@>(0);
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
@@ -245,15 +245,15 @@ namespace _MatchResults {
     }
     return ret;
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
+
   /* Namespace // Mixin: ToFromBuffer */
-  shared MatchResults@ ReadFromBuffer(Buffer@ &in buf) {
+  MatchResults@ ReadFromBuffer(Buffer@ &in buf) {
     /* Parse field: roundPosition of type: uint */
     uint roundPosition = buf.ReadUInt32();
     /* Parse field: matchLiveId of type: string */
@@ -264,13 +264,13 @@ namespace _MatchResults {
     array<MatchResult@> results = RFB_Array_MatchResult(buf);
     return MatchResults(roundPosition, matchLiveId, scoreUnit, results);
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }
-  
-  shared const array<MatchResult@>@ RFB_Array_MatchResult(Buffer@ &in buf) {
+
+  const array<MatchResult@>@ RFB_Array_MatchResult(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     array<MatchResult@> arr = array<MatchResult@>(len);
     for (uint i = 0; i < arr.Length; i++) {
@@ -278,16 +278,16 @@ namespace _MatchResults {
     }
     return arr;
   }
-  
+
   /* Namespace // Mixin: DirOf */
-  shared class DirOf {
+  class DirOf {
     /* Properties // Mixin: Default Properties */
     private dictionary@ _objs;
-    
+
     /* Properties // Mixin: DirOfMatchResults */
     private string _dir;
     private bool _initialized = false;
-    
+
     /* Methods // Mixin: DirOfMatchResults */
     DirOf(const string &in dir) {
       @_objs = dictionary();
@@ -297,17 +297,17 @@ namespace _MatchResults {
       }
       RunInit();
     }
-    
+
     bool get_Initialized() {
       return _initialized;
     }
-    
+
     void AwaitInitialized() {
       while (!_initialized) {
         yield();
       }
     }
-    
+
     private void RunInit() {
       auto keys = IO::IndexFolder(_dir, false);
       for (uint i = 0; i < keys.Length; i++) {
@@ -318,38 +318,38 @@ namespace _MatchResults {
       }
       _initialized = true;
     }
-    
+
     private dictionary@ get_objs() {
       return _objs;
     }
-    
+
     const string K(uint key) {
       return '' + key;
     }
-    
+
     uint UnK(const string &in keyStr) {
       return Text::ParseInt(keyStr);
     }
-    
+
     const string GetFileName(uint key) {
       return K(key) + '.bin';
     }
-    
+
     const string GetFilePath(uint key) {
       return _dir + '/' + GetFileName(key);
     }
-    
+
     MatchResults@ ReadFileToObj(const string &in path) {
       IO::File f(path, IO::FileMode::Read);
       Buffer@ buf = Buffer(f.Read(f.Size()));
       f.Close();
       return ReadFromBuffer(buf);
     }
-    
+
     bool Exists(uint key) {
       return objs.Exists(K(key)) || IO::FileExists(GetFilePath(key));
     }
-    
+
     MatchResults@ Get(uint key) {
       if (objs.Exists(K(key))) {
         return cast<MatchResults@>(objs[K(key)]);
@@ -361,7 +361,7 @@ namespace _MatchResults {
       }
       return obj;
     }
-    
+
     void Set(uint key, MatchResults@ val) {
       IO::File f(GetFilePath(key), IO::FileMode::Write);
       Buffer@ buf = Buffer();
@@ -371,5 +371,5 @@ namespace _MatchResults {
       f.Close();
     }
   }
-  
+
 }

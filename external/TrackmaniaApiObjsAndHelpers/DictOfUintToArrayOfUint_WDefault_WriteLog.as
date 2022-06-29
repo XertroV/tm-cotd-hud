@@ -1,25 +1,32 @@
-shared class DictOfUintToArrayOfUint_WDefault_WriteLog {
+class DictOfUintToArrayOfUint_WDefault_WriteLog {
   /* Properties // Mixin: Default Properties */
   private dictionary@ _d;
-  
+
   /* Properties // Mixin: Dict Backing */
   private string _logPath;
   private bool _initialized = false;
-  
+
   /* Methods // Mixin: Dict Backing */
   DictOfUintToArrayOfUint_WDefault_WriteLog(const string &in logDir, const string &in logFile) {
     @_d = dictionary();
     InitLog(logDir, logFile);
   }
-  
+
   private const string K(uint key) const {
     return '' + key;
   }
-  
+
   const uint[]@ Get(uint key) const {
     return cast<array<uint>>(_d[K(key)]);
   }
-  
+
+  const uint[]@ GetOr(uint key, const uint[] &in value) const {
+    if (Exists(key)) {
+      return Get(key);
+    }
+    return value;
+  }
+
   const array<uint>[]@ GetMany(const uint[] &in keys) const {
     array<array<uint>> ret = {};
     for (uint i = 0; i < keys.Length; i++) {
@@ -28,23 +35,23 @@ shared class DictOfUintToArrayOfUint_WDefault_WriteLog {
     }
     return ret;
   }
-  
+
   const uint[]@ GetOrDefault(uint key) {
     if (!Exists(key)) {
       Set(key, {});
     }
     return Get(key);
   }
-  
+
   void Set(uint key, const uint[] &in value) {
     _d[K(key)] = value;
     WriteOnSet(key, value);
   }
-  
+
   bool Exists(uint key) {
     return _d.Exists(K(key));
   }
-  
+
   uint CountExists(const uint[] &in keys) {
     uint ret = 0;
     for (uint i = 0; i < keys.Length; i++) {
@@ -53,7 +60,7 @@ shared class DictOfUintToArrayOfUint_WDefault_WriteLog {
     }
     return ret;
   }
-  
+
   const uint[]@ GetKeys() const {
     array<uint> ret = {};
     auto _keys = _d.GetKeys();
@@ -63,11 +70,11 @@ shared class DictOfUintToArrayOfUint_WDefault_WriteLog {
     }
     return ret;
   }
-  
+
   _DictOfUintToArrayOfUint_WDefault_WriteLog::KvPair@ GetItem(uint key) const {
     return _DictOfUintToArrayOfUint_WDefault_WriteLog::KvPair(key, Get(key));
   }
-  
+
   array<_DictOfUintToArrayOfUint_WDefault_WriteLog::KvPair@>@ GetItems() const {
     array<_DictOfUintToArrayOfUint_WDefault_WriteLog::KvPair@> ret = array<_DictOfUintToArrayOfUint_WDefault_WriteLog::KvPair@>(GetSize());
     array<uint> keys = GetKeys();
@@ -77,28 +84,28 @@ shared class DictOfUintToArrayOfUint_WDefault_WriteLog {
     }
     return ret;
   }
-  
+
   const uint[]@ opIndex(uint key) {
     return Get(key);
   }
-  
+
   uint GetSize() const {
     return _d.GetSize();
   }
-  
+
   bool Delete(uint key) {
     return _d.Delete(K(key));
   }
-  
+
   void DeleteAll() {
     WriteLogOnResetAll();
     _d.DeleteAll();
   }
-  
+
   /* Dict Optional: Write Log = True */
   private void InitLog(const string &in logDir, const string &in logFile) {
     _logPath = logDir + '/' + logFile;
-    trace('DictOfUintToArrayOfUint_WDefault_WriteLog dir: ' + logDir + ' | logFile: ' + logFile);
+    log_trace('DictOfUintToArrayOfUint_WDefault_WriteLog dir: ' + logDir + ' | logFile: ' + logFile);
     if (logDir.Length == 0) {
       throw('Invalid path: ' + _logPath);
     }
@@ -107,7 +114,7 @@ shared class DictOfUintToArrayOfUint_WDefault_WriteLog {
     }
     LoadWriteLogFromDisk();
   }
-  
+
   private void LoadWriteLogFromDisk() {
     if (IO::FileExists(_logPath)) {
       uint start = Time::Now;
@@ -118,7 +125,7 @@ shared class DictOfUintToArrayOfUint_WDefault_WriteLog {
         auto kv = _DictOfUintToArrayOfUint_WDefault_WriteLog::_KvPair::ReadFromBuffer(fb);
         _d[K(kv.key)] = kv.val;
       }
-      trace('\\$a4fDictOfUintToArrayOfUint_WDefault_WriteLog\\$777 loaded \\$a4f' + GetSize() + '\\$777 entries from: \\$a4f' + _logPath + '\\$777 in \\$a4f' + (Time::Now - start) + ' ms\\$777.');
+      log_trace('\\$a4fDictOfUintToArrayOfUint_WDefault_WriteLog\\$777 loaded \\$a4f' + GetSize() + '\\$777 entries from: \\$a4f' + _logPath + '\\$777 in \\$a4f' + (Time::Now - start) + ' ms\\$777.');
       f.Close();
     } else {
       IO::File f(_logPath, IO::FileMode::Write);
@@ -126,17 +133,17 @@ shared class DictOfUintToArrayOfUint_WDefault_WriteLog {
     }
     _initialized = true;
   }
-  
+
   bool get_Initialized() {
     return _initialized;
   }
-  
+
   void AwaitInitialized() {
     while (!_initialized) {
       yield();
     }
   }
-  
+
   private void WriteOnSet(uint key, const uint[] &in value) {
     _DictOfUintToArrayOfUint_WDefault_WriteLog::KvPair@ p = _DictOfUintToArrayOfUint_WDefault_WriteLog::KvPair(key, value);
     Buffer@ buf = Buffer();
@@ -146,7 +153,7 @@ shared class DictOfUintToArrayOfUint_WDefault_WriteLog {
     f.Write(buf._buf);
     f.Close();
   }
-  
+
   private void WriteLogOnResetAll() {
     IO::File f(_logPath, IO::FileMode::Write);
     f.Write('');
@@ -156,33 +163,33 @@ shared class DictOfUintToArrayOfUint_WDefault_WriteLog {
 
 namespace _DictOfUintToArrayOfUint_WDefault_WriteLog {
   /* Namespace // Mixin: Dict Backing */
-  shared class KvPair {
+  class KvPair {
     /* Properties // Mixin: Default Properties */
     private uint _key;
     private array<uint> _val;
-    
+
     /* Methods // Mixin: Default Constructor */
     KvPair(uint key, const uint[] &in val) {
       this._key = key;
       this._val = val;
     }
-    
+
     /* Methods // Mixin: Getters */
     uint get_key() const {
       return this._key;
     }
-    
+
     const uint[]@ get_val() const {
       return this._val;
     }
-    
+
     /* Methods // Mixin: ToString */
     const string ToString() {
       return 'KvPair('
         + string::Join({'key=' + '' + key, 'val=' + TS_Array_uint(val)}, ', ')
         + ')';
     }
-    
+
     private const string TS_Array_uint(const array<uint> &in arr) {
       string ret = '{';
       for (uint i = 0; i < arr.Length; i++) {
@@ -191,7 +198,7 @@ namespace _DictOfUintToArrayOfUint_WDefault_WriteLog {
       }
       return ret + '}';
     }
-    
+
     /* Methods // Mixin: Op Eq */
     bool opEquals(const KvPair@ &in other) {
       if (other is null) {
@@ -209,7 +216,7 @@ namespace _DictOfUintToArrayOfUint_WDefault_WriteLog {
         && _tmp_arrEq_val
         ;
     }
-    
+
     /* Methods // Mixin: Row Serialization */
     const string ToRowString() {
       string ret = "";
@@ -217,7 +224,7 @@ namespace _DictOfUintToArrayOfUint_WDefault_WriteLog {
       ret += TRS_WrapString(TRS_Array_uint(_val)) + ",";
       return ret;
     }
-    
+
     private const string TRS_WrapString(const string &in s) {
       string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
       string ret = '(' + _s.Length + ':' + _s + ')';
@@ -226,7 +233,7 @@ namespace _DictOfUintToArrayOfUint_WDefault_WriteLog {
       }
       return ret;
     }
-    
+
     private const string TRS_Array_uint(const array<uint> &in arr) {
       string ret = '';
       for (uint i = 0; i < arr.Length; i++) {
@@ -234,25 +241,25 @@ namespace _DictOfUintToArrayOfUint_WDefault_WriteLog {
       }
       return ret;
     }
-    
+
     /* Methods // Mixin: ToFromBuffer */
     void WriteToBuffer(Buffer@ &in buf) {
       buf.Write(_key);
       WTB_Array_Uint(buf, _val);
     }
-    
+
     uint CountBufBytes() {
       uint bytes = 0;
       bytes += 4;
       bytes += CBB_Array_Uint(_val);
       return bytes;
     }
-    
+
     void WTB_LP_String(Buffer@ &in buf, const string &in s) {
       buf.Write(uint(s.Length));
       buf.Write(s);
     }
-    
+
     void WTB_Array_Uint(Buffer@ &in buf, const array<uint> &in arr) {
       buf.Write(uint(arr.Length));
       for (uint ix = 0; ix < arr.Length; ix++) {
@@ -260,7 +267,7 @@ namespace _DictOfUintToArrayOfUint_WDefault_WriteLog {
         buf.Write(el);
       }
     }
-    
+
     uint CBB_Array_Uint(const array<uint> &in arr) {
       uint bytes = 4;
       for (uint ix = 0; ix < arr.Length; ix++) {
@@ -270,10 +277,10 @@ namespace _DictOfUintToArrayOfUint_WDefault_WriteLog {
       return bytes;
     }
   }
-  
+
   namespace _KvPair {
     /* Namespace // Mixin: Row Serialization */
-    shared KvPair@ FromRowString(const string &in str) {
+    KvPair@ FromRowString(const string &in str) {
       string chunk = '', remainder = str;
       array<string> tmp = array<string>(2);
       uint chunkLen = 0;
@@ -301,8 +308,8 @@ namespace _DictOfUintToArrayOfUint_WDefault_WriteLog {
       array<uint> val = FRS_Array_uint(chunk);
       return KvPair(key, val);
     }
-    
-    shared const array<uint>@ FRS_Array_uint(const string &in str) {
+
+    const array<uint>@ FRS_Array_uint(const string &in str) {
       array<uint> ret = array<uint>(0);
       string chunk = '', remainder = str;
       array<string> tmp = array<string>(2);
@@ -319,28 +326,28 @@ namespace _DictOfUintToArrayOfUint_WDefault_WriteLog {
       }
       return ret;
     }
-    
-    shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+    void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
       if (sample != expected) {
         throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
       }
     }
-    
+
     /* Namespace // Mixin: ToFromBuffer */
-    shared KvPair@ ReadFromBuffer(Buffer@ &in buf) {
+    KvPair@ ReadFromBuffer(Buffer@ &in buf) {
       /* Parse field: key of type: uint */
       uint key = buf.ReadUInt32();
       /* Parse field: val of type: array<uint> */
       array<uint> val = RFB_Array_Uint(buf);
       return KvPair(key, val);
     }
-    
-    shared const string RFB_LP_String(Buffer@ &in buf) {
+
+    const string RFB_LP_String(Buffer@ &in buf) {
       uint len = buf.ReadUInt32();
       return buf.ReadString(len);
     }
-    
-    shared const array<uint>@ RFB_Array_Uint(Buffer@ &in buf) {
+
+    const array<uint>@ RFB_Array_Uint(Buffer@ &in buf) {
       uint len = buf.ReadUInt32();
       array<uint> arr = array<uint>(len);
       for (uint i = 0; i < arr.Length; i++) {

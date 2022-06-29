@@ -24,7 +24,7 @@ class CacheQualiTimes {
 
     void SetCache(const string &in mapUid, uint cId) {
         if (_cId == cId) return;
-        trace('SetCache for cId: ' + cId);
+        log_trace('SetCache for cId: ' + cId);
         _cId = cId;
         _ResetCacheArrays();
         @rawCotdMapTimes = PersistentData::GetCotdMapTimes(mapUid, cId);

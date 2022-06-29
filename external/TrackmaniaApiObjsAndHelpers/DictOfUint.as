@@ -1,22 +1,29 @@
-shared class DictOfUint {
+class DictOfUint {
   /* Properties // Mixin: Default Properties */
   private dictionary@ _d;
-  
+
   /* Properties // Mixin: Dict Backing */
-  
+
   /* Methods // Mixin: Dict Backing */
   DictOfUint() {
     @_d = dictionary();
   }
-  
+
   private const string K(const string &in key) const {
     return key;
   }
-  
+
   uint Get(const string &in key) const {
     return uint(_d[K(key)]);
   }
-  
+
+  uint GetOr(const string &in key, uint value) const {
+    if (Exists(key)) {
+      return Get(key);
+    }
+    return value;
+  }
+
   const uint[]@ GetMany(const string[] &in keys) const {
     array<uint> ret = {};
     for (uint i = 0; i < keys.Length; i++) {
@@ -25,16 +32,16 @@ shared class DictOfUint {
     }
     return ret;
   }
-  
-  
+
+
   void Set(const string &in key, uint value) {
     _d[K(key)] = value;
   }
-  
+
   bool Exists(const string &in key) {
     return _d.Exists(K(key));
   }
-  
+
   uint CountExists(const string[] &in keys) {
     uint ret = 0;
     for (uint i = 0; i < keys.Length; i++) {
@@ -43,15 +50,15 @@ shared class DictOfUint {
     }
     return ret;
   }
-  
+
   array<string>@ GetKeys() const {
     return _d.GetKeys();
   }
-  
+
   _DictOfUint::KvPair@ GetItem(const string &in key) const {
     return _DictOfUint::KvPair(key, Get(key));
   }
-  
+
   array<_DictOfUint::KvPair@>@ GetItems() const {
     array<_DictOfUint::KvPair@> ret = array<_DictOfUint::KvPair@>(GetSize());
     array<string> keys = GetKeys();
@@ -61,19 +68,19 @@ shared class DictOfUint {
     }
     return ret;
   }
-  
+
   uint opIndex(const string &in key) {
     return Get(key);
   }
-  
+
   uint GetSize() const {
     return _d.GetSize();
   }
-  
+
   bool Delete(const string &in key) {
     return _d.Delete(K(key));
   }
-  
+
   void DeleteAll() {
     _d.DeleteAll();
   }
@@ -81,33 +88,33 @@ shared class DictOfUint {
 
 namespace _DictOfUint {
   /* Namespace // Mixin: Dict Backing */
-  shared class KvPair {
+  class KvPair {
     /* Properties // Mixin: Default Properties */
     private string _key;
     private uint _val;
-    
+
     /* Methods // Mixin: Default Constructor */
     KvPair(const string &in key, uint val) {
       this._key = key;
       this._val = val;
     }
-    
+
     /* Methods // Mixin: Getters */
     const string get_key() const {
       return this._key;
     }
-    
+
     uint get_val() const {
       return this._val;
     }
-    
+
     /* Methods // Mixin: ToString */
     const string ToString() {
       return 'KvPair('
         + string::Join({'key=' + key, 'val=' + '' + val}, ', ')
         + ')';
     }
-    
+
     /* Methods // Mixin: Op Eq */
     bool opEquals(const KvPair@ &in other) {
       if (other is null) {
@@ -118,7 +125,7 @@ namespace _DictOfUint {
         && _val == other.val
         ;
     }
-    
+
     /* Methods // Mixin: Row Serialization */
     const string ToRowString() {
       string ret = "";
@@ -126,7 +133,7 @@ namespace _DictOfUint {
       ret += '' + _val + ",";
       return ret;
     }
-    
+
     private const string TRS_WrapString(const string &in s) {
       string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
       string ret = '(' + _s.Length + ':' + _s + ')';
@@ -135,29 +142,29 @@ namespace _DictOfUint {
       }
       return ret;
     }
-    
+
     /* Methods // Mixin: ToFromBuffer */
     void WriteToBuffer(Buffer@ &in buf) {
       WTB_LP_String(buf, _key);
       buf.Write(_val);
     }
-    
+
     uint CountBufBytes() {
       uint bytes = 0;
       bytes += 4 + _key.Length;
       bytes += 4;
       return bytes;
     }
-    
+
     void WTB_LP_String(Buffer@ &in buf, const string &in s) {
       buf.Write(uint(s.Length));
       buf.Write(s);
     }
   }
-  
+
   namespace _KvPair {
     /* Namespace // Mixin: Row Serialization */
-    shared KvPair@ FromRowString(const string &in str) {
+    KvPair@ FromRowString(const string &in str) {
       string chunk = '', remainder = str;
       array<string> tmp = array<string>(2);
       uint chunkLen = 0;
@@ -185,23 +192,23 @@ namespace _DictOfUint {
       uint val = Text::ParseInt(chunk);
       return KvPair(key, val);
     }
-    
-    shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+    void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
       if (sample != expected) {
         throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
       }
     }
-    
+
     /* Namespace // Mixin: ToFromBuffer */
-    shared KvPair@ ReadFromBuffer(Buffer@ &in buf) {
+    KvPair@ ReadFromBuffer(Buffer@ &in buf) {
       /* Parse field: key of type: string */
       string key = RFB_LP_String(buf);
       /* Parse field: val of type: uint */
       uint val = buf.ReadUInt32();
       return KvPair(key, val);
     }
-    
-    shared const string RFB_LP_String(Buffer@ &in buf) {
+
+    const string RFB_LP_String(Buffer@ &in buf) {
       uint len = buf.ReadUInt32();
       return buf.ReadString(len);
     }

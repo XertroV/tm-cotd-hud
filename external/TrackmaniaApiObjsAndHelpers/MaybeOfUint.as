@@ -1,18 +1,18 @@
-shared class MaybeOfUint {
+class MaybeOfUint {
   /* Properties // Mixin: Default Properties */
   private uint _val;
   private bool _hasVal;
-  
+
   /* Methods // Mixin: JMaybes */
   MaybeOfUint(uint val) {
     _hasVal = true;
     _val = val;
   }
-  
+
   MaybeOfUint() {
     _hasVal = false;
   }
-  
+
   MaybeOfUint(const Json::Value &in j) {
     if (j.GetType() % Json::Type::Null == 0) {
       _hasVal = false;
@@ -21,14 +21,14 @@ shared class MaybeOfUint {
       _val = uint(j);
     }
   }
-  
+
   bool opEquals(const MaybeOfUint@ &in other) {
     if (IsJust()) {
       return other.IsJust() && (_val == other.val);
     }
     return other.IsNothing();
   }
-  
+
   const string ToString() {
     string ret = 'MaybeOfUint(';
     if (IsJust()) {
@@ -36,14 +36,14 @@ shared class MaybeOfUint {
     }
     return ret + ')';
   }
-  
+
   const string ToRowString() {
     if (!_hasVal) {
       return 'null,';
     }
     return '' + _val + ',';
   }
-  
+
   private const string TRS_WrapString(const string &in s) {
     string _s = s.Replace('\n', '\\n').Replace('\r', '\\r');
     string ret = '(' + _s.Length + ':' + _s + ')';
@@ -52,14 +52,14 @@ shared class MaybeOfUint {
     }
     return ret;
   }
-  
+
   Json::Value ToJson() {
     if (IsNothing()) {
       return Json::Value(); // json null
     }
     return Json::Value(_val);
   }
-  
+
   void WriteToBuffer(Buffer@ &in buf) {
     if (IsNothing()) {
       buf.Write(uint8(0));
@@ -68,42 +68,42 @@ shared class MaybeOfUint {
       buf.Write(_val);
     }
   }
-  
+
   void WTB_LP_String(Buffer@ &in buf, const string &in s) {
     buf.Write(uint(s.Length));
     buf.Write(s);
   }
-  
+
   uint CountBufBytes() {
     if (IsNothing()) {
       return 1;
     }
     return 1 + 4;
   }
-  
+
   uint get_val() const {
     if (!_hasVal) {
       throw('Attempted to access .val of a Nothing');
     }
     return _val;
   }
-  
+
   uint GetOr(uint _default) {
     return _hasVal ? _val : _default;
   }
-  
+
   bool IsJust() const {
     return _hasVal;
   }
-  
+
   bool IsSome() const {
     return IsJust();
   }
-  
+
   bool IsNothing() const {
     return !_hasVal;
   }
-  
+
   bool IsNone() const {
     return IsNothing();
   }
@@ -111,7 +111,7 @@ shared class MaybeOfUint {
 
 namespace _MaybeOfUint {
   /* Namespace // Mixin: JMaybes */
-  shared MaybeOfUint@ FromRowString(const string &in str) {
+  MaybeOfUint@ FromRowString(const string &in str) {
     string chunk = '', remainder = str;
     array<string> tmp = array<string>(2);
     uint chunkLen = 0;
@@ -129,14 +129,14 @@ namespace _MaybeOfUint {
     uint val = Text::ParseInt(chunk);
     return MaybeOfUint(Text::ParseInt(chunk));
   }
-  
-  shared void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
+
+  void FRS_Assert_String_Eq(const string &in sample, const string &in expected) {
     if (sample != expected) {
       throw('[FRS_Assert_String_Eq] expected sample string to equal: "' + expected + '" but it was "' + sample + '" instead.');
     }
   }
-  
-  shared MaybeOfUint@ ReadFromBuffer(Buffer@ &in buf) {
+
+  MaybeOfUint@ ReadFromBuffer(Buffer@ &in buf) {
     bool isNothing = 0 == buf.ReadUInt8();
     if (isNothing) {
       return MaybeOfUint();
@@ -146,8 +146,8 @@ namespace _MaybeOfUint {
       return MaybeOfUint(val);
     }
   }
-  
-  shared const string RFB_LP_String(Buffer@ &in buf) {
+
+  const string RFB_LP_String(Buffer@ &in buf) {
     uint len = buf.ReadUInt32();
     return buf.ReadString(len);
   }

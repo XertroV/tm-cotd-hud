@@ -144,7 +144,7 @@ namespace Histogram {
 
     bool IsMouseInBox(float x, float y, float w, float h) {
         int mx = CotdExplorer::mousePos.x, my = CotdExplorer::mousePos.y;
-        // trace("mx=" + mx + ", x=" + x + ", my=" + my+ ", y=" + y);
+        // log_trace("mx=" + mx + ", x=" + x + ", my=" + my+ ", y=" + y);
         return (x <= mx && mx <= x + w) && (y <= my && my <= y + h);
     }
 
@@ -249,7 +249,7 @@ namespace Histogram {
         }
 
         float bucketWidth = float(xSpan) / float(nBuckets);
-        // trace("min: " + minRawD + ", max: " + maxRawD);
+        // log_trace("min: " + minRawD + ", max: " + maxRawD);
         // debug("bucketWidth: " + bucketWidth + " = " + xSpan + " / " + nBuckets);
 
         /* organize data */
