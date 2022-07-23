@@ -1,11 +1,13 @@
 class FilterAll {
     string f_name = '';
+    string f_id = '';
     bool f_favorites = false;
     uint f_div = 0;
-    FilterAll(const string &in name = '', uint div = 0, bool onlyFavorites = false) {
+    FilterAll(const string &in name = '', uint div = 0, bool onlyFavorites = false, const string &in _id = "") {
         f_name = name;
         f_div = div;
         f_favorites = onlyFavorites;
+        f_id = _id;
     }
 
     FilterAll(FilterAll@ other) {
@@ -15,6 +17,7 @@ class FilterAll {
         f_name = other.f_name;
         f_favorites = other.f_favorites;
         f_div = other.f_div;
+        f_id = other.f_id;
     }
 
     const string get_name() {
@@ -28,8 +31,15 @@ class FilterAll {
     bool opEquals(FilterAll@ other) {
         if (other is null) return false;
         return f_name == other.f_name
+            && f_id == other.f_id
             && f_favorites == other.f_favorites
             && f_div == other.f_div;
+    }
+
+    bool MatchPlayerFull(PlayerName@ pn) {
+        return MatchName(pn)
+            && MatchPlayerId(pn)
+            && MatchFavorites(pn);
     }
 
     bool MatchPlayerName(PlayerName@ pn) {
@@ -39,6 +49,10 @@ class FilterAll {
 
     bool MatchName(PlayerName@ pn) {
         return f_name.Length == 0 || pn.Name.ToLower().Contains(f_name.ToLower());
+    }
+
+    bool MatchPlayerId(PlayerName@ pn) {
+        return f_id.Length == 0 || pn.Id.Contains(f_id);
     }
 
     bool MatchDiv(uint div) {
@@ -54,12 +68,14 @@ enum FilterTableFlags {
     None = 0,
     Name = 1,
     FavOnly = 2,
-    NameAndFav = 3,
     Divs = 4,
-    All = 7
+    PresetCotdResults = 7,
+    Ids = 8,
+    PresetPlayers = 1 | 2 | 8,
+    All = 15
 }
 
-FilterAll@ DrawFilterAllTable(const string &in id, FilterAll@ filter, uint nDivs, FilterTableFlags flags = FilterTableFlags::All) {
+FilterAll@ DrawFilterAllTable(const string &in id, FilterAll@ filter, uint nDivs, FilterTableFlags flags = FilterTableFlags::PresetCotdResults) {
     FilterAll@ ret = FilterAll(filter);
     TextSubheading("Filters:");
     if (UI::BeginTable(id, 3, TableFlagsStretch())) {
@@ -71,10 +87,22 @@ FilterAll@ DrawFilterAllTable(const string &in id, FilterAll@ filter, uint nDivs
             UI::AlignTextToFramePadding();
             UI::Text('Name:');
             UI::TableNextColumn();
-            ret.f_name = UI::InputText('', filter.f_name);
+            ret.f_name = UI::InputText('##' + id + '-f-name', filter.f_name);
             UI::TableNextColumn();
             if (UI::Button(Icons::Times + '##' + id + '-reset-name')) {
                 ret.f_name = '';
+            }
+        }
+        if (flags & FilterTableFlags::Ids > 0) {
+            // filter name
+            UI::TableNextColumn();
+            UI::AlignTextToFramePadding();
+            UI::Text('ID:');
+            UI::TableNextColumn();
+            ret.f_id = UI::InputText('##' + id + '-f-id', filter.f_id);
+            UI::TableNextColumn();
+            if (UI::Button(Icons::Times + '##' + id + '-reset-id')) {
+                ret.f_id = '';
             }
         }
 
