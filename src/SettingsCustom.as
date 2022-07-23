@@ -126,6 +126,7 @@ PLAYERS
 [SettingsTab name="Players"]
 void RenderSettingsPlayers() {
     TextHeading("Players and Favorites");
+    UI::Text("\\$8f2Hint:\\$z You can right click on any player's name to (un)favorite them or copy their name and/or ID.");
     UI_PlayersAndFavs::RenderInner();
 }
 

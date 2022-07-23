@@ -139,15 +139,17 @@ class CotdApi {
     }
 
     // todo ret value
-    Json::Value GetMapRecords(const string &in seasonUid) {
+    Json::Value GetMapRecords(const string &in seasonUid, bool onlyWorld = true) {
         // Personal_Best
-        return CallLiveApiPath("/api/token/leaderboard/group/" + seasonUid + "/top");
+        string qParams = onlyWorld ? "?onlyWorld=true" : "";
+        return CallLiveApiPath("/api/token/leaderboard/group/" + seasonUid + "/top" + qParams);
     }
 
     /* see example/getMapRecords.json */
-    Json::Value GetMapRecords(const string &in seasonUid, const string &in mapUid) {
+    Json::Value GetMapRecords(const string &in seasonUid, const string &in mapUid, bool onlyWorld = true) {
         // Personal_Best
-        return CallLiveApiPath("/api/token/leaderboard/group/" + seasonUid + "/map/" + mapUid + "/top");
+        string qParams = onlyWorld ? "?onlyWorld=true" : "";
+        return CallLiveApiPath("/api/token/leaderboard/group/" + seasonUid + "/map/" + mapUid + "/top" + qParams);
     }
 
     /* CORE SERVICES API CALLS */
