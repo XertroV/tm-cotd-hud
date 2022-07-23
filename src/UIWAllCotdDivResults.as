@@ -40,13 +40,14 @@ namespace WAllDivResults {
     bool cached = false;
     FilterAll@ filter;
 
-    void SetParams(uint _cId, FilterAll@ filter = null) {
+    void SetParams(uint _cId, FilterAll@ filter = null, bool populateCache = true) {
         cached = false;
         cId = _cId;
         @mapDb = PersistentData::mapDb;
         cotdTitleStr = CotdExplorer::_ExplorerCotdTitleStr();
         SetFilter(filter);
-        startnew(PopulateCache);
+        if (populateCache)
+            startnew(PopulateCache);
     }
 
     void SetFilter(FilterAll@ f = null) {
@@ -110,7 +111,7 @@ namespace WAllDivResults {
                 auto gr = ++gRank;
                 auto maxDivRank = thisDiv * 64;
                 pid = match.results[j].participant;
-                auto player = PlayerName(pid);
+                auto player = PlayerNames::Get(pid);
                 auto rankDelta = GetRankDeltaStr(gr, pid);
                 string dr = r.IsSome() ? '' + r.GetOr(0xff) : '--';
                 @cache_rows[i] = Row('' + gr, rankDelta, dr, thisDiv, '', player);

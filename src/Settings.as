@@ -11,7 +11,10 @@ bool Setting_ShowHudInCotdKO = true;
 bool Setting_ShowHudAlways = false;
 
 [Setting category="General" name="HUD Window Locked?" description="When disabled: you can drag the window around. Combine with 'Show HUD Always' to allow positioning the window right now."]
-bool Setting_HudWindowLocked = true;
+bool Setting_HudWindowLocked = false;
+
+[Setting category="General" name="Show HUD even if interface is hidden?"]
+bool Setting_ShowHudEvenIfInterfaceHidden = true;
 
 
 

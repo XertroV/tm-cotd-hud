@@ -931,8 +931,8 @@ namespace CotdExplorer {
 
         w_AllCotdQualiTimes.Hide(); // hide all times window if it's still around from a previous COTD
         w_AllCotdDivResults.Hide();
-        WAllTimes::SetParams(mapUid, cId);
-        WAllDivResults::SetParams(compId);
+        WAllTimes::SetParams(mapUid, cId, null, false);
+        WAllDivResults::SetParams(compId, null, false);
     }
 
     void EnsurePlayerNames() {

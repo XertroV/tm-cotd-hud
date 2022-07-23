@@ -289,6 +289,10 @@ namespace DataManager {
     void ApiUpdateCotdStatus() {
         cotdLatest_Status = api.GetCotdStatus();
         logcall('ApiUpdateCotdStatus', Json::Write(cotdLatest_Status));
+        if (IsJsonNull(cotdLatest_Status)) {
+            // sleep 10s if the response is null to avoid spamming it too much
+            sleep(10 * 1000);
+        }
     }
 
     Json::Value GetChallenge() {

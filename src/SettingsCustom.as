@@ -12,105 +12,6 @@ namespace SettingsCustom {
     }
 }
 
-/*
-    #######  ##     ## ####  ######  ##    ##     ######  ######## ######## ######## #### ##    ##  ######    ######
-   ##     ## ##     ##  ##  ##    ## ##   ##     ##    ## ##          ##       ##     ##  ###   ## ##    ##  ##    ##
-   ##     ## ##     ##  ##  ##       ##  ##      ##       ##          ##       ##     ##  ####  ## ##        ##
-   ##     ## ##     ##  ##  ##       #####        ######  ######      ##       ##     ##  ## ## ## ##   ####  ######
-   ##  ## ## ##     ##  ##  ##       ##  ##            ## ##          ##       ##     ##  ##  #### ##    ##        ##
-   ##    ##  ##     ##  ##  ##    ## ##   ##     ##    ## ##          ##       ##     ##  ##   ### ##    ##  ##    ##
-    ##### ##  #######  ####  ######  ##    ##     ######  ########    ##       ##    #### ##    ##  ######    ######
-
- QUICK SETTINGS
-
- */
-
-[SettingsTab name="Quick Settings"]
-void RenderSettingsQuickSettings() {
-    TextHeading("Quick Settings");
-
-    if (UI::Button("Set Large HUD Histogram (21:9)")) {
-        Setting_HudHistogramPos = vec2(.77, .75);
-        Setting_HudHistogramSize = vec2(.2, .2);
-    }
-    AddSimpleTooltip("Set's histogram to lower right corner with width and height set to 20%.\nSuitable for ultrawide monitors.");
-
-    VPad();
-
-    if (UI::Button("Set HUD to show lots of rankings")) {
-        Setting_HudShowAboveDiv = 3;
-        Setting_HudShowBelowDiv = 3;
-        Setting_HudShowTopDivCutoffs = 5;
-        Setting_HudShowLastDivPop = true;
-        Setting_HudShowPlayerDiv = true;
-        Setting_HudShowDeltas = true;
-        ::OnSettingsChanged();
-    }
-    AddSimpleTooltip("This sets the HUD to show:\n"
-        + "  - Top 5 div cutoffs \n"
-        + "  - 3 divs above yours \n"
-        + "  - 3 divs below yours \n"
-        + "  - Your div and time \n"
-        + "  - # of players in last div \n"
-        + "  - Deltas for times compared to yours"
-        );
-}
-
-/*
-
-   ########   ######      ########     ###    ########    ###
-   ##     ## ##    ##     ##     ##   ## ##      ##      ## ##
-   ##     ## ##           ##     ##  ##   ##     ##     ##   ##
-   ########  ##   ####    ##     ## ##     ##    ##    ##     ##
-   ##     ## ##    ##     ##     ## #########    ##    #########
-   ##     ## ##    ##     ##     ## ##     ##    ##    ##     ##
-   ########   ######      ########  ##     ##    ##    ##     ##
-
-BG DATA
-
-*/
-
-[Setting hidden]
-bool Setting_SyncAllowBgQualifierTimes = false;
-
-[Setting hidden]
-bool Setting_AllowSaveQualiSnapshots = IsDev();
-
-[SettingsTab name="Data & DBs"]
-void RenderSettingsDataSync() {
-    TextHeading("Data Synchronization");
-
-    UI::BeginDisabled();
-    UI::Text("NOT IMPLEMENTED YET // TODO");
-
-    Setting_SyncAllowBgQualifierTimes = UI::Checkbox(
-        "Allow Background Download of Qualifier Times for ALL COTDs?",
-        Setting_SyncAllowBgQualifierTimes);
-    AddSimpleTooltip("This will proactively download all COTD qualifier times in the background.\n"
-        + "It will consume about 400 KB per TOTD for ~2021 onwards. (at least 200 MB)\n"
-        + "This is required to show a complete list of any given player's qualifying times.");
-
-    UI::EndDisabled();
-
-    TextHeading("Qualifier Replays");
-
-    // 1.5 - 15 MB per COTD
-    // allows animated playback
-    // must be recorded during COTD
-    // folder `live-times-cache`
-
-    Setting_AllowSaveQualiSnapshots = UI::Checkbox(
-        "Save Snapshots of Qualifier Rankings?",
-        Setting_AllowSaveQualiSnapshots);
-    AddSimpleTooltip("This will save the full rankings during qualifiers every 8 seconds.\n"
-        + "It will consume about 15 MB per COTD (and 1.5 MB for COTN / COTM).\n\n"
-        + "This is required to show animated qualifier histograms and detect when someone\n"
-        + "has rejoined a COTD qualifier and gets a worse time than they previously had.\n"
-        + "\\$fe9  Note: these features are not implemented yet."
-        );
-
-}
-
 /**
 
  ##     ## ####  ######  ########  #######   ######   ########     ###    ##     ##
@@ -211,6 +112,123 @@ void RenderSettingsHudHistogram() {
 
 
 /*
+  ########  ##          ###    ##    ## ######## ########   ######
+  ##     ## ##         ## ##    ##  ##  ##       ##     ## ##    ##
+  ##     ## ##        ##   ##    ####   ##       ##     ## ##
+  ########  ##       ##     ##    ##    ######   ########   ######
+  ##        ##       #########    ##    ##       ##   ##         ##
+  ##        ##       ##     ##    ##    ##       ##    ##  ##    ##
+  ##        ######## ##     ##    ##    ######## ##     ##  ######
+
+PLAYERS
+*/
+
+[SettingsTab name="Players"]
+void RenderSettingsPlayers() {
+    TextHeading("Players and Favorites");
+    UI_PlayersAndFavs::RenderInner();
+}
+
+/*
+    #######  ##     ## ####  ######  ##    ##     ######  ######## ######## ######## #### ##    ##  ######    ######
+   ##     ## ##     ##  ##  ##    ## ##   ##     ##    ## ##          ##       ##     ##  ###   ## ##    ##  ##    ##
+   ##     ## ##     ##  ##  ##       ##  ##      ##       ##          ##       ##     ##  ####  ## ##        ##
+   ##     ## ##     ##  ##  ##       #####        ######  ######      ##       ##     ##  ## ## ## ##   ####  ######
+   ##  ## ## ##     ##  ##  ##       ##  ##            ## ##          ##       ##     ##  ##  #### ##    ##        ##
+   ##    ##  ##     ##  ##  ##    ## ##   ##     ##    ## ##          ##       ##     ##  ##   ### ##    ##  ##    ##
+    ##### ##  #######  ####  ######  ##    ##     ######  ########    ##       ##    #### ##    ##  ######    ######
+
+ QUICK SETTINGS
+
+ */
+
+[SettingsTab name="Quick Settings"]
+void RenderSettingsQuickSettings() {
+    TextHeading("Quick Settings");
+
+    if (UI::Button("Set Large HUD Histogram (21:9)")) {
+        Setting_HudHistogramPos = vec2(.77, .75);
+        Setting_HudHistogramSize = vec2(.2, .2);
+    }
+    AddSimpleTooltip("Set's histogram to lower right corner with width and height set to 20%.\nSuitable for ultrawide monitors.");
+
+    VPad();
+
+    if (UI::Button("Set HUD to show lots of rankings")) {
+        Setting_HudShowAboveDiv = 3;
+        Setting_HudShowBelowDiv = 3;
+        Setting_HudShowTopDivCutoffs = 5;
+        Setting_HudShowLastDivPop = true;
+        Setting_HudShowPlayerDiv = true;
+        Setting_HudShowDeltas = true;
+        ::OnSettingsChanged();
+    }
+    AddSimpleTooltip("This sets the HUD to show:\n"
+        + "  - Top 5 div cutoffs \n"
+        + "  - 3 divs above yours \n"
+        + "  - 3 divs below yours \n"
+        + "  - Your div and time \n"
+        + "  - # of players in last div \n"
+        + "  - Deltas for times compared to yours"
+        );
+}
+
+/*
+
+   ########   ######      ########     ###    ########    ###
+   ##     ## ##    ##     ##     ##   ## ##      ##      ## ##
+   ##     ## ##           ##     ##  ##   ##     ##     ##   ##
+   ########  ##   ####    ##     ## ##     ##    ##    ##     ##
+   ##     ## ##    ##     ##     ## #########    ##    #########
+   ##     ## ##    ##     ##     ## ##     ##    ##    ##     ##
+   ########   ######      ########  ##     ##    ##    ##     ##
+
+BG DATA
+
+*/
+
+[Setting hidden]
+bool Setting_SyncAllowBgQualifierTimes = false;
+
+[Setting hidden]
+bool Setting_AllowSaveQualiSnapshots = IsDev();
+
+[SettingsTab name="Data & DBs"]
+void RenderSettingsDataSync() {
+    TextHeading("Data Synchronization");
+
+    UI::BeginDisabled();
+    UI::Text("NOT IMPLEMENTED YET // TODO");
+
+    Setting_SyncAllowBgQualifierTimes = UI::Checkbox(
+        "Allow Background Download of Qualifier Times for ALL COTDs?",
+        Setting_SyncAllowBgQualifierTimes);
+    AddSimpleTooltip("This will proactively download all COTD qualifier times in the background.\n"
+        + "It will consume about 400 KB per TOTD for ~2021 onwards. (at least 200 MB)\n"
+        + "This is required to show a complete list of any given player's qualifying times.");
+
+    UI::EndDisabled();
+
+    TextHeading("Qualifier Replays");
+
+    // 1.5 - 15 MB per COTD
+    // allows animated playback
+    // must be recorded during COTD
+    // folder `live-times-cache`
+
+    Setting_AllowSaveQualiSnapshots = UI::Checkbox(
+        "Save Snapshots of Qualifier Rankings?",
+        Setting_AllowSaveQualiSnapshots);
+    AddSimpleTooltip("This will save the full rankings during qualifiers every 8 seconds.\n"
+        + "It will consume about 15 MB per COTD (and 1.5 MB for COTN / COTM).\n\n"
+        + "This is required to show animated qualifier histograms and detect when someone\n"
+        + "has rejoined a COTD qualifier and gets a worse time than they previously had.\n"
+        + "\\$fe9  Note: these features are not implemented yet."
+        );
+
+}
+
+/*
     ###    ########  ##     ##    ###    ##    ##  ######  ######## ########
    ## ##   ##     ## ##     ##   ## ##   ###   ## ##    ## ##       ##     ##
   ##   ##  ##     ## ##     ##  ##   ##  ####  ## ##       ##       ##     ##
@@ -221,19 +239,13 @@ void RenderSettingsHudHistogram() {
 ADVANCED
 */
 
-
-
-
-// [Setting category="Dev Features" name="Show HUD even if interface is hidden?" description=""]
-[Setting category="General" name="Show HUD even if interface is hidden?"]
-bool Setting_ShowHudEvenIfInterfaceHidden = true;
-
 [Setting hidden]
 bool Setting_AdvCheckPriorCotd = false;
 
 const int s_ReloadClickWait = 15 * 1000;
 int s_lastReloadClick = -1 * s_ReloadClickWait;
 
+#if DEV
 [SettingsTab name="Advanced"]
 void RenderSettingsAdvanced() {
     auto now = Time::get_Now();
@@ -265,7 +277,7 @@ void RenderSettingsAdvanced() {
     AddSimpleTooltip("Check this box to always get data for the previous COTD instead of the current one. (Except when you're actually in COTD.)\nUseful for testing. Make sure to reload COTD data after changing this setting.");
 
 }
-
+#endif
 
 
 /*
@@ -280,7 +292,7 @@ DEBUG
 */
 
 
-// #if DEV || UNIT_TEST
+#if DEV || UNIT_TEST
 
 [SettingsTab name="Debug"]
 void RenderSettingsDebug() {
@@ -401,11 +413,28 @@ void TestSaveReplay() {
 network.ClientManiaAppPlayground.UILayers[20] (20 in single player, 16 on totd)
 SendCustomEvent("playmap-endracemenu-save-replay", [])
 */
+#endif
 
 CMwNod@ _DebugNod;
 WindowState@ _DebugNodWindow = WindowState("View Nod: ----", false);
 
-// #endif
+
+
+
+/*
+
+    ###    ########   #######  ##     ## ########
+   ## ##   ##     ## ##     ## ##     ##    ##
+  ##   ##  ##     ## ##     ## ##     ##    ##
+ ##     ## ########  ##     ## ##     ##    ##
+ ######### ##     ## ##     ## ##     ##    ##
+ ##     ## ##     ## ##     ## ##     ##    ##
+ ##     ## ########   #######   #######     ##
+
+ABOUT
+
+*/
+
 
 const string mkRainbowName(const string &in name) {
     return rainbowLoopColorCycle(name, true);

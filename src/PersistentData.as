@@ -1465,7 +1465,7 @@ class MapDb : JsonDb {
                 c++;
             }
         }
-        if (c > 0) playerNameQDb.Persist();
+        // if (c > 0) playerNameQDb.Persist();
     }
 
     void QueueCompRoundsGet(const uint[] &in comps, bool force = false) {

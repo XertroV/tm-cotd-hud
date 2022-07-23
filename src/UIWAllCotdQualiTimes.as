@@ -44,13 +44,14 @@ namespace WAllTimes {
     bool cached = false;
     FilterAll@ filter;
 
-    void SetParams(const string &in _mapUid, int _cId, FilterAll@ filter = null) {
+    void SetParams(const string &in _mapUid, int _cId, FilterAll@ filter = null, bool populateCache = true) {
         cached = false;
         mapUid = _mapUid;
         cId = _cId;
         cotdTitleStr = CotdExplorer::_ExplorerCotdTitleStr();
         SetFilter(filter);
-        startnew(PopulateCache);
+        if (populateCache)
+            startnew(PopulateCache);
     }
 
     void SetFilter(FilterAll@ f = null) {

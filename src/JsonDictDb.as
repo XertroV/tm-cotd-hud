@@ -54,6 +54,10 @@ class JsonDictDb {
         return r;
     }
 
+    string[]@ GetKeys() const {
+        return d.GetKeys();
+    }
+
     void Set(const string &in key, const string &in value) {
         d[key] = value;
         CsvWrite(key, value);
