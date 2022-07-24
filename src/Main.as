@@ -14,7 +14,7 @@ bool UserHasCorrectPermissions() {
         && Permissions::PlayPastOfficialMonthlyCampaign() // Past TOTDs can be played
         && Permissions::PlayCurrentOfficialMonthlyCampaign() // Current TOTDs can be played
         && Permissions::PlayAgainstReplay() // possible future feature
-        && Permissions::PlayLocalMap() // ¯\_(ツ)_/¯
+        && Permissions::PlayLocalMap() // we possibly load arbitrary URLs
         ;
     logcall("UserHasCorrectPermissions", ret ? 'true' : 'false');
     return ret;
