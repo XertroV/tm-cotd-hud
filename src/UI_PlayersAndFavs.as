@@ -75,7 +75,7 @@ namespace UI_PlayersAndFavs {
     }
 
     void DrawPlayersTable() {
-        if (UI::BeginTable('players-and-favs', 3, TableFlagsStretch() | UI::TableFlags::ScrollY)) { //  | UI::TableFlags::Sortable
+        if (UI::BeginTable('players-and-favs', 3, TableFlagsStretch() | UI::TableFlags::ScrollY | UI::TableFlags::Sortable)) { //  | UI::TableFlags::Sortable
             UI::TableSetupScrollFreeze(0, 1);
             UI::TableSetupColumn("Player", UI::TableColumnFlags::WidthFixed, 200);
             UI::TableSetupColumn("Is Fav?", UI::TableColumnFlags::WidthFixed | UI::TableColumnFlags::NoSort, 50);
@@ -84,7 +84,7 @@ namespace UI_PlayersAndFavs {
             UI::TableHeadersRow();
 
             // auto sortSpecs = UI::TableGetSortSpecs();
-            // if (sortSpecs !is null && sortSpecs.Dirty || m_sortDirty) {
+            // if (sortSpecs !is null && (sortSpecs.Dirty || m_sortDirty)) {
             //     // set this early b/c we need to do this async
             //     sortSpecs.Dirty = false;
             //     m_sortDirty = false;
@@ -128,23 +128,18 @@ namespace UI_PlayersAndFavs {
     //         auto spec = specs[i];
     //         if (spec.SortDirection == UI::SortDirection::None) continue;
 
-    //         uint chunkSize = 100;
-    //         // for (uint chunkSize = 100; chunkSize < filteredPlayers.Length; chunkSize *= 2) {
-    //             for (uint sortFrom = 0; sortFrom < filteredPlayers.Length; sortFrom += chunkSize) {
-    //                 if (spec.SortDirection == UI::SortDirection::Ascending) {
-    //                     switch (spec.ColumnIndex) {
-    //                         case 0: filteredPlayers.Sort(function(a, b) { return a.Name < b.Name; }, sortFrom, chunkSize); break;
-    //                         case 2: filteredPlayers.Sort(function(a, b) { return a.Id < b.Id; }, sortFrom, chunkSize); break;
-    //                     }
-    //                 } else if (spec.SortDirection == UI::SortDirection::Descending) {
-    //                     switch (spec.ColumnIndex) {
-    //                         case 0: filteredPlayers.Sort(function(a, b) { return a.Name > b.Name; }, sortFrom, chunkSize); break;
-    //                         case 2: filteredPlayers.Sort(function(a, b) { return a.Id > b.Id; }, sortFrom, chunkSize); break;
-    //                     }
-    //                 }
-    //                 yield();
+    //         if (spec.SortDirection == UI::SortDirection::Ascending) {
+    //             switch (spec.ColumnIndex) {
+    //                 case 0: filteredPlayers.Sort(function(a, b) { return a.Name < b.Name; }); break;
+    //                 case 2: filteredPlayers.Sort(function(a, b) { return a.Id < b.Id; }); break;
     //             }
-    //         // }
+    //         } else if (spec.SortDirection == UI::SortDirection::Descending) {
+    //             switch (spec.ColumnIndex) {
+    //                 case 0: filteredPlayers.Sort(function(a, b) { return a.Name > b.Name; }); break;
+    //                 case 2: filteredPlayers.Sort(function(a, b) { return a.Id > b.Id; }); break;
+    //             }
+    //         }
+    //         yield();
     //     }
     // }
 }
