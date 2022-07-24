@@ -791,7 +791,11 @@ namespace CotdExplorer {
                 if (!debounce.CanProceed('play-map-btn', 2000)) {
                     warn("debouncer said we could proceed but then said we can't proceed :(");
                 }
-                GI::GetMainaTitleControlScriptAPI().PlayMap(wstring(string(map.FileUrl)), '', '');
+                if (UserHasCorrectPermissions()) {
+                    GI::GetMainaTitleControlScriptAPI().PlayMap(wstring(string(map.FileUrl)), '', '');
+                } else {
+                    UI::ShowNotification("COTD HUD Impossible Situation", "It shouldn't have been be possible to get here, but in any case, you can't play the map b/c you don't have permissions.", vec4(.8, .5, .2, .9), 10000);
+                }
             };
             UI::PopFont();
 
