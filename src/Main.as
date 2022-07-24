@@ -22,7 +22,7 @@ bool UserHasCorrectPermissions() {
 void NotifyInsufficientPermissions() {
     string msg1 = "COTD HUD: Insufficient Permissions";
     string msg2 = "COTD HUD requires Club access. All features are disabled if your account lacks any of the necessary permissions.";
-    UI::ShowNotification(msg1, msg2, vec4(.9, .4, .2, .99), 15 * 1000);
+    UI::ShowNotification(msg1, msg2, vec4(.9, .4, .2, .9), 15 * 1000);
     warn(msg1 + "! " + msg2);
 }
 
