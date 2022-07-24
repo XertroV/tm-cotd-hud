@@ -6,7 +6,38 @@ bool EulaAccepted() {
     return Setting_EulaAgreement;
 }
 
+bool UserHasCorrectPermissions() {
+    bool ret = true
+        && Permissions::PlayOnlineCompetition() // cotd
+        && Permissions::PlayRecords() // possible future feature
+        && Permissions::ViewRecords() // TOTD records are downloaded
+        && Permissions::PlayPastOfficialMonthlyCampaign() // Past TOTDs can be played
+        && Permissions::PlayCurrentOfficialMonthlyCampaign() // Current TOTDs can be played
+        && Permissions::PlayAgainstReplay() // possible future feature
+        ;
+    logcall("UserHasCorrectPermissions", ret ? 'true' : 'false');
+    return ret;
+}
+
+void NotifyInsufficientPermissions() {
+    string msg1 = "COTD HUD: Insufficient Permissions";
+    string msg2 = "COTD HUD requires Club access. All features are disabled if your account lacks any of the necessary permissions.";
+    UI::ShowNotification(msg1, msg2, vec4(.9, .4, .2, .99), 15 * 1000);
+    warn(msg1 + "! " + msg2);
+}
+
 void Main() {
+    if (!UserHasCorrectPermissions()) {
+        NotifyInsufficientPermissions();
+        log_warn("Exiting early due to insufficient permissions.");
+        return;
+    }
+
+#if DEV
+    UI::ShowNotification("Now testing NotifyInsufficientPermissions:", 15 * 1000);
+    NotifyInsufficientPermissions();
+#endif
+
     startnew(InitSpecialPlayers);
 
 #if DEV

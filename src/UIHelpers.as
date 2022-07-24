@@ -136,9 +136,6 @@ void DrawCenteredInTable(const string &in tableId, DrawUiElems@ f) {
 }
 
 void DrawCenteredInTable(const string &in tableId, DrawUiElemsWRef@ f, ref@ r) {
-    // UI::PushStyleColor(UI::Col::TableBorderLight, vec4(1,1,1,1));
-    // UI::PushStyleColor(UI::Col::TableBorderStrong, vec4(1,1,1,1));
-    // UI::PopStyleColor(2);
     //  | TableFBorders()
     if (UI::BeginTable(tableId, 3, TableFlagsStretch())) {
         /* CENTERING!!! */
