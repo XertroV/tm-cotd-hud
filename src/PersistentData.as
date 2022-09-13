@@ -1044,7 +1044,7 @@ class MapDb : JsonDb {
         auto toGet = recordsQDb.GetQueueItemNow();
         string mapUid = toGet['uid'];
         bool shouldGet = PersistentData::MapRecordsShouldRegen(mapUid)
-                            || toGet.Get('force', false);
+                            || (!IsJsonNull(toGet) && toGet.Get('force', false));
         if (shouldGet) {
             string seasonUid = toGet['seasonUid'];
             logcall("_SyncLoopRecords", "Downloading " + seasonUid + "/" + mapUid);

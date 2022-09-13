@@ -172,6 +172,19 @@ void DevMain() {
     // TestStringLen();
     // MemBufTest();
     // BufTest();
+    return;
+    while (true) {
+        if (GI::PlaygroundNotNull()) {
+            auto input = GI::GetManiaAppPlayground().Input;
+            uint loopStart = Time::Now;
+            // while (loopStart + 50 > Time::Now) {
+                if (input.PendingEvents.Length > 0) {
+                    print("[" + Time::Now + "] input.PendingEvents.Length: " + input.PendingEvents.Length);
+                }
+            // }
+        }
+        sleep(1);
+    }
 }
 
 void TestStringLen() {

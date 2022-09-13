@@ -1,5 +1,16 @@
 namespace GI {
-    CTrackMania@ get_app() {
+    // CTrackMania@ get_app() {
+    //     return GetTmApp();
+    // }
+
+    CTrackMania@ app {
+        get {
+            return GetTmApp();
+        }
+    }
+
+
+    CTrackMania@ GetApp() {
         return GetTmApp();
     }
 
