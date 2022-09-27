@@ -441,8 +441,8 @@ string MakeColorsOkayDarkMode(const string &in raw) {
                 if (l < 60) {
                     // logcall("MakeColorsOkayDarkMode", "fixing color: " + _test + " / " + c.ManiaColor + " / " + c.ToString());
                     c.v = vec3(c.v.x, c.v.y, Math::Max(100. - l, 60));
-                    // logcall("MakeColorsOkayDarkMode", "new color: " + Vec3ToStr(c.get_rgb()) + " / " + c.get_ManiaColor() + " / " + c.ToString());
-                    ret = ret.Replace(_test, c.get_ManiaColor());
+                    // logcall("MakeColorsOkayDarkMode", "new color: " + Vec3ToStr(c.get_rgb()) + " / " + c.ManiaColor + " / " + c.ToString());
+                    ret = ret.Replace(_test, c.ManiaColor);
                 }
             }
         }

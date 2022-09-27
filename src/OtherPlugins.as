@@ -7,7 +7,7 @@ Meta::PluginSetting@ GetOtherPluginSettingVar(string pluginId, string varName) {
 
     auto _settings = plugin.GetSettings();
     for (uint i = 0; i < _settings.Length; i++) {
-        if (_settings[i].get_VarName() == varName) {
+        if (_settings[i].VarName == varName) {
             return _settings[i];
         }
     }

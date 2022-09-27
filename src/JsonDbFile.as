@@ -140,14 +140,14 @@ class JsonDb {
         db['time'] = "" + Time::Stamp;  /* as string to avoid losing precision */
         db['data'] = _data.j;
         db['dbId'] = dbId;
-        string sz = Json::Write(db);
-        if (Time::Now - start > 10) {
-            trace_benchmark('JsonDb.Persist (Json::Write) ' + path, Time::Now - start);
-            yield();
-        }
-        IO::File file(path, IO::FileMode::Write);
-        file.Write(sz);
-        // Json::ToFile(path, db);
+        // string sz = Json::Write(db);
+        // if (Time::Now - start > 3) {
+        //     trace_benchmark('JsonDb.Persist (Json::Write) ' + path, Time::Now - start);
+        //     yield();
+        // }
+        // IO::File file(path, IO::FileMode::Write);
+        // file.Write(sz);
+        Json::ToFile(path, db);
         uint end = Time::Now;
         Unlock();
         if (!IO::FileExists(path)) {
@@ -161,7 +161,13 @@ class JsonDb {
 class JsonQueueDb : JsonDb {
     JsonQueueDb(const string &in path, const string &in dbId) {
         super(path, dbId);
-        StartSyncLoops();
+        // try {
+            StartSyncLoops();
+        // } catch {
+        //     string msg = 'JsonQueueDb failed to load path: ' + path + '. Exception info: \n' + getExceptionInfo();
+        //     warn(msg);
+        //     throw(msg);
+        // }
         // asdf
     }
 
@@ -172,9 +178,9 @@ class JsonQueueDb : JsonDb {
     }
 
     void CheckInitQueueData() {
-        if (IsJsonNull(data.j) || IsJsonNull(data.j['meta']) || IsJsonNull(data.j['queue'])) {
+        if (IsJsonNull(data.j) || IsJsonNull(data.j['meta']) || IsJsonNull(data.j['queue']) || data.j['meta'].Length < 6) {
             if (IsJsonNull(data.j)) data.j = Json::Object();
-            if (IsJsonNull(data.j['meta'])) {
+            if (IsJsonNull(data.j['meta']) || data.j['meta'].Length < 6) {
                 auto meta = Json::Object();
                 meta['version'] = 1;
                 meta['queueStart'] = "0"; /* these are strings because Json::Write turns integers into x.xxxE+5 sci notation format above ~1m. */
@@ -190,7 +196,7 @@ class JsonQueueDb : JsonDb {
     }
 
     int get_Length() {
-        return data.j['meta']['length'];
+        return int(data.j['meta']['length']);
     }
 
     int get_CompletedHowMany() {
@@ -198,7 +204,8 @@ class JsonQueueDb : JsonDb {
     }
 
     void ValidateUpgradeQueue() {
-        int version = data.j['meta']['version'];
+        trace_dev("data.j.meta: " + Json::Write(data.j['meta']));
+        int version = int(data.j['meta']['version']);
         if (version != 1) {
             throw("Cannot deal with versions other than 1.");
         }
@@ -223,12 +230,12 @@ class JsonQueueDb : JsonDb {
         int end = GetQueueEnd();
         data.j['queue']['' + end] = j; /* add queue item */
         auto meta = data.j['meta']; /* update metadata */
-        int len = meta['length'];
+        int len = int(meta['length']);
         meta['queueEnd'] = '' + (end + 1);
         meta['length'] = len + 1;
         meta['isEmpty'] = false;
         meta['lastUpdated'] = "" + Time::Stamp;
-        data.j['meta'] = meta;
+        // data.j['meta'] = meta;
         if (persist) Persist();
     }
 
@@ -240,10 +247,18 @@ class JsonQueueDb : JsonDb {
     }
 
     int GetQueueEnd() {
-        return Text::ParseInt(data.j['meta']['queueEnd']);
+        if (IsJsonNull(data.j['meta']['queueEnd'])) {
+            data.j = Json::Value();
+            CheckInitQueueData();
+        }
+        return Text::ParseInt(string(data.j['meta']['queueEnd']));
     }
 
     int GetQueueStart() {
+        if (IsJsonNull(data.j['meta']['queueStart'])) {
+            data.j = Json::Value();
+            CheckInitQueueData();
+        }
         return Text::ParseInt(data.j['meta']['queueStart']);
     }
 
@@ -255,7 +270,7 @@ class JsonQueueDb : JsonDb {
         int start = GetQueueStart();
         int end = GetQueueEnd();
         auto meta = data.j['meta'];
-        int length = meta['length'];
+        int length = int(meta['length']);
         // consistency checks
         if (start >= end || length <= 0) {
             throw("JsonQueueDb *Emergency* // start >= end (and queue is non-empty) OR length <= 0");
@@ -275,7 +290,6 @@ class JsonQueueDb : JsonDb {
         meta['isEmpty'] = length - 1 == 0;
         meta['lastUpdated'] = "" + Time::Stamp;
         /* update db */
-        data.j['meta'] = meta;
         data.j['queue'].Remove('' + start);
         // save and return
         if (persist) Persist();
@@ -310,6 +324,7 @@ class JsonQueueDb : JsonDb {
     }
 
     bool IsEmpty() {
-        return data.j['meta']['isEmpty'];
+        if (IsJsonNull(data.j['meta']['isEmpty'])) return true;
+        return bool(data.j['meta']['isEmpty']);
     }
 }

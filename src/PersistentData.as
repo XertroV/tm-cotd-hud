@@ -156,7 +156,9 @@ namespace PersistentData {
     Json::Value[] GetCotdMapTimesAllJ(const string &in mapUid, int cId) {
         auto jb = GetCotdMapTimes(mapUid, cId);
         int nPlayers = jb.j['nPlayers'];
+        // int nPlayers = int(jb.j['nPlayers']);
         int chunkSize = jb.j['chunkSize'];
+        // int chunkSize = int(jb.j['chunkSize']);
         Json::Value[] rows = array<Json::Value>(nPlayers);
         string[] keys = jb.j['ranges'].GetKeys();
         for (uint i = 0; i < keys.Length; i++) {
@@ -240,20 +242,20 @@ namespace DbSync {
     const string UPKEEP = "Upkeep";
 
     bool Exists(Json::Value &in v) {
-        return v.GetType() == Json::Type::Object;
+        return v.GetType() == Json::Type::Object && v['id'].GetType() == Json::Type::String;
     }
 
     bool IsStarted(Json::Value &in v) {
-        return Exists(v) && v['id'] == STARTED;
+        return Exists(v) && string(v['id']) == STARTED;
     }
     bool IsInProg(Json::Value &in v) {
-        return Exists(v) && v['id'] == IN_PROG;
+        return Exists(v) && string(v['id']) == IN_PROG;
     }
     bool IsWaiting(Json::Value &in v) {
-        return Exists(v) && v['id'] == WAITING;
+        return Exists(v) && string(v['id']) == WAITING;
     }
     bool IsUpkeep(Json::Value &in v) {
-        return Exists(v) && v['id'] == UPKEEP;
+        return Exists(v) && string(v['id']) == UPKEEP;
     }
 
     Json::Value Gen(const string &in id) {
@@ -360,7 +362,9 @@ class HistoryDb : JsonDb {
     }
 
     int GetChallengesMaxId() {
-        return data.j['challenges'].Get('maxId', 0);
+        if (IsJsonNull(data.j['challenges'])) return 0;
+        if (IsJsonNull(data.j['challenges']['maxId'])) return 0;
+        return int(data.j['challenges']['maxId']);
     }
 
     dictionary@ cachedChallenges = dictionary();
@@ -410,6 +414,7 @@ class HistoryDb : JsonDb {
     /* start the sync if it's null/not pres */
 
     void _SyncChallengesInit() {
+        dev_logcall('_SyncChallengesInit', 'data.j: ' + Json::Write(data.j));
         if (IsJsonNull(data.j['sync'])) {
             data.j['sync'] = Json::Object();
         }
@@ -425,7 +430,8 @@ class HistoryDb : JsonDb {
         auto sd = data.j['sync']['challenges'];
         if (DbSync::IsStarted(sd)) {
             /* this is only true while we are doing the initial requests */
-            auto latestChallenge = api.GetChallenges(1, 0)[0];
+            auto challenges = Challenges(api.GetChallenges(1, 0));
+            auto latestChallenge = challenges[0];
             auto newSD = Json::Object();
             newSD['id'] = DbSync::IN_PROG;
             auto state = Json::Object();
@@ -435,8 +441,8 @@ class HistoryDb : JsonDb {
                we don't miss any if they're published while we're syncing.
                (Batch size = 100)
             */
-            state['maxId'] = latestChallenge['id'];
-            state['offset'] = latestChallenge['id'] - 95;
+            state['maxId'] = latestChallenge.id;
+            state['offset'] = latestChallenge.id - 95;
             state['updatedAt'] = "" + Time::Stamp;
             newSD['state'] = state;
             SetChallengesSyncData(newSD);
@@ -448,11 +454,12 @@ class HistoryDb : JsonDb {
     }
 
     int ChallengesSdUpdatedAt() {
-        return Text::ParseInt(ChallengesSyncData()['state']['updatedAt']);
+        return Text::ParseInt(string(ChallengesSyncData()['state']['updatedAt']));
     }
 
     int ChallengesSdMaxId() {
-        return ChallengesSyncData()['state'].Get('maxId', 0);
+        if (IsJsonNull(ChallengesSyncData()['state']['maxId'])) return 0;
+        return ChallengesSyncData()['state']['maxId'];
     }
 
     void SetChallengesSyncData(Json::Value &in sd) {
@@ -473,7 +480,7 @@ class HistoryDb : JsonDb {
                 */
                 auto latestChallenge = Challenge(api.GetChallenges(1, 0)[0]);
                 int maxId = latestChallenge.id;
-                int oldMaxId = sd['state']['maxId'];
+                int oldMaxId = int(sd['state']['maxId']);
                 int maxIdDiff = maxId - oldMaxId;
                 print("Updating ChallengesSync state (stale).");
                 print("> Old sync data: " + Json::Write(sd));
@@ -483,17 +490,18 @@ class HistoryDb : JsonDb {
             }
             /* based on the offset, get 100 rows and populate the sync'd DB.
             */
-            int offset = sd['state']['offset'];
+            int offset = int(sd['state']['offset']);
             Challenges@ newCs;
             if (offset < 0) {
-                @newCs = Challenges({});
+                @newCs = Challenges(api.GetChallenges(1, 0));
             } else {
-                int length = sd['state'].Get('length', 100);
+                int length = Math::Min(100, sd['state'].Get('length', 100));
                 @newCs = Challenges(api.GetChallenges(length, offset));
             }
             if (newCs.Length > 0) {  // we'll get `[]` response when offset is too high.
-                // todo
                 auto chs = data.j['challenges'];
+                print(Json::Write(chs));
+                print(newCs.ToString());
                 chs['maxId'] = newCs[0].id;  // first entry always has highest id
                 for (uint i = 0; i < newCs.Length; i++) {
                     auto c = newCs[i];
@@ -505,8 +513,6 @@ class HistoryDb : JsonDb {
                         log_trace("[SyncChallenges] Skipping challenge " + id + " since it's already in the DB.");
                     }
                 }
-                chs['items'] = Json::Value();
-                data.j['challenges'] = chs;
             }
             if (offset == 0) {
                 // this was the last run we had to do
@@ -535,9 +541,14 @@ class HistoryDb : JsonDb {
         }
     }
 
+    int JToInt(Json::Value j, int _default = 0) {
+        if (IsJsonNull(j)) return _default;
+        return int(j);
+    }
+
     Json::Value GenChallengesInProgSyncData(int maxId) {
         auto j = DbSync::Gen(DbSync::IN_PROG);
-        int oldMaxId = data.j['challenges']['maxId'];
+        int oldMaxId = JToInt(data.j['challenges']['maxId']);
         int offset = Math::Max(0, maxId - oldMaxId - 95);
         j['state']['maxId'] = maxId;
         j['state']['offset'] = offset;
@@ -546,7 +557,7 @@ class HistoryDb : JsonDb {
 
     Json::Value GenChallengesUpkeepSyncData() {
         auto j = DbSync::Gen(DbSync::UPKEEP);
-        j['state']['maxId'] = data.j['challenges']['maxId'];
+        j['state']['maxId'] = JToInt(data.j['challenges']['maxId']);
         return j;
     }
 
@@ -565,8 +576,8 @@ class HistoryDb : JsonDb {
                     return;
                 }
                 auto latestC = latestCs[0];
-                int newMaxId = latestC['id'];
-                int oldMaxId = sd['state']['maxId'];
+                int newMaxId = int(latestC['id']);
+                int oldMaxId = IsJsonNull(sd['state']['maxId']) ? 0 : int(sd['state']['maxId']);
                 log_trace("[ChallengeSyncUpkeep] challenge latest IDs >> old: " + oldMaxId + ", new: " + newMaxId);
                 if (newMaxId > oldMaxId) {
                     /* in prog */
@@ -593,14 +604,13 @@ class HistoryDb : JsonDb {
         int toSleepSecs;
         while (true) {
             toSleepSecs = 60;
-            sd = TotdMapsSyncData();
             log_trace("[TotdMapsSync] Loop Start. SD: " + Json::Write(sd));
             if (DbSync::IsInProg(sd)) {
                 uint nextReqTs = _SyncTotdMapsUpdateFromApi(false);
                 sd = DbSync::Gen(DbSync::UPKEEP);
                 sd['state']['updateAfter'] = "" + nextReqTs;
                 log_trace("[TotdMapsSync] Done InProg. SD: " + Json::Write(sd));
-                SetTotdMapsSyncData(sd);
+                Persist();
             }
             if (DbSync::IsWaiting(sd)) {
                 throw("Ahh! TotdMapsSync should never be WAITING.");
@@ -609,7 +619,7 @@ class HistoryDb : JsonDb {
                 int onlyAfter = Text::ParseInt(sd['state']['updateAfter']);
                 if (Time::Stamp > onlyAfter) {
                     sd = DbSync::Gen(DbSync::IN_PROG);
-                    SetTotdMapsSyncData(sd);
+                    Persist();
                     toSleepSecs = 1;
                 } else {
                     toSleepSecs = Math::Max(1, onlyAfter - Time::Stamp);
@@ -640,7 +650,7 @@ class HistoryDb : JsonDb {
                 }
             }
         }
-        data.j['totd'] = Json::Value();
+        // data.j['totd'] = Json::Value();
         if (persist) Persist();
         return totdData.nextRequestTimestamp;
     }
@@ -650,6 +660,7 @@ class HistoryDb : JsonDb {
     }
 
     void SetTotdMapsSyncData(Json::Value sd, bool persist = true) {
+        // if (data.j['sync']['totd'] != @sd)
         data.j['sync']['totd'] = sd;
         if (persist) Persist();
     }
@@ -734,19 +745,19 @@ class CotdIndexDb : JsonDb {
             if (name.SubStr(0, 14) == "Cup of the Day") {
                 string date = name.SubStr(15, 10); // 2022-05-30
                 string[] ymd = FromYMD(date);
-                auto ymdObj = data.j['ymdToCotdChallenges'];
-                auto year = ymdObj[ymd[0]];
+                auto @ymdObj = data.j['ymdToCotdChallenges'];
+                auto @year = ymdObj[ymd[0]];
                 if (year.GetType() != Json::Type::Object) year = Json::Object();
-                auto month = year[ymd[1]];
+                auto @month = year[ymd[1]];
                 if (month.GetType() != Json::Type::Object) month = Json::Object();
-                auto day = month[ymd[2]];
+                auto @day = month[ymd[2]];
                 if (day.GetType() != Json::Type::Array) day = Json::Array();
 
                 if (!JArrayContainsInt(day, cId)) {
                     day.Add(cId);
-                    month[ymd[2]] = day;
-                    year[ymd[1]] = month;
-                    data.j['ymdToCotdChallenges'][ymd[0]] = year;
+                    // month[ymd[2]] = day;
+                    // year[ymd[1]] = month;
+                    // data.j['ymdToCotdChallenges'][ymd[0]] = year;
                 }
             } else {
                 log_trace("[AddChallenge] skipping challenge with name: " + name);
@@ -814,9 +825,9 @@ class CotdIndexDb : JsonDb {
         if (comp !is null) {
             if (comp.name.SubStr(0, 14) == "Cup of the Day") {
                 string[] ymd = NameToYMD(comp.name);
+                if (data.j['ymdToCotdComps'].GetType() != Json::Type::Object)
+                    data.j['ymdToCotdComps'] = Json::Object();
                 auto ymdObj = data.j['ymdToCotdComps'];
-                if (ymdObj.GetType() != Json::Type::Object) ymdObj = Json::Object();
-
                 auto year = ymdObj[ymd[0]];
                 if (year.GetType() != Json::Type::Object) year = Json::Object();
                 auto month = year[ymd[1]];
@@ -825,10 +836,9 @@ class CotdIndexDb : JsonDb {
                 if (day.GetType() != Json::Type::Array) day = Json::Array();
                 if (!JArrayContainsInt(day, comp.id)) {
                     day.Add(comp.id);
-                    month[ymd[2]] = day;
-                    year[ymd[1]] = month;
-                    ymdObj[ymd[0]] = year;
-                    data.j['ymdToCotdComps'] = ymdObj;
+                    // month[ymd[2]] = day;
+                    // year[ymd[1]] = month;
+                    // ymdObj[ymd[0]] = year;
                 }
             } else {
                 // trace_dev("[AddComp] skipping competition with name: " + comp.name);
@@ -1044,7 +1054,7 @@ class MapDb : JsonDb {
         auto toGet = recordsQDb.GetQueueItemNow();
         string mapUid = toGet['uid'];
         bool shouldGet = PersistentData::MapRecordsShouldRegen(mapUid)
-                            || (!IsJsonNull(toGet) && toGet.Get('force', false));
+                            || (!IsJsonNull(toGet) && bool(toGet.Get('force', false)));
         if (shouldGet) {
             string seasonUid = toGet['seasonUid'];
             logcall("_SyncLoopRecords", "Downloading " + seasonUid + "/" + mapUid);
@@ -1068,7 +1078,7 @@ class MapDb : JsonDb {
         while (true) {
             if (!timesQDb.IsEmpty()) {
                 nReqs = _GetOneCotdMapTimes();
-                sleepFor = 1000 * Math::Max(1, nReqs) + nReqs * 100;
+                sleepFor = Math::Min(2000, 1000 * Math::Max(1, nReqs) + nReqs * 100);
                 logcall("_SyncLoopCotdMapTimes", "sleeping for ms: " + sleepFor);
                 sleep(sleepFor);  // sleep at least sleepFor ms because the requests are async and take about a second round time in Aus
                 yield();
