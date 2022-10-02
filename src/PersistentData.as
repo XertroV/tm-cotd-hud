@@ -1201,7 +1201,7 @@ class MapDb : JsonDb {
             auto playerInfos = GI::getPlayerInfos();
             for (uint i = 0; i < playerInfos.Length; i++) {
                 auto pi = GI::NetPIToTrackmaniaPI(playerInfos[i]);
-                if (!playerNameDb.Exists(pi.WebServicesUserId)) {
+                if (!playerNameDb.Exists(pi.WebServicesUserId) || playerNameDb.Get(pi.WebServicesUserId) != pi.Name) {
                     log_trace("Caching player id -> name: (" + pi.WebServicesUserId + ", " + pi.Name + ")");
                     playerNameDb.Set(pi.WebServicesUserId, pi.Name);
                     yield();  // lazy instead of making a list of keys and vals
@@ -1470,6 +1470,7 @@ class MapDb : JsonDb {
         int c = 0;
         for (uint i = 0; i < playerIds.Length; i++) {
             pid = playerIds[i];
+            // todo: sometimes / somehow disable checking if player names are the same so that we update them when ppl update their name
             if (!playerNameDb.Exists(pid) && pid.Length > 0) {
                 playerNameQDb.PutQueueEntry(pid, false);
                 c++;

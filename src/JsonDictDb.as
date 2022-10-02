@@ -59,6 +59,7 @@ class JsonDictDb {
     }
 
     void Set(const string &in key, const string &in value) {
+        if (d.Exists(key) && string(d[key]) == value) return;
         d[key] = value;
         CsvWrite(key, value);
     }
@@ -66,6 +67,7 @@ class JsonDictDb {
     void SetMany(const string[] &in keys, const string[] &in vals) {
         string toWrite = "";
         for (uint i = 0; i < keys.Length; i++) {
+            if (d.Exists(keys[i]) && string(d[keys[i]]) == vals[i]) continue;
             toWrite += keys[i] + "," + vals[i] + "\n";
             d[keys[i]] = vals[i];
         }

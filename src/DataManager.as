@@ -86,12 +86,18 @@ namespace DataManager {
 
     void Initialize() {
         // only request this at app startup -- will be updated when we join a COTD server
-        auto days = api.GetTotdByMonth(1)["monthList"][0]["days"];
-        string mapUid;
-        for (uint i = 0; i < days.Length; i++) {
-            mapUid = days[i]['mapUid'];
-            if (mapUid.Length > 0) cotdLatest_MapId = mapUid;
-            else break;
+        try {
+            auto days = api.GetTotdByMonth(1)["monthList"][0]["days"];
+            string mapUid;
+            for (uint i = 0; i < days.Length; i++) {
+                mapUid = days[i]['mapUid'];
+                if (mapUid.Length > 0) cotdLatest_MapId = mapUid;
+                else break;
+            }
+        } catch {
+            // sometimes the api is down
+            trace('cotd_hud.datamanager.Initialize exception (non-fatal): ' + getExceptionInfo());
+            return;
         }
         // todo: save all of GetTotdMap data so that we can look at past COTDs, too
     }

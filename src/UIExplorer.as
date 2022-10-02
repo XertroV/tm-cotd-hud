@@ -57,7 +57,7 @@ namespace CotdExplorer {
            tweak wider and flatter: .04,.05
            looks good on 1080 so use that as reference (not gameRes).
         */
-        calendarDayBtnDims = vec2(1920, 1080) * vec2(0.04, 0.05);
+        calendarDayBtnDims = vec2(1920, 1080) * vec2(0.04, 0.08);
         calendarMonthBtnDims = vec2(1920, 1080) * vec2(0.0472, 0.05);
         challengeBtnDims = vec2(1920, 1080) * vec2(.056, .05);
         windowActive.v = IsDev();
@@ -293,6 +293,29 @@ namespace CotdExplorer {
             resetLevel = 4;
             startnew(_ResetExplorerCotdSelection);
         }
+    }
+
+    bool MDisabledThumbnailButton(bool disabled, const string &in day, const string &in mapUid, vec2 size = calendarDayBtnDims) {
+        vec2 cPos = UI::GetCursorPos();
+        UI::PushStyleVar(UI::StyleVar::ButtonTextAlign, vec2(.5, 0));
+        // UI::PushStyleColor(UI::Col::Button, vec4(1,1,1,0));
+        bool ret = MDisabledButton(disabled, day, size);
+        vec2 endPos = UI::GetCursorPos();
+        if (!disabled) {
+            // todo: calc size of thumbnail and draw
+            float thumbDim = Math::Min(size.x, size.y) - UI::GetTextLineHeightWithSpacing() + UI::GetTextLineHeight();
+            vec2 thumbDims = vec2(thumbDim, thumbDim);
+            // size - text - thumb dims = region around
+            vec2 offset = vec2(0, UI::GetTextLineHeight());
+            vec2 padding = (size - offset - thumbDims) / 2;
+            vec2 tl = cPos + offset + padding;
+            UI::SetCursorPos(tl);
+            _DrawThumbnail(mapDb.GetMap(mapUid).ThumbnailUrl, true, thumbDim / mapThumbDims.x);
+        }
+        // UI::PopStyleColor();
+        UI::PopStyleVar();
+        UI::SetCursorPos(endPos);
+        return ret;
     }
 
     void DrawMapTooltip(const string &in mapUid) {
@@ -603,10 +626,13 @@ namespace CotdExplorer {
         TrackOfTheDayEntry@ map1 = cast<TrackOfTheDayEntry@>(dd[days[0]]);
         TrackOfTheDayEntry@ map;
         uint dayOffset = map1.day;  /* .monthDay is the calendar day number (1-31); .day is 0-6 */
-        if (UI::BeginTable(UI_EXPLORER + "-ymd-table", 9, TableFlagsStretch())) {
-            UI::TableSetupColumn("left", UI::TableColumnFlags::WidthStretch);
-            for (uint i = 0; i < 7; i++) UI::TableSetupColumn("" + i, UI::TableColumnFlags::WidthFixed);
-            UI::TableSetupColumn("right", UI::TableColumnFlags::WidthStretch);
+        float spacing = UI::GetTextLineHeightWithSpacing() - UI::GetTextLineHeight();
+        float bWidth = UI::GetWindowContentRegionWidth() / 7 - spacing * 2;
+        vec2 bDims = vec2(bWidth, bWidth + spacing * 2 + UI::GetTextLineHeight());
+        if (UI::BeginTable(UI_EXPLORER + "-ymd-table", 7, TableFlagsStretch())) {
+            // UI::TableSetupColumn("left", UI::TableColumnFlags::WidthStretch);
+            for (uint i = 0; i < 7; i++) UI::TableSetupColumn("" + i, UI::TableColumnFlags::WidthStretch);
+            // UI::TableSetupColumn("right", UI::TableColumnFlags::WidthStretch);
 
             UI::TableNextColumn();
 
@@ -621,14 +647,11 @@ namespace CotdExplorer {
                 if (map is null || IsJsonNull(map.mapUid)) continue;
                 string mapUid = map.mapUid;
                 bool _disabled = mapUid.Length < 10;
-                if (MDisabledButton(_disabled, day, calendarDayBtnDims)) {
+                if (MDisabledThumbnailButton(_disabled, day, mapUid, bDims)) {
+                // if (MDisabledButton(_disabled, day, calendarDayBtnDims)) {
                     OnSelectedCotdDay(Text::ParseInt(day));
                 }
                 DrawMapTooltip(mapUid);
-                if ((i + 1 + dayOffset) % 7 == 0) {
-                    UI::TableNextColumn();
-                    UI::TableNextColumn();
-                }
             }
 
             UI::EndTable();

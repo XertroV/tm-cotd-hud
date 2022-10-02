@@ -30,7 +30,7 @@ class CotdApi {
 
     /* COMPETITION API CALLS */
 
-    Json::Value CallCompApiPath(string path) {
+    Json::Value CallCompApiPath(const string &in path) {
         AssertGoodPath(path);
         return FetchClubEndpoint(compUrl + path);
     }
@@ -77,7 +77,7 @@ class CotdApi {
     /** example return value
       * [{"time":48679,"uid":"jAtn7LQt2MTG5xv4BeiQwZAX1K","player":"a4cd0259-4ad1-48d9-bf0a-3fee92008686","score":48679,"rank":64}]
       */
-    Json::Value GetCutoffForDiv(int challengeid, string mapid, int div) {
+    Json::Value GetCutoffForDiv(int challengeid, const string &in mapid, int div) {
         // the last position in the div
         int offset = div * 64 - 1;
         // return CallCompApiPath("/api/challenges/" + challengeid + "/records/maps/" + mapid + "?length=1&offset=" + offset);
@@ -86,7 +86,7 @@ class CotdApi {
 
     /** see GetCutoffForDiv for example return value
       */
-    Json::Value GetCotdTimes(int challengeid, string mapid, uint length, uint offset) {
+    Json::Value GetCotdTimes(int challengeid, const string &in mapid, uint length, uint offset) {
         if (length > 100) {
             throw("GetCotdTimes parameter length cannot be >100");
         }
@@ -96,12 +96,12 @@ class CotdApi {
     /** example ret val
       * {"uid":"jAtn7LQt2MTG5xv4BeiQwZAX1K","cardinal":376,"records":[{"player":"0a2d1bc0-4aaa-4374-b2db-3d561bdab1c9","score":52414,"rank":230}]}
       */
-    Json::Value GetPlayerRank(int challengeid, string mapid, string userId) {
+    Json::Value GetPlayerRank(int challengeid, const string &in mapid, const string &in userId) {
         return CallCompApiPath("/api/challenges/" + challengeid + "/records/maps/" + mapid + "/players?players[]=" + userId);
     }
 
     /* see above */
-    Json::Value GetPlayersRank(int challengeid, string mapid, const string[]&in userIds) {
+    Json::Value GetPlayersRank(int challengeid, const string &in mapid, const string[]&in userIds) {
         string players = string::Join(userIds, ",");
         return CallCompApiPath("/api/challenges/" + challengeid + "/records/maps/" + mapid + "/players?players[]=" + players);
     }
@@ -115,7 +115,7 @@ class CotdApi {
 
     /* LIVE SERVICES API CALLS */
 
-    Json::Value CallLiveApiPath(string path) {
+    Json::Value CallLiveApiPath(const string &in path) {
         AssertGoodPath(path);
         return FetchLiveEndpoint(liveSvcUrl + path);
     }
@@ -146,9 +146,10 @@ class CotdApi {
     }
 
     /* see example/getMapRecords.json */
-    Json::Value GetMapRecords(const string &in seasonUid, const string &in mapUid, bool onlyWorld = true) {
+    Json::Value GetMapRecords(const string &in seasonUid, const string &in mapUid, bool onlyWorld = true, uint length=5, uint offset=0) {
         // Personal_Best
         string qParams = onlyWorld ? "?onlyWorld=true" : "";
+        if (onlyWorld) qParams += "&" + LengthAndOffset(length, offset);
         return CallLiveApiPath("/api/token/leaderboard/group/" + seasonUid + "/map/" + mapUid + "/top" + qParams);
     }
 
