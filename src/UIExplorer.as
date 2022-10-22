@@ -983,29 +983,29 @@ namespace CotdExplorer {
         }
     }
 
-    dictionary@ CotdTreeY(string yr = '') {
-        if (yr == '') yr = "" + explYear.val;
+    dictionary@ CotdTreeY(const string &in yr = '') {
+        string _yr = (yr == '') ? "" + explYear.val : yr;
         dictionary@ ret;
-        if (cotdYMDMapTree !is null && cotdYMDMapTree.Get(yr, @ret)) {
+        if (cotdYMDMapTree !is null && cotdYMDMapTree.Get(_yr, @ret)) {
             return ret;
         }
         return dictionary();
     }
 
-    dictionary@ CotdTreeYM(const string &in year = '', string month = '') {
-        if (month == '') month = Text::Format("%02d", explMonth.val);
+    dictionary@ CotdTreeYM(const string &in year = '', const string &in month = '') {
+        string _month = (month == '') ? Text::Format("%02d", explMonth.val) : month;
         dictionary@ ret;
-        if (CotdTreeY(year).Get(month, @ret)) {
+        if (CotdTreeY(year).Get(_month, @ret)) {
             return ret;
         }
         // return cast<dictionary@>(CotdTreeY()[Text::Format("%02d", explMonth.val)]);
         return dictionary();
     }
 
-    TrackOfTheDayEntry@ CotdTreeYMD(const string &in year = '', const string &in month = '', string day = '') {
-        if (day == '') day = Text::Format("%02d", explDay.val);
+    TrackOfTheDayEntry@ CotdTreeYMD(const string &in year = '', const string &in month = '', const string &in day = '') {
+        string _day = (day == '') ? Text::Format("%02d", explDay.val) : day;
         TrackOfTheDayEntry@ ret;
-        if (CotdTreeYM(year, month).Get(day, @ret)) {
+        if (CotdTreeYM(year, month).Get(_day, @ret)) {
             return ret;
         }
         return null;

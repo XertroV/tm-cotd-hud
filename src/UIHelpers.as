@@ -12,7 +12,7 @@ void SetCursorAtItemTopRight() {
 
 /* tooltips */
 
-void AddSimpleTooltip(string msg) {
+void AddSimpleTooltip(const string &in msg) {
     if (UI::IsItemHovered()) {
         UI::BeginTooltip();
         UI::Text(msg);
@@ -82,7 +82,7 @@ void TextSubheading(const string &in t) {
     UI::PopFont();
 }
 
-void TextBigHeading(string t, bool withLine = false) {
+void TextBigHeading(const string &in t, bool withLine = false) {
     UI::PushFont(bigHeadingFont);
     VPad();
     UI::Text(t);

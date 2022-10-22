@@ -70,6 +70,7 @@ namespace WAllTimes {
     void PopulateCache() {
         while (!PersistentData::MapTimesCached(mapUid, cId)) yield();
         times = PersistentData::GetCotdMapTimesAllJ(mapUid, cId);
+        yield();
         playerId = GI::PlayersId();
         nPlayers = times.Length;
         // nDivs = uint(Math::Ceil(float(nPlayers) / 64.));
@@ -82,9 +83,9 @@ namespace WAllTimes {
         bool special;
         uint time, nDivsDone = 0, i, bestInDiv, thisDiv, playerScore = 0;
         playerFound = false;
-        uint lastBreak = 0;
+        uint lastBreak = Time::Now;
         for (uint _i = 0; _i < nPlayers; _i++) {
-            if (Time::Now - lastBreak > 8) {
+            if (Time::Now > 5 + lastBreak) {
                 yield();
                 lastBreak = Time::Now;
             }

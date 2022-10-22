@@ -1,4 +1,4 @@
-Meta::PluginSetting@ GetOtherPluginSettingVar(string pluginId, string varName) {
+Meta::PluginSetting@ GetOtherPluginSettingVar(const string &in pluginId, const string &in varName) {
     auto plugin = Meta::GetPluginFromID(pluginId);
     if (plugin is null) {
         warn("GetOtherPluginSettingVar -- cannot find a plugin with ID '"+pluginId+"'.");

@@ -4,7 +4,7 @@ namespace PersistentData {
 
     /* set our data folder to include the path mod (PM) set above */
     const string dataFolder = IO::FromDataFolder(mainFolderName);
-    string MkPath(string fname) { return dataFolder + "/" + fname; };
+    string MkPath(const string &in fname) { return dataFolder + "/" + fname; };
 
     const string filepath_Follows = MkPath("follows.json");
     const string filepath_HistoricalCotd = MkPath("historical-cotd.json");
@@ -157,6 +157,7 @@ namespace PersistentData {
 
     /* expensive */
     Json::Value[] GetCotdMapTimesAllJ(const string &in mapUid, int cId) {
+        uint start = Time::Now;
         auto jb = GetCotdMapTimes(mapUid, cId);
         int nPlayers = jb.j['nPlayers'];
         // int nPlayers = int(jb.j['nPlayers']);
@@ -171,6 +172,7 @@ namespace PersistentData {
                 rows[rank - 1] = times[j];
             }
         }
+        trace_benchmark("GetCotdMapTimesAllJ", Time::Now - start);
         return rows;
     }
 
@@ -867,7 +869,7 @@ class CotdTimesReqData {
     int cId;
     uint rank;
     uint length;
-    CotdTimesReqData(string mapUid, int cId, uint rank, uint length) {
+    CotdTimesReqData(const string &in mapUid, int cId, uint rank, uint length) {
         this.mapUid = mapUid;
         this.cId = cId;
         this.rank = rank;
@@ -1376,6 +1378,7 @@ class MapDb : JsonDb {
 
     void _SyncNextCompMatchResults() {
         if (!matchResultsQDb.IsEmpty()) {
+            while (!debounce.CanProceed("_SyncNextCompMatchResults.GetQueueItem", 5)) yield();
             Json::Value toGet = matchResultsQDb.GetQueueItemNow();
             uint roundId = toGet[0];
             uint matchId = toGet[1];
@@ -1390,7 +1393,7 @@ class MapDb : JsonDb {
                 auto res = matchResults.results[i];
                 pids[i] = res.participant;
             }
-            yield();
+            while (!debounce.CanProceed("_SyncNextCompMatchResults.QueuePlayerNames", 5)) yield();
             QueuePlayerNamesGet(pids);
         }
     }
