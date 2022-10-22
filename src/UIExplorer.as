@@ -778,8 +778,7 @@ namespace CotdExplorer {
         string authorId = map.AuthorWebServicesUserId;
         string authorScore = Time::Format(map.AuthorScore);
         string authorName = map.AuthorDisplayName;
-        if (map_author is null or map_author.Id != authorId) {
-            // @map_author = PlayerName(authorName, authorId, IsSpecialPlayerId(authorId));
+        if (map_author is null || map_author.Id != authorId) {
             @map_author = PlayerNames::Get(authorId);
         }
         string authorNameAndId = authorName + " " + authorId;

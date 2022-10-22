@@ -116,8 +116,11 @@ namespace PersistentData {
             || IO::FileExists(MapTimesPath(uid, "" + cId));
         if (!gotJson) return false;
         auto jb = GetCotdMapTimes(uid, cId);
-        if (IsJsonNull(jb.j) || IsJsonNull(jb.j['ranges']) || jb.j['ranges'].GetType() != Json::Type::Object || jb.j['ranges'].Length == 0)
-            return false;
+        if (IsJsonNull(jb.j) || IsJsonNull(jb.j['ranges'])
+            || jb.j['ranges'].GetType() != Json::Type::Object
+            || jb.j['ranges'].Length == 0
+        ) return false;
+        // todo: will the json box get auto updated or should we check that it's complete?
         // cached that we've cached this uid--cid
         mapTimesCached_Cache[key] = true;
         return true;
@@ -1081,7 +1084,6 @@ class MapDb : JsonDb {
                 sleepFor = Math::Min(2000, 1000 * Math::Max(1, nReqs) + nReqs * 100);
                 logcall("_SyncLoopCotdMapTimes", "sleeping for ms: " + sleepFor);
                 sleep(sleepFor);  // sleep at least sleepFor ms because the requests are async and take about a second round time in Aus
-                yield();
             } else {
                 sleep(250);
             }
@@ -1164,7 +1166,9 @@ class MapDb : JsonDb {
 
     void _GetCotdMapTimesRange(ref@ _args) {
         auto args = cast<CotdTimesReqData@>(_args);
+        while (!debounce.CanProceed("_GetCotdMapTimesRange", 5)) yield();
         auto times = api.GetCotdTimes(args.cId, args.mapUid, args.length, args.rank - 1);
+        while (!debounce.CanProceed("_GetCotdMapTimesRange.postProcess", 5)) yield();
         string[] playerIds = array<string>(times.Length);
         for (uint i = 0; i < times.Length; i++) {
             times[i].Remove('uid');
@@ -1180,18 +1184,21 @@ class MapDb : JsonDb {
         logcall("_SyncLoopPlayerNames", "Starting");
         while (true) {
             if (!playerNameQDb.IsEmpty()) {
+                while (!debounce.CanProceed("_SyncLoopPlayerNames", 5)) yield();
                 auto _playerIds = playerNameQDb.GetNQueueItemsNow(100);
+                yield();
                 string[] playerIds = ArrayOfJToString(_playerIds);
                 yield();
                 logcall("_SyncLoopPlayerNames", "Fetching " + playerIds.Length + " player names. " + playerIds[0] +  string::Join(playerIds, ","));
                 auto names = api.GetPlayersDisplayNames(playerIds);
+                yield();
                 playerNameDb.SetMany(playerIds, names);
                 logcall("_SyncLoopPlayerNames", "Completed " + names.Length + " player names.");
                 if (names.Length == 1) {
                     logcall("_SyncLoopPlayerNames", "(" + playerIds[0] + " -> " + names[0] + ")");
                 }
             }
-            sleep(250);
+            yield();
         }
     }
 
@@ -1372,7 +1379,9 @@ class MapDb : JsonDb {
             Json::Value toGet = matchResultsQDb.GetQueueItemNow();
             uint roundId = toGet[0];
             uint matchId = toGet[1];
+            while (!debounce.CanProceed("_SyncNextCompMatchResults.GetCompMatchResults", 5)) yield();
             auto matchResults = MatchResults(api.GetCompMatchResults(matchId));
+            while (!debounce.CanProceed("_SyncNextCompMatchResults.Save", 5)) yield();
             matchResultsDb.Get(roundId).Set(matchId, matchResults);
             logcall("_SyncNextCompMatchResults", "got results for match:" + matchId);
 
@@ -1381,6 +1390,7 @@ class MapDb : JsonDb {
                 auto res = matchResults.results[i];
                 pids[i] = res.participant;
             }
+            yield();
             QueuePlayerNamesGet(pids);
         }
     }

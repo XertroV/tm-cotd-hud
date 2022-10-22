@@ -292,12 +292,14 @@ namespace DataManager {
 
     /* Set COTD Status */
 
+    auto timeout = 10000;
     void ApiUpdateCotdStatus() {
         cotdLatest_Status = api.GetCotdStatus();
         logcall('ApiUpdateCotdStatus', Json::Write(cotdLatest_Status));
         if (IsJsonNull(cotdLatest_Status)) {
-            // sleep 10s if the response is null to avoid spamming it too much
-            sleep(10 * 1000);
+            // if null, sleep with growing timeout to avoid spamming
+            sleep(timeout);
+            timeout = Math::Min(timeout * 1.75, 60000); // max 60s to avoid a too-long timeout near cotd
         }
     }
 
@@ -471,11 +473,15 @@ namespace DataManager {
         }
     }
 
+    uint lastUpdateDivFromQ = 0;
     void CoroUpdateDivFromQ() {
         auto _div = GetDivToUpdateFromQ();
         if (_div == 0 || _div >= divRows.Length) {
             return;
         }
+        // don't run too many at once
+        while (lastUpdateDivFromQ + 5 > Time::Now) yield();
+        lastUpdateDivFromQ = Time::Now;
 
         auto logpre = "CoroUpdateDivFromQ(" + _div + ") | ";
 #if DEV
@@ -544,6 +550,9 @@ namespace DataManager {
         }
     }
 
+    // this will only save the times if the setting is enabled.
+    // it will get all times if saving is enabled or if showing favorite players is enabled.
+    // it will get just times for divs that are visible, too.
     void CoroLoopSaveAllTimes() {
         logcall("CoroLoopSaveAllTimes", "Starting...");
         while (true) {
@@ -556,8 +565,9 @@ namespace DataManager {
                     uint chunkSize = 100;
                     uint timeStamp = Time::Stamp;
                     for (uint i = 1; i <= nPlayers; i += chunkSize) {
-                        if (Setting_AllowSaveQualiSnapshots || divRows[int(i/chunkSize)].visible) {
+                        if (Setting_HudShowFavoritedPlayersTimes || Setting_AllowSaveQualiSnapshots || divRows[int(i/chunkSize)].visible) {
                             startnew(_CoroCacheTimesLive, UpdateTimesForLiveCache(0, i - 1, timeStamp));
+                            yield(); // slow down a bit
                         }
                     }
                 }
@@ -567,7 +577,9 @@ namespace DataManager {
 
     void _CoroCacheTimesLive(ref@ _args) {
         UpdateTimesForLiveCache@ args = cast<UpdateTimesForLiveCache@>(_args);
+        while (!debounce.CanProceed("_CoroCacheTimesLive.preApi", 5)) yield();
         auto timesData = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, args.length, args.offset);
+        while (!debounce.CanProceed("_CoroCacheTimesLive.postApi", 5)) yield(); // avoid too much processing in one frame
         string toWrite = "";
         if (timesData.GetType() == Json::Type::Array) {
             for (uint i = 0; i < timesData.Length; i++) {
