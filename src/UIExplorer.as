@@ -399,6 +399,8 @@ namespace CotdExplorer {
 
     void DbMenuTotdRefresh() {
         histDb._SyncTotdMapsUpdateFromApi();
+        SoftRefreshCotdTreeFromDb();
+        _ResetExplorerCotdSelection();
     }
 
     void _RenderSyncMenu() {
@@ -575,11 +577,14 @@ namespace CotdExplorer {
         SoftRefreshCotdTreeFromDb();
     }
 
+    string[] _monthsSorted;
+
     void _RenderExplorerCotdMonthSelection() {
         TextHeading(_ExplorerCotdTitleStr() + " | Select Month");
-        auto md = CotdTreeY();
-        auto months = md.GetKeys();
-        months.SortAsc();
+        // auto md = CotdTreeY();
+        // auto months = md.GetKeys();
+        // months.SortAsc();
+        auto months = _monthsSorted;
         uint month;
         int _offs = (Text::ParseInt(months[0]));  // 2 rows of 6 months
         int _last = Text::ParseInt(months[months.Length - 1]);
@@ -617,11 +622,11 @@ namespace CotdExplorer {
         */
         explMonth.AsJust(month);
         SoftRefreshCotdTreeFromDb();
+        _monthsSorted = CotdTreeY().GetKeys();
+        _monthsSorted.SortAsc();
         startnew(EnsureMapDataForCurrMonth);
-        // startnew(LoadThumbTexturesForCurrMonth);  // idk if this is worth it
+        startnew(LoadThumbTexturesForCurrMonth);  // idk if this is worth it
     }
-
-    // todo -- can select june 12th but it's only june 1st
 
     /* select a monthDay for COTD -- draw calendar for the month */
     void _RenderExplorerCotdDaySelection() {
