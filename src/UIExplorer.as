@@ -203,6 +203,7 @@ namespace CotdExplorer {
                 dictionary@ year = cast<dictionary>(cotdYMDMapTree[years[y]]);
                 auto months = year.GetKeys();
                 for (uint m = 0; m < months.Length; m++) {
+                    yield();
                     if (HaveAllMapDataForYM(years[y], months[m])) {
                         // if we have the data then skip the sleep.
                         continue;
@@ -310,7 +311,8 @@ namespace CotdExplorer {
             vec2 padding = (size - offset - thumbDims) / 2;
             vec2 tl = cPos + offset + padding;
             UI::SetCursorPos(tl);
-            _DrawThumbnail(mapDb.GetMap(mapUid).ThumbnailUrl, true, thumbDim / mapThumbDims.x);
+            if (mapDb.MapIsCached(mapUid))
+                _DrawThumbnail(mapDb.GetMap(mapUid).ThumbnailUrl, true, thumbDim / mapThumbDims.x);
         }
         // UI::PopStyleColor();
         UI::PopStyleVar();
@@ -376,6 +378,9 @@ namespace CotdExplorer {
                 if (UI::MenuItem("Re-index COTD Qualifiers", '', false)) {
                     startnew(DbMenuCotdIndexReset);
                 }
+                if (UI::MenuItem("Refresh TOTD Info", '', false)) {
+                    startnew(DbMenuTotdRefresh);
+                }
                 UI::EndMenu();
             }
 
@@ -390,6 +395,10 @@ namespace CotdExplorer {
         if (explDay.isSome) {
             EnsureMapDataForCurrDay();
         }
+    }
+
+    void DbMenuTotdRefresh() {
+        histDb._SyncTotdMapsUpdateFromApi();
     }
 
     void _RenderSyncMenu() {
