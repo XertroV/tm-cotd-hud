@@ -724,6 +724,7 @@ namespace DataManager {
     }
 
     void RegenHistogramData() {
+        if (!Setting_HudShowHistogram) return;
         if (!IsJsonNull(cotdLatest_PlayerRank)) {
             int pRank = 101;
             if (cotdLatest_PlayerRank["records"].Length > 0)
