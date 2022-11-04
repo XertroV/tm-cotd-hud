@@ -1,6 +1,6 @@
 const Json::Value JSON_NULL = Json::Parse("null");
 
-bool IsJsonNull(const Json::Value &in j) {
+bool IsJsonNull(const Json::Value@ j) {
     /* Sometimes a json value will have a .GetType() of 0 which
      * isn't a valid Json::Type.
      * Json::Type ranges [1, 6] with Null being 6.
@@ -18,18 +18,18 @@ bool IsJsonNull(const Json::Value &in j) {
 //     return obj[key];
 // }
 
-void AssertJsonArray(Json::Value &in v) {
+void AssertJsonArray(Json::Value@ v) {
     if (v.GetType() != Json::Type::Array)
         throw("not a json array");
 }
 
-void AssertJsonArrayNonEmpty(Json::Value &in v) {
+void AssertJsonArrayNonEmpty(Json::Value@ v) {
     AssertJsonArray(v);
     if (v.Length == 0)
         throw("json array length is 0");
 }
 
-int JsonMinInt(Json::Value &in v) {
+int JsonMinInt(Json::Value@ v) {
     AssertJsonArrayNonEmpty(v);
     int min = v[0];
     int x;
@@ -40,7 +40,7 @@ int JsonMinInt(Json::Value &in v) {
     return min;
 }
 
-float JsonMinFloat(Json::Value &in v) {
+float JsonMinFloat(Json::Value@ v) {
     AssertJsonArrayNonEmpty(v);
     float min = v[0];
     float x;
@@ -51,7 +51,7 @@ float JsonMinFloat(Json::Value &in v) {
     return min;
 }
 
-int[] JArrayToInt(Json::Value &in v) {
+int[] JArrayToInt(Json::Value@ v) {
     AssertJsonArrayNonEmpty(v);
     int[] xs = array<int>(v.Length);
     for (uint i = 0; i < v.Length; i++) {
@@ -60,7 +60,7 @@ int[] JArrayToInt(Json::Value &in v) {
     return xs;
 }
 
-array<Json::Value>@ ArrayOfUintToJs(const uint[] &in xs) {
+array<Json::Value>@ ArrayOfUintToJs(const uint[]@ xs) {
     array<Json::Value> ret = array<Json::Value>(xs.Length);
     for (uint i = 0; i < xs.Length; i++) {
         ret[i] = Json::Value(xs[i]);
@@ -68,7 +68,7 @@ array<Json::Value>@ ArrayOfUintToJs(const uint[] &in xs) {
     return ret;
 }
 
-float[] JArrayToFloat(Json::Value &in v) {
+float[] JArrayToFloat(Json::Value@ v) {
     AssertJsonArrayNonEmpty(v);
     float[] xs = array<float>(v.Length);
     for (uint i = 0; i < v.Length; i++) {
@@ -77,7 +77,7 @@ float[] JArrayToFloat(Json::Value &in v) {
     return xs;
 }
 
-string[] JArrayToString(Json::Value &in v) {
+string[] JArrayToString(Json::Value@ v) {
     AssertJsonArrayNonEmpty(v);
     string[] xs = array<string>();
     for (uint i = 0; i < v.Length; i++) {
@@ -94,7 +94,7 @@ string[] ArrayOfJToString(array<Json::Value> &in v) {
     return xs;
 }
 
-bool JArrayContainsInt(Json::Value &in j, int v) {
+bool JArrayContainsInt(Json::Value@ j, int v) {
     AssertJsonArray(j);
     for (uint i = 0; i < j.Length; i++) {
         if (int(j[i]) == v) return true;

@@ -47,6 +47,11 @@ void trace_benchmark(const string &in action, uint deltaMs) {
     log_trace(c_mid_grey + "[" + c_purple + action + c_mid_grey + "] took " + c_purple + deltaMs + " ms");
 }
 
+void trace_benchmark_(const string &in action, uint start) {
+    auto deltaMs = Time::Now - start;
+    log_trace(c_mid_grey + "[" + c_purple + action + c_mid_grey + "] took " + c_purple + deltaMs + " ms");
+}
+
 void trace_dev(const string &in msg) {
     if (IsDev())
         log_trace(msg);

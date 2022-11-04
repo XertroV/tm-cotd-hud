@@ -584,6 +584,10 @@ namespace CotdExplorer {
         // auto md = CotdTreeY();
         // auto months = md.GetKeys();
         // months.SortAsc();
+        if (_monthsSorted.Length == 0) {
+            _monthsSorted = CotdTreeY().GetKeys();
+            _monthsSorted.SortAsc();
+        }
         auto months = _monthsSorted;
         uint month;
         int _offs = (Text::ParseInt(months[0]));  // 2 rows of 6 months

@@ -24,6 +24,7 @@ class CacheQualiTimes {
 
     void SetCache(const string &in mapUid, uint cId) {
         if (_cId == cId) return;
+        uint start = Time::Now;
         log_trace('SetCache for cId: ' + cId);
         _cId = cId;
         _ResetCacheArrays();
@@ -42,6 +43,7 @@ class CacheQualiTimes {
         if (lastTimes.Length >= 2)
             _CacheRow(lastTimes[lastTimes.Length - 2], topScore);
         _CacheRow(lastTimes[lastTimes.Length - 1], topScore);
+        trace_benchmark_("QualiTimes.SetCache", start);
     }
 
     private void _CacheRow(Json::Value &in time, int topScore) {

@@ -1,11 +1,11 @@
 dictionary@ JSON_DB_MUTEXES = dictionary();
 
 class JsonBox {
-    Json::Value j;
+    Json::Value@ j;
     private bool expired = false;
 
-    JsonBox(Json::Value &in jsonVal) {
-        this.j = jsonVal;
+    JsonBox(Json::Value@ jsonVal) {
+        @this.j = jsonVal;
     }
 
     // JsonBox() {
@@ -25,7 +25,7 @@ class JsonBox {
         throw("not implemented");
         this.expired = true;
         auto ret = JsonBox(this.j);
-        this.j = Json::Value();
+        @this.j = Json::Value();
         return ret;
     }
 }
@@ -135,7 +135,7 @@ class JsonDb {
     void Persist() {
         GetLock();
         uint start = Time::Now;
-        Json::Value db = Json::Object();
+        Json::Value@ db = Json::Object();
         db['version'] = 1;
         db['time'] = "" + Time::Stamp;  /* as string to avoid losing precision */
         db['data'] = _data.j;
@@ -219,7 +219,7 @@ class JsonQueueDb : JsonDb {
          1. a unique string; or
          2. an object with j['id'] property that's a unique string.
     */
-    void PutQueueEntry(Json::Value &in j, bool persist = true) {
+    void PutQueueEntry(Json::Value@ j, bool persist = true) {
         // auto ty = j.GetType();
         // if (ty != Json::Type::String && ty != Json::Type::Object) {
         //     throw("Json value is not a string nor an object.");
@@ -263,7 +263,7 @@ class JsonQueueDb : JsonDb {
     }
 
     /* can return null */
-    Json::Value GetQueueItemNow(bool persist = true) {
+    Json::Value@ GetQueueItemNow(bool persist = true) {
         // return null if no queue items available
         if (IsEmpty()) { return Json::Value(); }
         // init
@@ -307,7 +307,7 @@ class JsonQueueDb : JsonDb {
     }
 
     /* will yield until a value is available and throw if timeout is reached */
-    Json::Value GetQueueItemAsync(int timeoutMs = -1) {
+    Json::Value@ GetQueueItemAsync(int timeoutMs = -1) {
         uint start = Time::Now;
         uint limit = timeoutMs < 0 ? A_MONTH_IN_MS : start + uint(timeoutMs);
         while (IsEmpty()) {
