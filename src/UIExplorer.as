@@ -588,8 +588,7 @@ namespace CotdExplorer {
             _monthsSorted = CotdTreeY().GetKeys();
             _monthsSorted.SortAsc();
         }
-        auto months = _monthsSorted;
-        uint month;
+        array<string> months = _monthsSorted;
         int _offs = (Text::ParseInt(months[0]));  // 2 rows of 6 months
         int _last = Text::ParseInt(months[months.Length - 1]);
         int _nMonths = months.Length;
@@ -638,7 +637,7 @@ namespace CotdExplorer {
         // auto md = cast<dictionary@>(cotdYMDMapTree["" + explYear.val]);
         // auto dd = cast<dictionary@>(md[Text::Format("%02d", explMonth.val)]);
         dictionary@ dd = CotdTreeYM();
-        auto days = dd.GetKeys();
+        array<string> days = dd.GetKeys();
         days.SortAsc();
         string day;
         TrackOfTheDayEntry@ map1 = cast<TrackOfTheDayEntry@>(dd[days[0]]);
@@ -690,8 +689,8 @@ namespace CotdExplorer {
     }
 
     void EnsureMapDataForYM(const string &in year, const string &in month) {
-        auto mo = CotdTreeYM(year, month);
-        auto keys = mo.GetKeys();
+        dictionary@ mo = CotdTreeYM(year, month);
+        array<string> keys = mo.GetKeys();
         for (uint i = 0; i < keys.Length; i++) {
             EnsureMapDataForYMD(year, month, keys[i]);
         }
@@ -702,12 +701,12 @@ namespace CotdExplorer {
     }
 
     void LoadThumbTexturesForYM(const string &in year, const string &in month) {
-        auto mo = CotdTreeYM(year, month);
-        auto keys = mo.GetKeys();
+        dictionary@ mo = CotdTreeYM(year, month);
+        array<string> keys = mo.GetKeys();
         for (uint i = 0; i < keys.Length; i++) {
-            auto day = keys[i];
-            auto totd = CotdTreeYMD(year, month, day);
-            auto map = mapDb.GetMap(totd.mapUid);
+            string day = keys[i];
+            TrackOfTheDayEntry@ totd = CotdTreeYMD(year, month, day);
+            TmMap@ map = mapDb.GetMap(totd.mapUid);
             if (PersistentData::ThumbnailCached(map.ThumbnailUrl)) {
                 yield();
                 PersistentData::GetThumbTex(map.ThumbnailUrl);  // load it from disk if it isn't already
@@ -716,8 +715,8 @@ namespace CotdExplorer {
     }
 
     bool HaveAllMapDataForYM(const string &in year, const string &in month) {
-        auto mo = CotdTreeYM(year, month);
-        auto keys = mo.GetKeys();
+        dictionary@ mo = CotdTreeYM(year, month);
+        array<string> keys = mo.GetKeys();
         uint lastBreak = Time::Now;
         for (uint i = 0; i < keys.Length; i++) {
             if (!HaveAllMapDataForYMD(year, month, keys[i])) return false;
@@ -1189,8 +1188,8 @@ namespace CotdExplorer {
             if (isGenerated && showHistogram) {
                 auto histData = cast<Histogram::HistData>(COTD_HISTOGRAM_DATA[key]);
                 uint pad = 40;
-                auto wPos = UI::GetWindowPos();
-                auto wSize = UI::GetWindowSize();
+                vec2 wPos = UI::GetWindowPos();
+                vec2 wSize = UI::GetWindowSize();
                 screenRes = vec2(Draw::GetWidth(), Draw::GetHeight());
                 vec2 newPos = vec2(wPos.x + wSize.x + pad, wPos.y) / screenRes;
                 vec2 newSize = vec2(wSize.x, Math::Min(wSize.x, wSize.y) / 2.) / screenRes;
@@ -1291,7 +1290,7 @@ namespace CotdExplorer {
     CacheQualiTimes@ qtCache = CacheQualiTimes();
 
     bool _CotdQualiTimesTable(int cId) {
-        auto mapInfo = CotdTreeYMD();
+        TrackOfTheDayEntry@ mapInfo = CotdTreeYMD();
         string mapUid = mapInfo.mapUid;
         // string seasonUid = mapInfo.seasonUid;
         bool gotTimes = PersistentData::MapTimesCached(mapUid, cId);
@@ -1365,7 +1364,7 @@ namespace CotdExplorer {
 
     uint pressedForceDownload = 0;
     bool _DrawCotdTimesDownloadStatus(const string &in mapUid, int cId) {
-        auto jb = PersistentData::GetCotdMapTimes(mapUid, cId);
+        JsonBox@ jb = PersistentData::GetCotdMapTimes(mapUid, cId);
         float nPlayers = jb.j['nPlayers'];
         if (nPlayers == 0) {
             UI::TableNextColumn();

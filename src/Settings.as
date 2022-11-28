@@ -17,7 +17,6 @@ bool Setting_HudWindowLocked = false;
 bool Setting_ShowHudEvenIfInterfaceHidden = true;
 
 
-
 [Setting category="HUD" name="Show deltas?" description="Example: `-0:02.252` or `+0:11.002`"]
 bool Setting_HudShowDeltas = true;
 
