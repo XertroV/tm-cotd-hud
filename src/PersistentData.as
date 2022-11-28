@@ -1212,9 +1212,12 @@ class MapDb : JsonDb {
     void _LoopCheckPlayerNamesInGame() {
         logcall("_LoopCheckPlayerNamesInGame", "Starting...");
         while (true) {
-            auto playerInfos = GI::getPlayerInfos();
+            yield();
+            if (GetApp().CurrentPlayground is null) continue;
+            auto playerInfos = GI::GetCurrPgPlayers();
             for (uint i = 0; i < playerInfos.Length; i++) {
-                auto pi = GI::NetPIToTrackmaniaPI(playerInfos[i]);
+                auto pi = GI::NetPIToTrackmaniaPI(playerInfos[i].User);
+                if (pi.WebServicesUserId.Length < 36) continue; // skip fake players
                 if (!playerNameDb.Exists(pi.WebServicesUserId) || playerNameDb.Get(pi.WebServicesUserId) != pi.Name) {
                     log_trace("Caching player id -> name: (" + pi.WebServicesUserId + ", " + pi.Name + ")");
                     playerNameDb.Set(pi.WebServicesUserId, pi.Name);
