@@ -40,6 +40,7 @@ void Main() {
 #endif
 
     startnew(InitSpecialPlayers);
+    startnew(ClearJsonSlowly_Loop);
 
 #if DEV
     // SetDevSettings();

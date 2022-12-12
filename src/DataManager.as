@@ -12,8 +12,8 @@ namespace DataManager {
     /* global COTD state variables we want to keep track of and update */
 
     string cotdLatest_MapId = "";
-    Json::Value cotdLatest_Status = JSON_NULL;
-    Json::Value cotdLatest_PlayerRank = JSON_NULL;
+    Json::Value@ cotdLatest_Status = Json::Value();
+    Json::Value@ cotdLatest_PlayerRank = Json::Value();
 
     MaybeInt cotd_OverrideChallengeId = MaybeInt();
 
@@ -87,7 +87,9 @@ namespace DataManager {
     void Initialize() {
         // only request this at app startup -- will be updated when we join a COTD server
         try {
-            auto days = api.GetTotdByMonth(1)["monthList"][0]["days"];
+            auto jTotd = api.GetTotdByMonth(1);
+            ClearJsonSlowly(jTotd);
+            auto days = jTotd["monthList"][0]["days"];
             string mapUid;
             for (uint i = 0; i < days.Length; i++) {
                 mapUid = days[i]['mapUid'];
@@ -144,8 +146,8 @@ namespace DataManager {
 
     void _ResetCotdStats() {
         divs_lastUpdated = 0;
-        cotdLatest_Status = JSON_NULL;
-        cotdLatest_PlayerRank = JSON_NULL;
+        @cotdLatest_Status = Json::Value();
+        @cotdLatest_PlayerRank = Json::Value();
         startnew(SetCurrentCotdData);
         playerDivRow.timeMs = MAX_DIV_TIME;
         playerDivRow.div = 0;
@@ -294,7 +296,7 @@ namespace DataManager {
 
     auto timeout = 10000;
     void ApiUpdateCotdStatus() {
-        cotdLatest_Status = api.GetCotdStatus();
+        @cotdLatest_Status = api.GetCotdStatus();
         logcall('ApiUpdateCotdStatus', Json::Write(cotdLatest_Status));
         if (IsJsonNull(cotdLatest_Status)) {
             // if null, sleep with growing timeout to avoid spamming
@@ -371,7 +373,7 @@ namespace DataManager {
             return;
         }
 
-        cotdLatest_PlayerRank = api.GetPlayerRank(GetChallengeId(), cotdLatest_MapId, GI::PlayersId());
+        @cotdLatest_PlayerRank = api.GetPlayerRank(GetChallengeId(), cotdLatest_MapId, GI::PlayersId());
         // log_trace("[ApiUpdateCotdPlayerRank] from api got: " + Json::Write(cotdLatest_PlayerRank));
         logcall("ApiUpdateCotdPlayerRank", "Done! " + Json::Write(cotdLatest_PlayerRank));
     }
@@ -499,13 +501,14 @@ namespace DataManager {
         } else {
             log_trace(logpre + "got div w/ " + GetCotdTotalPlayers() + " total players");
             // we can get a time for this div
-            Json::Value res;
+            Json::Value@ res;
             if (_div * 64 > GetCotdTotalPlayers()) {
                 // div is not full, get time of last player
-                res = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, 1, GetCotdTotalPlayers() - 1);
+                @res = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, 1, GetCotdTotalPlayers() - 1);
             } else {
-                res = api.GetCutoffForDiv(GetChallengeId(), cotdLatest_MapId, _div);
+                @res = api.GetCutoffForDiv(GetChallengeId(), cotdLatest_MapId, _div);
             }
+            ClearJsonSlowly(res);
             // log_trace(logpre + " res: " + Json::Write(res));
             /* note: res[0]["score"] and res[0]["time"] appear to be identical */
             if (res.GetType() == Json::Type::Array) {
@@ -566,7 +569,7 @@ namespace DataManager {
                     uint timeStamp = Time::Stamp;
                     for (uint i = 1; i <= nPlayers; i += chunkSize) {
                         if (Setting_HudShowFavoritedPlayersTimes || Setting_AllowSaveQualiSnapshots || divRows[int(i/chunkSize)].visible) {
-                            startnew(_CoroCacheTimesLive, UpdateTimesForLiveCache(0, i - 1, timeStamp));
+                            startnew(_CoroCacheTimesLive, UpdateTimesForLiveCache(chunkSize, i - 1, timeStamp));
                             yield(); // slow down a bit
                         }
                     }
@@ -579,6 +582,7 @@ namespace DataManager {
         UpdateTimesForLiveCache@ args = cast<UpdateTimesForLiveCache@>(_args);
         while (!debounce.CanProceed("_CoroCacheTimesLive.preApi", 5)) yield();
         auto timesData = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, args.length, args.offset);
+        ClearJsonSlowly(timesData);
         while (!debounce.CanProceed("_CoroCacheTimesLive.postApi", 5)) yield(); // avoid too much processing in one frame
         string toWrite = "";
         if (timesData.GetType() == Json::Type::Array) {
@@ -627,7 +631,9 @@ namespace DataManager {
 
     void _ScanFavsForOffset(ref@ r) {
         uint off = cast<Uint>(r).v;
-        auto times = ChallengeTimes(api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, 100, off));
+        auto jTimes = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, 100, off);
+        ClearJsonSlowly(jTimes);
+        auto times = ChallengeTimes(jTimes);
         bool setFav = false;
         for (uint i = 0; i < times.Length; i++) {
             auto time = times[i];

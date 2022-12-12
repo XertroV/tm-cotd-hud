@@ -57,13 +57,14 @@ namespace GI {
     }
 
     MwFastBuffer<CSmPlayer@> GetCurrPgPlayers() {
-        auto pg = GetCurrentPlayground();
-        if (pg is null or pg.Players is null) return null;
-        auto ps = pg.Players;
         auto ret = MwFastBuffer<CSmPlayer@>();
-        for (uint i = 0; i < ps.Length; i++) {
-            ret.Add(cast<CSmPlayer>(ps[i]));
-        }
+        if (GetApp().CurrentPlayground is null) return ret;
+        try {
+            auto ps = GetApp().CurrentPlayground.Players;
+            for (uint i = 0; i < ps.Length; i++) {
+                ret.Add(cast<CSmPlayer>(ps[i]));
+            }
+        } catch {}
         return ret;
     }
 

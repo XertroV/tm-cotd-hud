@@ -707,7 +707,7 @@ namespace CotdExplorer {
             string day = keys[i];
             TrackOfTheDayEntry@ totd = CotdTreeYMD(year, month, day);
             TmMap@ map = mapDb.GetMap(totd.mapUid);
-            if (PersistentData::ThumbnailCached(map.ThumbnailUrl)) {
+            if (map !is null && PersistentData::ThumbnailCached(map.ThumbnailUrl)) {
                 yield();
                 PersistentData::GetThumbTex(map.ThumbnailUrl);  // load it from disk if it isn't already
             }

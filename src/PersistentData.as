@@ -437,7 +437,7 @@ class HistoryDb : JsonDb {
         auto sd = data.j['sync']['challenges'];
         if (DbSync::IsStarted(sd)) {
             /* this is only true while we are doing the initial requests */
-            auto challenges = Challenges(api.GetChallenges(1, 0));
+            auto challenges = Challenges(ClearJsonSlowly(api.GetChallenges(1, 0)));
             auto latestChallenge = challenges[0];
             auto newSD = Json::Object();
             newSD['id'] = DbSync::IN_PROG;
@@ -485,7 +485,7 @@ class HistoryDb : JsonDb {
                 /* if we updated a long time ago, update our offset based
                    on new most recent challenge.
                 */
-                auto latestChallenge = Challenge(api.GetChallenges(1, 0)[0]);
+                auto latestChallenge = Challenge(ClearJsonSlowly(api.GetChallenges(1, 0)[0]));
                 int maxId = latestChallenge.id;
                 int oldMaxId = int(sd['state']['maxId']);
                 int maxIdDiff = maxId - oldMaxId;
@@ -500,10 +500,10 @@ class HistoryDb : JsonDb {
             int offset = int(sd['state']['offset']);
             Challenges@ newCs;
             if (offset < 0) {
-                @newCs = Challenges(api.GetChallenges(1, 0));
+                @newCs = Challenges(ClearJsonSlowly(api.GetChallenges(1, 0)));
             } else {
                 int length = Math::Min(100, sd['state'].Get('length', 100));
-                @newCs = Challenges(api.GetChallenges(length, offset));
+                @newCs = Challenges(ClearJsonSlowly(api.GetChallenges(length, offset)));
             }
             if (newCs.Length > 0) {  // we'll get `[]` response when offset is too high.
                 auto chs = data.j['challenges'];
@@ -575,7 +575,7 @@ class HistoryDb : JsonDb {
             int td = Time::Stamp - ChallengesSdUpdatedAt();
             if (td > 15*60) {
                 log_trace("[ChallengeSyncUpkeep] Checking for updated challenges. (td=" + td + ")");
-                auto latestCs = api.GetChallenges(1);
+                auto latestCs = ClearJsonSlowly(api.GetChallenges(1));
                 if (latestCs.GetType() != Json::Type::Array) {
                     // something went wrong, sleep and try again.
                     sleep(3 * 1000);
@@ -642,7 +642,7 @@ class HistoryDb : JsonDb {
             next ~6 yrs 5 months (as of May 2022).
             todo before 2029: check if we need to make a second call and merge results.
             */
-        auto totdData = TotdResp(api.GetTotdByMonth(100));
+        auto totdData = TotdResp(ClearJsonSlowly(api.GetTotdByMonth(100)));
         auto ml = totdData.monthList;
         for (uint i = 0; i < ml.Length; i++) {
             auto m = ml[i];
@@ -1065,7 +1065,7 @@ class MapDb : JsonDb {
         if (shouldGet) {
             string seasonUid = toGet['seasonUid'];
             logcall("_SyncLoopRecords", "Downloading " + seasonUid + "/" + mapUid);
-            auto resp = api.GetMapRecords(seasonUid, mapUid);
+            auto resp = ClearJsonSlowly(api.GetMapRecords(seasonUid, mapUid));
             logcall("_SyncLoopRecords", "Got Response");
             if (!IsJsonNull(resp['tops'])) {
                 int endTs = Text::ParseInt(toGet['end']);
@@ -1105,7 +1105,7 @@ class MapDb : JsonDb {
         uint chunkSize = 100;
         initData['chunkSize'] = chunkSize;
         initData['ranges'] = Json::Object();
-        auto resp = api.GetPlayerRank(cId, mapUid, '');
+        auto resp = ClearJsonSlowly(api.GetPlayerRank(cId, mapUid, ''));
         uint nPlayers;
         if (IsJsonNull(resp)) {
             warn("Got null response for _GetOneCotdMapTimes; toGet=" + Json::Write(toGet));
@@ -1170,8 +1170,8 @@ class MapDb : JsonDb {
 
     void _GetCotdMapTimesRange(ref@ _args) {
         auto args = cast<CotdTimesReqData@>(_args);
-        while (!debounce.CanProceed("_GetCotdMapTimesRange", 15)) yield();
-        auto times = api.GetCotdTimes(args.cId, args.mapUid, args.length, args.rank - 1);
+        while (!debounce.CanProceed("_GetCotdMapTimesRange", 250)) yield();
+        auto times = ClearJsonSlowly(api.GetCotdTimes(args.cId, args.mapUid, args.length, args.rank - 1));
         while (!debounce.CanProceed("_GetCotdMapTimesRange.postProcess", 15)) yield();
         string[] playerIds = array<string>(times.Length);
         for (uint i = 0; i < times.Length; i++) {
@@ -1265,7 +1265,7 @@ class MapDb : JsonDb {
             bool gotOverlapping = false;
             // inner loop to keep getting rows while there's new stuff
             while (!gotOverlapping) {
-                auto comps = Competitions(api.GetCompetitions(length, offset));
+                auto comps = Competitions(ClearJsonSlowly(api.GetCompetitions(length, offset)));
                 for (uint i = 0; i < comps.Length; i++) {
                     auto comp = comps[i];
                     if (compsDb.Exists('' + comp.id)) {
@@ -1291,7 +1291,7 @@ class MapDb : JsonDb {
         int maxId = -1;
         while (true) {
             if (compsDb.Exists('1')) return; // we're done the historical scan at this point
-            auto resp = api.GetCompetitions(length, offset);
+            auto resp = ClearJsonSlowly(api.GetCompetitions(length, offset));
             if (IsJsonNull(resp)) {
                 warn("api.GetCompetitions(" + length + ", " + offset + ") returned Json null!");
                 sleep(500);
@@ -1328,7 +1328,7 @@ class MapDb : JsonDb {
         if (!roundsQDb.IsEmpty()) {
             uint compId = roundsQDb.GetQueueItemNow();
             uint[] roundIds = {};
-            auto rounds = CompRounds(api.GetCompRounds(compId));
+            auto rounds = CompRounds(ClearJsonSlowly(api.GetCompRounds(compId)));
             for (uint i = 0; i < rounds.Length; i++) {
                 auto round = rounds[i];
                 roundIds.InsertLast(round.id);
@@ -1356,7 +1356,7 @@ class MapDb : JsonDb {
         if (!matchesQDb.IsEmpty()) {
             uint roundId = matchesQDb.GetQueueItemNow();
             uint[] matchIds = {};
-            auto matchesJ = api.GetCompRoundMatches(roundId)['matches'];
+            auto matchesJ = ClearJsonSlowly(api.GetCompRoundMatches(roundId))['matches'];
             // auto start = Time::Now;
             auto matches = CompRoundMatches(matchesJ);
             // trace_benchmark_("CompRoundMatches fromJson", start);
@@ -1394,7 +1394,7 @@ class MapDb : JsonDb {
             uint roundId = toGet[0];
             uint matchId = toGet[1];
             while (!debounce.CanProceed("_SyncNextCompMatchResults.GetCompMatchResults", 5)) yield();
-            auto matchRes = api.GetCompMatchResults(matchId);
+            auto matchRes = ClearJsonSlowly(api.GetCompMatchResults(matchId));
             auto matchResults = MatchResults(matchRes);
             while (!debounce.CanProceed("_SyncNextCompMatchResults.Save", 5)) yield();
             auto start = Time::Now;
