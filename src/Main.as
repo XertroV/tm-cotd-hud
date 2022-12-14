@@ -39,6 +39,8 @@ void Main() {
     NotifyInsufficientPermissions();
 #endif
 
+    AwaitSmoothFrameRate();
+
     startnew(InitSpecialPlayers);
     startnew(ClearJsonSlowly_Loop);
 
@@ -49,9 +51,9 @@ void Main() {
     startnew(DevMain);
 #endif
 
-#if UNIT_TEST || DEV
-    TestColors();
-#endif
+// #if UNIT_TEST || DEV
+//     TestColors();
+// #endif
 
     log_trace("Main: Awaiting EULA");
     AwaitEula();
@@ -79,6 +81,29 @@ void Main() {
     startnew(BcCommands::Main);
 #endif
 }
+
+
+// average over 20 frames, wait for a consistent and/or low framerate for 50 frames
+void AwaitSmoothFrameRate() {
+    float avg = 1000.;
+    float lastAvg = avg;
+    uint goodFramesCount = 0;
+    uint totalCount = 0;
+    uint lastTime = Time::Now;
+    float ft;
+    while (goodFramesCount < 50 && totalCount < 600) {
+        yield();
+        totalCount++;
+        ft = float(Time::Now - lastTime);
+        lastAvg = avg;
+        avg = (avg * 19. + ft) / 20.;
+        if (Math::Abs(lastAvg - avg) < 15 || avg < 50 && ft < 50) {
+            goodFramesCount++;
+        }
+    }
+}
+
+
 
 void Update(float dt) {
     if (!EulaAccepted()) return;
