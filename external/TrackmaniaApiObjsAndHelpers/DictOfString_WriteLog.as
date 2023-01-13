@@ -28,7 +28,7 @@ class DictOfString_WriteLog {
   }
 
   const string[]@ GetMany(const string[] &in keys) const {
-    array<string> ret = {};
+    array<string> ret;
     for (uint i = 0; i < keys.Length; i++) {
       auto key = keys[i];
       ret.InsertLast(Get(key));

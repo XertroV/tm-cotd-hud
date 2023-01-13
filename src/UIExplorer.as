@@ -575,6 +575,8 @@ namespace CotdExplorer {
     void OnSelectedYear(int year) {
         explYear.AsJust(year);
         SoftRefreshCotdTreeFromDb();
+        _monthsSorted = CotdTreeY().GetKeys();
+        _monthsSorted.SortAsc();
     }
 
     string[] _monthsSorted;
@@ -588,7 +590,7 @@ namespace CotdExplorer {
             _monthsSorted = CotdTreeY().GetKeys();
             _monthsSorted.SortAsc();
         }
-        array<string> months = _monthsSorted;
+        array<string>@ months = _monthsSorted;
         int _offs = (Text::ParseInt(months[0]));  // 2 rows of 6 months
         int _last = Text::ParseInt(months[months.Length - 1]);
         int _nMonths = months.Length;

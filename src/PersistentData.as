@@ -356,14 +356,14 @@ class HistoryDb : JsonDb {
                 continue;
             }
             if (!d.Exists(ymd[0])) {
-                @d[ymd[0]] = dictionary();
+                d[ymd[0]] = @dictionary();
             }
             dictionary@ md = cast<dictionary@>(d[ymd[0]]);
             if (!md.Exists(ymd[1])) {
-                @md[ymd[1]] = dictionary();
+                md[ymd[1]] = @dictionary();
             }
             dictionary@ dd = cast<dictionary@>(md[ymd[1]]);
-            @dd[ymd[2]] = totdDb.Get(k);
+            dd[ymd[2]] = @totdDb.Get(k);
         }
         return d;
     }
