@@ -749,9 +749,10 @@ class CotdIndexDb : JsonDb {
                 throw("[AddChallenge] Challenge ID Mismatch! " + id + " vs " + cId);
             }
             string name = c.name;
-            if (name.SubStr(0, 14) == "Cup of the Day") {
-                string date = name.SubStr(15, 10); // 2022-05-30
-                string[] ymd = FromYMD(date);
+            bool newFormat = name.StartsWith("COTD");
+            if (newFormat || name.SubStr(0, 14) == "Cup of the Day") {
+                // string date = name.SubStr(newFormat ? 5 : 15, 10); // 2022-05-30
+                string[] ymd = NameToYMD(name);
                 auto @ymdObj = data.j['ymdToCotdChallenges'];
                 auto @year = ymdObj[ymd[0]];
                 if (year.GetType() != Json::Type::Object) year = Json::Object();
@@ -830,7 +831,8 @@ class CotdIndexDb : JsonDb {
 
     void AddComp(Competition@ &in comp) {
         if (comp !is null) {
-            if (comp.name.SubStr(0, 14) == "Cup of the Day") {
+            auto newFormat = comp.name.StartsWith("COTD");
+            if (newFormat || comp.name.SubStr(0, 14) == "Cup of the Day") {
                 string[] ymd = NameToYMD(comp.name);
                 if (data.j['ymdToCotdComps'].GetType() != Json::Type::Object)
                     data.j['ymdToCotdComps'] = Json::Object();

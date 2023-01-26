@@ -39,8 +39,9 @@ const array<string>@ FromYMD(const string &in date) {
 }
 
 const string ExtractYMD(const string &in cotdName) {
-    assert(cotdName.SubStr(0, 14) == "Cup of the Day", "is not a Cup of the Day event name.");
-    return cotdName.SubStr(15, 10);
+    bool newNameVer = cotdName.StartsWith("COTD");
+    assert(newNameVer || cotdName.SubStr(0, 14) == "Cup of the Day", "is not a Cup of the Day event name.");
+    return cotdName.SubStr(newNameVer ? 5 : 15, 10);
 }
 
 const array<string>@ NameToYMD(const string &in name) {

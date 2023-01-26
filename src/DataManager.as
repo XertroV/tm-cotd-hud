@@ -319,7 +319,7 @@ namespace DataManager {
 
     string GetChallengeDateAndNumber() {
         auto cn = GetChallengeName();
-        return cn == "" ? "0000-00-00 #0" : cn.SubStr(15, 13);
+        return cn == "" ? "0000-00-00 #0" : cn.SubStr(cn.StartsWith("COTD") ? 5 : 15, 13);
     }
 
     string GetChallengeTitle() {
