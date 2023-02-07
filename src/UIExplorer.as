@@ -928,10 +928,11 @@ namespace CotdExplorer {
                     if (c !is null) {
                         _disabled = c.endDate >= uint(Time::Stamp);
                         string cName = string(c.name);
-                        bool isSingleton = cName.SubStr(26, 1) != "#";
+                        int hashIx = cName.StartsWith("COTD") ? 16 : 26;
+                        bool isSingleton = cName.SubStr(hashIx, 1) != "#";
                         int cotdNum = 1;
                         if (!isSingleton)
-                            cotdNum = Text::ParseInt(cName.SubStr(27, 1)); // should be the number in "#2" or w/e after COTD
+                            cotdNum = Text::ParseInt(cName.SubStr(hashIx + 1, 1)); // should be the number in "#2" or w/e after COTD
                         if (cotdNum <= 0 || cotdNum > 3) {
                             warn("_RenderExplorerCotdCupSelection | invalid cotdNum: " + cotdNum + " for COTD with name: " + cName);
                         }

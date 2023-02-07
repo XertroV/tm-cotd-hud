@@ -16,10 +16,6 @@ const string c_warn = "\\$fd2";
 
 const string c_menuIconColor = c_fuchsia;
 
-
-Color@ CGreen = Color(vec3(0.082, 0.961, 0.208));  // #15F535
-Color@ CBlack = Color(vec3(0, 0, 0));  // #15F535
-
 enum ColorTy {
     RGB,
     LAB,
@@ -27,12 +23,9 @@ enum ColorTy {
     HSL,
 }
 
-ColorTy[] allColorTys = {
-    ColorTy::RGB,
-    ColorTy::LAB,
-    ColorTy::XYZ,
-    ColorTy::HSL
-};
+Color@ CGreen = Color(vec3(0.082, 0.961, 0.208));  // #15F535
+Color@ CBlack = Color(vec3(0, 0, 0));  // #15F535
+
 
 string ColorTyStr(ColorTy ty) {
     switch (ty) {
@@ -161,16 +154,6 @@ uint8 ToSingleHexCol(float v) {
     int u = uint8(Math::Round(v));
     if (u < 10) { return 48 + u; }  /* 48 = '0' */
     return 87 + u;  /* u>=10 and 97 = 'a' */
-    // switch (u) {
-    //     case 10: return "a";
-    //     case 11: return "b";
-    //     case 12: return "c";
-    //     case 13: return "d";
-    //     case 14: return "e";
-    //     case 15: return "f";
-    // }
-    // // should never happen
-    // return "F";
 }
 
 string rgbToHexTri(vec3 rgb) {
@@ -219,10 +202,6 @@ class Color {
 
     string get_HexTri() {
         return rgbToHexTri(this.rgb);
-        // return ""
-        //     + ToSingleHexCol(v.x)
-        //     + ToSingleHexCol(v.y)
-        //     + ToSingleHexCol(v.z);
     }
 
     void AsLAB() {
@@ -370,18 +349,23 @@ string TextGradient2Point0(Color@[] colors, uint nColors, ColorTy mode, string &
 
 
 string EscapeRawToOpenPlanet(const string &in raw) {
-    return raw.Replace("$$", "_^&^_")
+    auto ret = raw.Replace("$$", "_^&^_")
         .Replace("$o", "") /* strip out $o b/c openplanet renders it as `o` */
         .Replace("$O", "") /* strip out $o b/c openplanet renders it as `o` */
+        ;
+    ret = ret
         .Replace("$n", "") /* as above */
         .Replace("$N", "") /* as above */
         .Replace("$i", "") /* as above */
         .Replace("$I", "") /* as above */
+        ;
+    ret = ret
         .Replace("$w", "") /* as above */
         .Replace("$W", "") /* as above */
         .Replace("$t", "") /* testing -- '$cfa$tSan$af7har$9f4aja $4f1ft' Krnz' doesn't render right */
         .Replace("$", "\\$")
         .Replace("_^&^_", "\\$$");
+    return ret;
 }
 
 const uint asciiDollarSign = "$"[0];
@@ -452,55 +436,55 @@ string MakeColorsOkayDarkMode(const string &in raw) {
 }
 
 
-void tPrint(const string &in msg) {
-#if UNIT_TEST
-    print("\\$b1f" + msg);
-#endif
-}
+// void tPrint(const string &in msg) {
+// #if UNIT_TEST
+//     print("\\$b1f" + msg);
+// #endif
+// }
 
 
-#if UNIT_TEST || DEV
+// #if UNIT_TEST || DEV
 
-void TestColors() {
-    TestOneColor(vec3(1, 1, 1));
-    TestOneColor(vec3(.3, .5, .1));
-    TestOneColor(vec3(.99, .1, .6));
-    TestHexTri();
-    logcall('TestColors', 'completed successfully!');
-}
+// void TestColors() {
+//     TestOneColor(vec3(1, 1, 1));
+//     TestOneColor(vec3(.3, .5, .1));
+//     TestOneColor(vec3(.99, .1, .6));
+//     TestHexTri();
+//     logcall('TestColors', 'completed successfully!');
+// }
 
-void TestOneColor(vec3 rgb) {
-    vec3 xyz = rgbToXYZ(rgb);
-    vec3 lab = xyzToLAB(xyz);
-    vec3 xyz2 = labToXYZ(lab);
-    vec3 rgb2 = xyzToRGB(xyz2);
-    vec3 diff = rgb2 - rgb;
-    assert(diff.Length() < 0.001, "rgb2-rgb diff");
-    tPrint("rgb: " + Vec3ToStr(rgb));
-    tPrint("xyz: " + Vec3ToStr(xyz));
-    tPrint("lab: " + Vec3ToStr(lab));
-    tPrint("xyz2: " + Vec3ToStr(xyz2));
-    tPrint("rgb2: " + Vec3ToStr(rgb2));
-    tPrint("diff: " + Vec3ToStr(diff));
-    tPrint("C(rgb).ManiaColor: \\" + Color(rgb).ManiaColor + " <<<< test ");
+// void TestOneColor(vec3 rgb) {
+//     vec3 xyz = rgbToXYZ(rgb);
+//     vec3 lab = xyzToLAB(xyz);
+//     vec3 xyz2 = labToXYZ(lab);
+//     vec3 rgb2 = xyzToRGB(xyz2);
+//     vec3 diff = rgb2 - rgb;
+//     assert(diff.Length() < 0.001, "rgb2-rgb diff");
+//     tPrint("rgb: " + Vec3ToStr(rgb));
+//     tPrint("xyz: " + Vec3ToStr(xyz));
+//     tPrint("lab: " + Vec3ToStr(lab));
+//     tPrint("xyz2: " + Vec3ToStr(xyz2));
+//     tPrint("rgb2: " + Vec3ToStr(rgb2));
+//     tPrint("diff: " + Vec3ToStr(diff));
+//     tPrint("C(rgb).ManiaColor: \\" + Color(rgb).ManiaColor + " <<<< test ");
 
-    vec3 hsl = rgbToHSL(rgb);
-    vec3 rgb3 = hslToRGB(hsl);
-    diff = rgb3 - rgb;
-    tPrint("rgb: " + Vec3ToStr(rgb));
-    tPrint("hsl: " + Vec3ToStr(hsl));
-    tPrint("rgb3: " + Vec3ToStr(rgb3));
-    tPrint("diff: " + Vec3ToStr(diff));
-    assert(diff.Length() < 0.001, "rgb3-rgb diff");
-}
+//     vec3 hsl = rgbToHSL(rgb);
+//     vec3 rgb3 = hslToRGB(hsl);
+//     diff = rgb3 - rgb;
+//     tPrint("rgb: " + Vec3ToStr(rgb));
+//     tPrint("hsl: " + Vec3ToStr(hsl));
+//     tPrint("rgb3: " + Vec3ToStr(rgb3));
+//     tPrint("diff: " + Vec3ToStr(diff));
+//     assert(diff.Length() < 0.001, "rgb3-rgb diff");
+// }
 
-void TestHexTri() {
-    auto c = Color(vec3(1, .51, 0));
-    auto ht = c.HexTri;
-    assert(ht == "f80", 'ht /= "f80"; ht=' + ht + ' from ' + c.ToString());
-    assert(rgbToHexTri(vec3(1, 1, 1)) == "fff", "hextri: fff");
-    assert(rgbToHexTri(vec3(1./15., 2/15., 3/15.)) == "123", "hextri: 123");
-    assert(rgbToHexTri(vec3(13., 5, 1) / 15.) == 'd51', 'hextri: d51');
-}
+// void TestHexTri() {
+//     auto c = Color(vec3(1, .51, 0));
+//     auto ht = c.HexTri;
+//     assert(ht == "f80", 'ht /= "f80"; ht=' + ht + ' from ' + c.ToString());
+//     assert(rgbToHexTri(vec3(1, 1, 1)) == "fff", "hextri: fff");
+//     assert(rgbToHexTri(vec3(1./15., 2/15., 3/15.)) == "123", "hextri: 123");
+//     assert(rgbToHexTri(vec3(13., 5, 1) / 15.) == 'd51', 'hextri: d51');
+// }
 
-#endif
+// #endif

@@ -40,29 +40,27 @@ bool State_CheckedEulaAgreeBox = false;  // false on load as reset
 void RenderSettingsEula() {
     CenteredTextBigHeading("\"End User License Agreement\"", BcCommands::ByCotdHudStr);
     UI::PushFont(subheadingFont);
-    UI::TextWrapped(string::Join(
-        { "You are asked to agree to the following 'End User License Agreement' (EULA) for COTD HUD + Explorer (i.e., \"this work\") in exchange for the utility it provides.\nIn this EULA, \"we\" refers to the developers of this software."
-        , ""
-        , "The EULA is that you both acknowledge and consent to all of the following:"
-        , ""
-        , "\t→\t This software will use \\$<\\$6efyour Trackmania account\\$> to request \\$<\\$f84A LOT\\$> of data from Nadeo's APIs. We do not know how Nadeo will react to this, or whether it will have an impact on your account. Usage of this software implies consent to download potentially a lot of data. At least 100s of KB for each COTD that you view the data of or participate in (COTN and COTM are about 10% the size)."
-        , ""
-        , "\t→\t \\$<\\$ee2This software is provided with no warranties or guarantees.\\$> If it is helpful to you then we are glad for that. But the authors will not accept responsibility for any harm that comes to you from use of this software, including any matters related to the above point."
-        , ""
-        , "\t→\t Any additional requirements as specified under any license that the distribution of this work that you are using is published under."
-        , ""
-        , "\t→\t \\$<\\$ee2Preliminary downloads will begin as soon as you click 'Accept EULA'.\\$> \\$<\\$bbb(Current COTD requests may also occur in the background at any time whenever Trackmania is open -- though this should be infrequent when outside of a COTD event.)\\$>"
-        , ""
-        , "\t→\t Revoking this agreement requires restarting Trackmania."
-        , ""
-        // , "\t→\t Your consent will be sought before gathering telemetry if this software ever integrates such functionality. Currently no such functionality is present. (In such a case, this clause must be replaced for the author to be considered honest.)"
-        // , ""
-        , "\t→\t The source code for this software (or an ancestor) is and/or has been released under a public domain license. Therefore, it is left to you -- as your responsibility -- both to verify the integrity, behavior, and origin of this software and to only agree to this EULA if said integrity, behavior, and origin meets your relevant standards."
-        , ""
-        , "\t→\t (Beta clause) This software may have breaking version changes which require you to re-download any and all data. Currently the DB api is unstable and we are not sure that it will remain stable."
-        , ""
-        , "If you consent and agree to the above, please check the following box and press the button. (This plugin will not be functional otherwise.)"
-        }, "\n"));
+    UI::TextWrapped("""
+You are asked to agree to the following 'End User License Agreement' (EULA) for COTD HUD + Explorer (i.e., \"this work\") in exchange for the utility it provides.\nIn this EULA, \"we\" refers to the developers of this software.
+
+The EULA is that you both acknowledge and consent to all of the following:
+
+\t→\t This software will use \\$<\\$6efyour Trackmania account\\$> to request \\$<\\$f84A LOT\\$> of data from Nadeo's APIs. We do not know how Nadeo will react to this, or whether it will have an impact on your account. Usage of this software implies consent to download potentially a lot of data. At least 100s of KB for each COTD that you view the data of or participate in (COTN and COTM are about 10% the size).
+
+\t→\t \\$<\\$ee2This software is provided with no warranties or guarantees.\\$> If it is helpful to you then we are glad for that. But the authors will not accept responsibility for any harm that comes to you from use of this software, including any matters related to the above point.
+
+\t→\t Any additional requirements as specified under any license that the distribution of this work that you are using is published under.
+
+\t→\t \\$<\\$ee2Preliminary downloads will begin as soon as you click 'Accept EULA'.\\$> \\$<\\$bbb(Current COTD requests may also occur in the background at any time whenever Trackmania is open -- though this should be infrequent when outside of a COTD event.)\\$>
+
+\t→\t Revoking this agreement requires restarting Trackmania.
+
+\t→\t The source code for this software (or an ancestor) is and/or has been released under a public domain license. Therefore, it is left to you -- as your responsibility -- both to verify the integrity, behavior, and origin of this software and to only agree to this EULA if said integrity, behavior, and origin meets your relevant standards.
+
+\t→\t (Beta clause) This software may have breaking version changes which require you to re-download any and all data. Currently the DB api is unstable and we are not sure that it will remain stable.
+
+If you consent and agree to the above, please check the following box and press the button. (This plugin will not be functional otherwise.)
+        """.Replace("\\t", "\t").Replace("\\\\", "\\"));
     VPad();
     VPad();
     VPad();

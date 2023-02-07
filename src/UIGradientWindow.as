@@ -68,8 +68,8 @@ void RenderUtilityColorGradients() {
 
     s_GradientText = UI::InputText("Input Text", s_GradientText);
     if (UI::BeginCombo("Color Mode", ColorTyStr(s_gradientMode))) {
-        for (uint i = 0; i < allColorTys.Length; i++) {
-            auto ct = allColorTys[i];
+        for (uint i = 0; i < 4; i++) {
+            auto ct = ColorTy(i);
             if (UI::Selectable(ColorTyStr(ct), ct == s_gradientMode, UI::SelectableFlags::None)) {
                 s_gradientMode = ct;
             }

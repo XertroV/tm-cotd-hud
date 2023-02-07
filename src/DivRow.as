@@ -53,14 +53,15 @@ class DivRow {
     }
 
     string ToString() {
-        return "DivRow("
-            + "div=" + this.div + ", "
-            + "timeMs=" + this.timeMs + ", "
-            + "lastUpdateStart=" + this.lastUpdateStart + ", "
-            + "lastUpdateDone=" + this.lastUpdateDone + ", "
-            + "Δ=" + (this.lastUpdateDone - this.lastUpdateStart) + ", "
-            + "visible=" + this.visible + ", "
-            + "ty=" + tostring(this.ty)
-            + ")";
+        string ret = "DivRow(";
+        ret += "div=" + this.div + ", ";
+        ret += "timeMs=" + this.timeMs + ", ";
+        ret += "lastUpdateStart=" + this.lastUpdateStart + ", ";
+        ret += "lastUpdateDone=" + this.lastUpdateDone + ", ";
+        ret += "Δ=" + (this.lastUpdateDone - this.lastUpdateStart) + ", ";
+        ret += "visible=" + this.visible + ", ";
+        ret += "ty=" + tostring(this.ty);
+        ret += ")";
+        return ret;
     }
 }
