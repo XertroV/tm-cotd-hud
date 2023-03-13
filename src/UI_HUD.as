@@ -65,6 +65,8 @@ namespace CotdHud {
     }
 
     void _RenderHistogram() {
+        // todo: histogram in quali only option -- might interfer with preview
+        // if (Setting_HistogramOnlyInQuali && )
         if (Setting_HudShowHistogram || sTabHudHistogramActive.Either()) {
             uint[] data = {};
             Histogram::Draw(
@@ -300,6 +302,7 @@ namespace CotdHud {
             || Setting_ShowHudAlways
             ;
         ret = Setting_ShowHud && ret;
+        if (Setting_HideWithGameUI && !UI::IsGameUIVisible()) return false;
         return ret;
     }
 

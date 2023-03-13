@@ -13,8 +13,11 @@ bool Setting_ShowHudAlways = false;
 [Setting category="General" name="HUD Window Locked?" description="When disabled: you can drag the window around. Combine with 'Show HUD Always' to allow positioning the window right now."]
 bool Setting_HudWindowLocked = false;
 
-[Setting category="General" name="Show HUD even if interface is hidden?"]
+[Setting category="General" name="Show HUD even if the Openplanet interface is hidden?"]
 bool Setting_ShowHudEvenIfInterfaceHidden = true;
+
+[Setting category="General" name="Hide HUD when the game UI is hidden?"]
+bool Setting_HideWithGameUI = true;
 
 
 [Setting category="HUD" name="Show deltas?" description="Example: `-0:02.252` or `+0:11.002`"]
@@ -50,6 +53,9 @@ bool Setting_HudShowFavoritedPlayersTimes = false;
 // [Setting category="HUD Histogram" name="Show HUD Histogram?" description="Shows a histogram graphing the distribution of 200 players' times. Typically those will be the 100 players above you and the 99 players below you. This is useful to see if there are any *breakpoints* that are important to pass (where you would substantially improve in ranking). If you are in the top or bottom 100 players, then the top or bottom 200 times are used instead."]
 [Setting hidden]
 bool Setting_HudShowHistogram = true;
+
+// [Setting hidden]
+// bool Setting_HistogramOnlyInQuali = true;
 
 // [Setting category="HUD Histogram" name="How many bars in the histogram?" min="10" max="100" description="aka. 'bins' or 'buckets'. If set to 25 then the times that appear on the histogram will be grouped into 25 bins, thus there will be 25 vertical bars in the histogram."]
 [Setting hidden]

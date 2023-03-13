@@ -70,6 +70,9 @@ void RenderSettingsHudHistogram() {
         + "This is useful to see if there are any *breakpoints* that are important to pass (where you would substantially improve in ranking).\n"
         + "If you are in the top or bottom 100 players, then the top or bottom 200 times are used instead.");
 
+    // Setting_HistogramOnlyInQuali = UI::Checkbox("Only show HUD Histogram during qualifiers?", Setting_HistogramOnlyInQuali);
+    // AddSimpleTooltip("This will hide the histogram in rounds even if the HUD is shown.");
+
     TextHeading("Position and Size");
 
     Setting_HudHistogramPos.x = UI::SliderFloat("Horizontal Position (%)", Setting_HudHistogramPos.x, 0, 1);
