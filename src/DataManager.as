@@ -71,24 +71,14 @@ namespace DataManager {
         startnew(LoopDevPrintState);
 #endif
 
-        // while (true) {
-        //     yield();
-        // }
-
         sleep(2000);
         UpdateDivs();
-
-        while (true) {
-            // print("" + Time::get_Now());
-            sleep(15);
-        }
     }
 
     void Initialize() {
         // only request this at app startup -- will be updated when we join a COTD server
         try {
             auto jTotd = api.GetTotdByMonth(1);
-            ClearJsonSlowly(jTotd);
             auto days = jTotd["monthList"][0]["days"];
             string mapUid;
             for (uint i = 0; i < days.Length; i++) {
@@ -96,6 +86,7 @@ namespace DataManager {
                 if (mapUid.Length > 0) cotdLatest_MapId = mapUid;
                 else break;
             }
+            ClearJsonSlowly(jTotd);
         } catch {
             // sometimes the api is down
             trace('cotd_hud.datamanager.Initialize exception (non-fatal): ' + getExceptionInfo());
@@ -508,7 +499,6 @@ namespace DataManager {
             } else {
                 @res = api.GetCutoffForDiv(GetChallengeId(), cotdLatest_MapId, _div);
             }
-            ClearJsonSlowly(res);
             // log_trace(logpre + " res: " + Json::Write(res));
             /* note: res[0]["score"] and res[0]["time"] appear to be identical */
             if (res.GetType() == Json::Type::Array) {
@@ -516,6 +506,7 @@ namespace DataManager {
                 if (res.Length > 0)
                     _row.lastJson = res[0];
             }
+            ClearJsonSlowly(res);
         }
 
         _row.lastUpdateDone = Time::get_Now();
@@ -582,7 +573,6 @@ namespace DataManager {
         UpdateTimesForLiveCache@ args = cast<UpdateTimesForLiveCache@>(_args);
         while (!debounce.CanProceed("_CoroCacheTimesLive.preApi", 5)) yield();
         auto timesData = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, args.length, args.offset);
-        ClearJsonSlowly(timesData);
         while (!debounce.CanProceed("_CoroCacheTimesLive.postApi", 5)) yield(); // avoid too much processing in one frame
         string toWrite = "";
         if (timesData.GetType() == Json::Type::Array) {
@@ -600,6 +590,7 @@ namespace DataManager {
             td.WriteLine(toWrite);
             td.Close();
         }
+        ClearJsonSlowly(timesData);
     }
 
     void CoroLoopScanForFavorites() {
@@ -632,7 +623,6 @@ namespace DataManager {
     void _ScanFavsForOffset(ref@ r) {
         uint off = cast<Uint>(r).v;
         auto jTimes = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, 100, off);
-        ClearJsonSlowly(jTimes);
         auto times = ChallengeTimes(jTimes);
         bool setFav = false;
         for (uint i = 0; i < times.Length; i++) {
@@ -642,6 +632,7 @@ namespace DataManager {
                 setFav = true;
             }
         }
+        ClearJsonSlowly(jTimes);
         if (!setFav) return;
         SortFavorites();
     }
