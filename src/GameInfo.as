@@ -231,7 +231,8 @@ namespace GI {
     bool IsCotdQuali() {
         auto server_info = GetServerInfo();
         return PlaygroundNotNull()
-            && server_info.CurGameModeStr == "TM_TimeAttackDaily_Online";
+            && (server_info.CurGameModeStr == "TM_TimeAttackDaily_Online"
+                || server_info.CurGameModeStr == "TM_COTDQualifications_Online");
     }
 
     bool IsCotdKO() {
@@ -243,7 +244,9 @@ namespace GI {
     bool IsCotd() {
         auto server_info = GetServerInfo();
         return PlaygroundNotNull()
-            && (server_info.CurGameModeStr == "TM_TimeAttackDaily_Online" || server_info.CurGameModeStr == "TM_KnockoutDaily_Online");
+            && (server_info.CurGameModeStr == "TM_TimeAttackDaily_Online"
+                || server_info.CurGameModeStr == "TM_COTDQualifications_Online"
+                || server_info.CurGameModeStr == "TM_KnockoutDaily_Online");
     }
 
     string MapId() {
