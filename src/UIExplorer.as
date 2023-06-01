@@ -151,7 +151,9 @@ namespace CotdExplorer {
 
         /* main body */
 
-        if (!mapDb.Initialized) {
+        if (mapDb is null) {
+            _RenderDbLoading();
+        } else if (!mapDb.Initialized) {
             _RenderDbLoading();
         } else if (cotdYMDMapTree is null || cotdYMDMapTree.GetKeys().Length == 0) {
             _RenderExplorerLoading();
