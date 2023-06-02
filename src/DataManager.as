@@ -485,8 +485,7 @@ namespace DataManager {
 #endif
 
         auto _row = divRows[_div - 1];
-        _row.lastUpdateStart = Time::get_Now();
-        auto start = Time::get_Now();
+        _row.lastUpdateStart = Time::Now;
 
         if ((_div - 1) * 64 >= GetCotdTotalPlayers()) {
             // there are no players in this div

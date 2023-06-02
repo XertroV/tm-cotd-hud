@@ -34,10 +34,10 @@ void Main() {
         return;
     }
 
-#if DEV
-    UI::ShowNotification("Now testing NotifyInsufficientPermissions:", 15 * 1000);
-    NotifyInsufficientPermissions();
-#endif
+// #if DEV
+//     UI::ShowNotification("Now testing NotifyInsufficientPermissions:", 15 * 1000);
+//     NotifyInsufficientPermissions();
+// #endif
 
     AwaitSmoothFrameRate();
 

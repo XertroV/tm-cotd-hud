@@ -93,6 +93,13 @@ string[] ArrayOfJToString(array<Json::Value> &in v) {
     }
     return xs;
 }
+string[] ArrayOfJToString(array<Json::Value@> &in v) {
+    string[] xs = array<string>();
+    for (uint i = 0; i < v.Length; i++) {
+        xs.InsertLast(v[i]);
+    }
+    return xs;
+}
 
 bool JArrayContainsInt(Json::Value@ j, int v) {
     AssertJsonArray(j);

@@ -1177,7 +1177,7 @@ class MapDb : JsonDb {
         while (!debounce.CanProceed("_GetCotdMapTimesRange.postProcess", 15)) yield();
         string[] playerIds = array<string>(times.Length);
         for (uint i = 0; i < times.Length; i++) {
-            times[i].Remove('uid');
+            // times[i].Remove('uid');
             playerIds[i] = times[i]['player'];
         }
         while (!debounce.CanProceed("_GetCotdMapTimesRange.postProcess2", 15)) yield();
@@ -1194,7 +1194,7 @@ class MapDb : JsonDb {
         while (true) {
             if (!playerNameQDb.IsEmpty()) {
                 while (!debounce.CanProceed("_SyncLoopPlayerNames", 5)) yield();
-                auto _playerIds = playerNameQDb.GetNQueueItemsNow(100);
+                auto _playerIds = playerNameQDb.GetNQueueItemsNow(50);
                 yield();
                 string[] playerIds = ArrayOfJToString(_playerIds);
                 yield();

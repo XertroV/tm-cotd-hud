@@ -60,7 +60,7 @@ namespace CotdExplorer {
         calendarDayBtnDims = vec2(1920, 1080) * vec2(0.04, 0.08);
         calendarMonthBtnDims = vec2(1920, 1080) * vec2(0.0472, 0.05);
         challengeBtnDims = vec2(1920, 1080) * vec2(.056, .05);
-        windowActive.v = IsDev();
+        // windowActive.v = IsDev();
     }
 
     void OnMouseMove(int x, int y) {
@@ -1270,6 +1270,7 @@ namespace CotdExplorer {
         bool isLast;
         for (uint i = 1; i <= nPlayers; i += chunkSize) {
             auto times = jb.j['ranges']['' + i];
+            trace('times: ' + Json::Write(times));
             for (uint j = 0; j < times.Length; j++) {
                 isLast = i == nPlayers && j + 1 == times.Length;
                 score = times[j]['score'];
