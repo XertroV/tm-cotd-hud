@@ -49,7 +49,7 @@ Json::Value@ CallMapMonitorApiPath(const string &in path) {
     req.Start();
     while(!req.Finished()) { yield(); }
     auto respStr = req.String();
-    log_trace("[CallMapMonitorApiPath] Response: " + respStr);
+    // log_trace("[CallMapMonitorApiPath] Response: " + respStr);
     return Json::Parse(respStr);
 }
 

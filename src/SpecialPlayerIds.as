@@ -8,6 +8,7 @@ void InitSpecialIDs() {
     specialPlayerIds.Set("d320a237-1b0a-4069-af83-f2c09fbf042e", true); // AR_Mudda -- for 3x COTD wins on the same TOTD // 2021-08-22
     specialPlayerIds.Set("a4615959-2ccb-4264-8de1-108cfce42585", true); // Acide. 2021-12-28
     specialPlayerIds.Set("e3ff2309-bc24-414a-b9f1-81954236c34b", true); // Lars 2022-06-26
+    specialPlayerIds.Set("8f08302a-f670-463b-9f71-fbfacffb8bd1", true); // AR_Down
 #if DEV
     specialPlayerIds.Set("bd45204c-80f1-4809-b983-38b3f0ffc1ef", true); // wirtual, useful for testing
     specialPlayerIds.Set("d46fb45d-d422-47c9-9785-67270a311e25", true); // elconn
