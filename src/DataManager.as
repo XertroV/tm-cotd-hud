@@ -8,9 +8,10 @@ namespace DataManager {
 
     Debouncer@ debounce = Debouncer();
 
-    uint REFRESH_DIVS_PERIOD = 10000;
+    // reduce these again now we use caching server
+    uint REFRESH_DIVS_PERIOD = 5000;
     uint REFRESH_MY_TIME_PERIOD = 10000;
-    uint REFRESH_PLAYERS_PERIOD = 60000;
+    uint REFRESH_PLAYERS_PERIOD = 30000;
 
     /* global COTD state variables we want to keep track of and update */
 
@@ -503,6 +504,7 @@ namespace DataManager {
             }
             // log_trace(logpre + " res: " + Json::Write(res));
             /* note: res[0]["score"] and res[0]["time"] appear to be identical */
+            if (res is null) throw('CoroUpdateDivFromQ | res is null -- please report on openplanet discord in COTD HUD plugin thread.');
             if (res.GetType() == Json::Type::Array) {
                 _row.timeMs = (res.Length == 0) ? MAX_DIV_TIME : res[0]["score"];
                 if (res.Length > 0)
@@ -577,6 +579,7 @@ namespace DataManager {
         auto timesData = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, args.length, args.offset);
         while (!debounce.CanProceed("_CoroCacheTimesLive.postApi", 5)) yield(); // avoid too much processing in one frame
         string toWrite = "";
+        if (timesData is null) throw('_CoroCacheTimesLive | timesData is null -- please report on openplanet discord in COTD HUD plugin thread.');
         if (timesData.GetType() == Json::Type::Array) {
             for (uint i = 0; i < timesData.Length; i++) {
                 // timesData[i].Remove('uid');

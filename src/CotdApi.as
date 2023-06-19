@@ -95,6 +95,8 @@ class CotdApi {
         auto resp = MapMonitor::GetChallengeRecords(challengeid, mapid, length, offset);
         if (resp !is null && resp.GetType() == Json::Type::Object && resp.HasKey('json_payload')) {
             return resp['json_payload'];
+        } else if (resp !is null) {
+            warn("Got non-null non-object response for GetCotdTimes("+challengeid+", "+mapid+", l="+length+", o="+offset+"): " + Json::Write(resp));
         }
         return null;
     }
