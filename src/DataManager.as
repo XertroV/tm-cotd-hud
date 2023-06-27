@@ -8,6 +8,10 @@ namespace DataManager {
 
     Debouncer@ debounce = Debouncer();
 
+    // reduce these again now we use caching server
+    uint REFRESH_DIVS_PERIOD = 5000;
+    uint REFRESH_MY_TIME_PERIOD = 10000;
+    uint REFRESH_PLAYERS_PERIOD = 30000;
 
     /* global COTD state variables we want to keep track of and update */
 
@@ -157,13 +161,13 @@ namespace DataManager {
 
     void EnsureCotdStatsReacquired() {
         while (IsJsonNull(cotdLatest_Status)) {
-            if (debounce.CanProceed('cotdLatest_Status', 3000)) {
+            if (debounce.CanProceed('cotdLatest_Status', REFRESH_MY_TIME_PERIOD)) {
                 ApiUpdateCotdStatus();
             }
             yield();
         }
         while (IsJsonNull(cotdLatest_PlayerRank) || GetCotdTotalPlayers() == 0) {
-            if (debounce.CanProceed('cotdLatest_PlayerRank', 3000)) {
+            if (debounce.CanProceed('cotdLatest_PlayerRank', REFRESH_MY_TIME_PERIOD)) {
                 ApiUpdateCotdPlayerRank();
             }
             yield();
@@ -216,20 +220,19 @@ namespace DataManager {
 
     void LoopUpdateDivsInCotd() {
         uint loopSleepMs = 100;
-        uint loopUpdatePeriodMs = 5 * 1000;
 
         while (true) {
             auto now = Time::get_Now();
 
             bool shouldUpdate = false
                 || divs_lastUpdated == 0  // if we never have
-                || (now - divs_lastUpdated) > loopUpdatePeriodMs  // or if we've waited long enough
+                || (now - divs_lastUpdated) > REFRESH_DIVS_PERIOD  // or if we've waited long enough
                 ;
 
             // must be COTD
             shouldUpdate = shouldUpdate && GI::IsCotdQuali();
 
-            if (GI::IsCotdQuali() && debounce.CanProceed('log shouldUpdate cotdDivs', loopUpdatePeriodMs) || shouldUpdate)
+            if (GI::IsCotdQuali() && debounce.CanProceed('log shouldUpdate cotdDivs', REFRESH_DIVS_PERIOD) || shouldUpdate)
                 dev_logcall("LoopUpdateDivsInCotd", 'shouldUpdate:' + shouldUpdate);
 
             /* Update divs */
@@ -244,6 +247,7 @@ namespace DataManager {
     }
 
     void UpdateDivs() {
+        if (!debounce.CanProceed('UpdateDivs', REFRESH_DIVS_PERIOD)) return;
         divs_lastUpdated = Time::get_Now();
         // if the div is in the past, load from disk
         if (_ViewPriorChallenge() || uint(Time::Stamp) > GetChallengeEndDate()) {
@@ -358,7 +362,7 @@ namespace DataManager {
             yield();
         }
         /* if we updated in last 1500ms wait for obj to be not null and return */
-        if (!debounce.CanProceed('getCotdPlayerRank', 1500)) {
+        if (!debounce.CanProceed('getCotdPlayerRank', REFRESH_MY_TIME_PERIOD)) {
             while (IsJsonNull(cotdLatest_PlayerRank)) { yield(); }
             logcall_trace("ApiUpdateCotdPlayerRank", "debounced and waited for cotdLatest_PlayerRank to be non-null");
             return;
@@ -485,8 +489,7 @@ namespace DataManager {
 #endif
 
         auto _row = divRows[_div - 1];
-        _row.lastUpdateStart = Time::get_Now();
-        auto start = Time::get_Now();
+        _row.lastUpdateStart = Time::Now;
 
         if ((_div - 1) * 64 >= GetCotdTotalPlayers()) {
             // there are no players in this div
@@ -504,6 +507,7 @@ namespace DataManager {
             }
             // log_trace(logpre + " res: " + Json::Write(res));
             /* note: res[0]["score"] and res[0]["time"] appear to be identical */
+            if (res is null) throw('CoroUpdateDivFromQ | res is null -- please report on openplanet discord in COTD HUD plugin thread.');
             if (res.GetType() == Json::Type::Array) {
                 _row.timeMs = (res.Length == 0) ? MAX_DIV_TIME : res[0]["score"];
                 if (res.Length > 0)
@@ -553,7 +557,7 @@ namespace DataManager {
     void CoroLoopSaveAllTimes() {
         logcall("CoroLoopSaveAllTimes", "Starting...");
         while (true) {
-            if (!debounce.CanProceed("saveAllTimes", 7500)) {
+            if (!debounce.CanProceed("saveAllTimes", REFRESH_PLAYERS_PERIOD)) {
                 sleep(500);
             } else {
                 uint nPlayers = GetCotdTotalPlayers();
@@ -578,6 +582,7 @@ namespace DataManager {
         auto timesData = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, args.length, args.offset);
         while (!debounce.CanProceed("_CoroCacheTimesLive.postApi", 5)) yield(); // avoid too much processing in one frame
         string toWrite = "";
+        if (timesData is null) throw('_CoroCacheTimesLive | timesData is null -- please report on openplanet discord in COTD HUD plugin thread.');
         if (timesData.GetType() == Json::Type::Array) {
             for (uint i = 0; i < timesData.Length; i++) {
                 // timesData[i].Remove('uid');
@@ -601,10 +606,12 @@ namespace DataManager {
         // the rankings each 30s and cache special players.
         LoadFavoritesTimesFromDisk();
         while (true) {
+            yield();
+            if (!debounce.CanProceed("REFRESH_PLAYERS_PERIOD", REFRESH_PLAYERS_PERIOD)) continue;
             if (Setting_HudShowFavoritedPlayersTimes && isCotd.v) {
                 startnew(_ScanAllTimesForFavorites);
             }
-            sleep(30 * 1000);
+            sleep(REFRESH_PLAYERS_PERIOD);
         }
     }
 

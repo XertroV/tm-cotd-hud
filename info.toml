@@ -2,7 +2,7 @@
 name     = "COTD HUD"
 author   = "XertroV"
 category = "Race"
-version  = "0.2.8"
+version  = "0.2.12"
 
 [script]
 dependencies = ["NadeoServices"]
@@ -12,3 +12,4 @@ dependencies = ["NadeoServices"]
 # defines = [ "UNIT_TEST" ]
 # defines = [ "RELEASE" ]
 optional_dependencies = [ "BetterChat" ]
+timeout = 4000

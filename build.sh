@@ -75,9 +75,11 @@ for pluginSrc in ${pluginSources[@]}; do
       # in case it doesn't exist
       _build_dest=$PLUGIN_DEV_LOC
       mkdir -p $_build_dest/
-      rm -vr $_build_dest/*
-      cp -LR -v ./$pluginSrc/* $_build_dest/
-      cp -LR -v ./external/* $_build_dest/
+      rsync -auv --progress --delete ./$pluginSrc/ $_build_dest
+      # rsync -auv --progress ./external/ $_build_dest
+      # rm -vr $_build_dest/*
+      # cp -LR -v ./$pluginSrc/* $_build_dest/
+      # cp -LR -v ./external/* $_build_dest/
       cp -LR -v ./info.toml $_build_dest/
       _copy_exit_code="$?"
       ;;
