@@ -928,6 +928,7 @@ namespace CotdExplorer {
                     if (c !is null) {
                         _disabled = c.endDate >= uint(Time::Stamp);
                         string cName = string(c.name);
+                        // name change from "Cup of the day ..." to "COTD ..."
                         int hashIx = cName.StartsWith("COTD") ? 16 : 26;
                         bool isSingleton = cName.SubStr(hashIx, 1) != "#";
                         int cotdNum = 1;

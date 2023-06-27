@@ -376,7 +376,10 @@ namespace DataManager {
 
     uint GetCotdTotalPlayers() {
         auto pr = cotdLatest_PlayerRank;
-        return IsJsonNull(pr) ? 0 : pr['cardinal'];
+        try {
+            return IsJsonNull(pr) ? 0 : pr['cardinal'];
+        } catch {};
+        return 0;
     }
 
     uint GetCotdTotalDivs() {
