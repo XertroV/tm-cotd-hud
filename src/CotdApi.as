@@ -11,7 +11,7 @@ class CotdApi {
         // NadeoServices::AddAudience("NadeoServices");
 
         compUrl = NadeoServices::BaseURLCompetition();
-        liveSvcUrl = NadeoServices::BaseURL();
+        liveSvcUrl = NadeoServices::BaseURLLive();
 
         // @app = GetTmApp();
         // @network = cast<CTrackManiaNetwork>(app.Network);

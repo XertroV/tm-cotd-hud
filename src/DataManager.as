@@ -8,10 +8,9 @@ namespace DataManager {
 
     Debouncer@ debounce = Debouncer();
 
-    // reduce these again now we use caching server
-    uint REFRESH_DIVS_PERIOD = 5000;
+    uint REFRESH_DIVS_PERIOD = 10000;
     uint REFRESH_MY_TIME_PERIOD = 10000;
-    uint REFRESH_PLAYERS_PERIOD = 30000;
+    uint REFRESH_PLAYERS_PERIOD = 60000;
 
     /* global COTD state variables we want to keep track of and update */
 
