@@ -2,7 +2,7 @@
 name     = "COTD HUD"
 author   = "XertroV"
 category = "Race"
-version  = "0.2.12"
+version  = "0.2.13"
 
 [script]
 dependencies = ["NadeoServices"]
