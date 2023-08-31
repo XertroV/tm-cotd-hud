@@ -208,7 +208,7 @@ namespace DataManager {
                 auto favs = _favs.ReadString();
                 if (bcFavorites != favs) {
                     logcall("LoopUpdateBetterChatFavs", "Favs set to: " + tostring(bcFavorites));
-                    print("\\$f61todo: \\$3a3better chat favs");
+                    // print("\\$f61todo: \\$3a3better chat favs");
                 }
                 bcFavorites = favs;
             }
@@ -426,6 +426,16 @@ namespace DataManager {
             for (uint i = 0; i < cotd_ActiveDivRows.Length; i++) {
                 cotd_ActiveDivRows[i] = i + 1;
             }
+        } else if (Setting_HudShowBetterDivs) {
+            auto limit = 99;
+            if (playerDivRow.timeMs > 0) {
+                limit = Math::Min(limit, playerDivRow.div);
+            }
+            cotd_ActiveDivRows = array<uint>(limit);
+            for (uint i = 0; i < limit; i++) {
+                cotd_ActiveDivRows[i] = i + 1;
+            }
+            uint pDiv = playerDivRow.div;
         } else {
             uint pDiv = playerDivRow.div;
             int min, max;

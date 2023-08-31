@@ -38,6 +38,9 @@ int Setting_HudShowBelowDiv = 1;
 [Setting category="HUD" name="Show cutoffs for all divs?" description="Yup. ALL of them."]
 bool Setting_HudShowAllDivs = false;
 
+[Setting category="HUD" name="Show cutoffs for divs >= yours?"]
+bool Setting_HudShowBetterDivs = false;
+
 [Setting category="HUD" name="Show last div population?" description="..."]
 bool Setting_HudShowLastDivPop = false;
 

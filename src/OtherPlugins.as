@@ -1,7 +1,11 @@
+bool warned = false;
+
 Meta::PluginSetting@ GetOtherPluginSettingVar(const string &in pluginId, const string &in varName) {
     auto plugin = Meta::GetPluginFromID(pluginId);
     if (plugin is null) {
-        warn("GetOtherPluginSettingVar -- cannot find a plugin with ID '"+pluginId+"'.");
+        if (!warned)
+            log_warn("GetOtherPluginSettingVar -- cannot find a plugin with ID '"+pluginId+"'.");
+        warned = true;
         return null;
     }
 
@@ -11,6 +15,8 @@ Meta::PluginSetting@ GetOtherPluginSettingVar(const string &in pluginId, const s
             return _settings[i];
         }
     }
-    warn("GetOtherPluginSettingVar -- cannot find a setting with variable name '"+varName+"' for plugin '"+pluginId+"'.");
+    if (!warned)
+        log_warn("GetOtherPluginSettingVar -- cannot find a setting with variable name '"+varName+"' for plugin '"+pluginId+"'.");
+    warned = true;
     return null;
 }
