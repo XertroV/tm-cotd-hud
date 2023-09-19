@@ -785,8 +785,7 @@ class CotdIndexDb : JsonDb {
             @cs = data.j['ymdToCotdChallenges'][year][month][day];
             _cs = array<int>(cs.Length);
         } catch {
-            @cs = Json::Array();
-            _cs = array<int>(0);
+            return array<int>(0);
         }
         for (uint i = 0; i < cs.Length; i++) {
             _cs[i] = cs[i];

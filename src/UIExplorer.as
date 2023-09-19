@@ -301,6 +301,9 @@ namespace CotdExplorer {
     bool MDisabledThumbnailButton(bool disabled, const string &in day, const string &in mapUid, vec2 size = calendarDayBtnDims) {
         vec2 cPos = UI::GetCursorPos();
         UI::PushStyleVar(UI::StyleVar::ButtonTextAlign, vec2(.5, 0));
+        // extend parent boundaries
+        UI::Dummy(size + UI::GetStyleVarVec2(UI::StyleVar::FramePadding) * 2.);
+        UI::SetCursorPos(cPos);
         // UI::PushStyleColor(UI::Col::Button, vec4(1,1,1,0));
         bool ret = MDisabledButton(disabled, day, size);
         vec2 endPos = UI::GetCursorPos();

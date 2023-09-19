@@ -74,3 +74,12 @@ This plugin will use a lot of disk space, relatively speaking. Especially over t
 * hud preferences
 * histogram
 * bg downloads
+
+
+
+-----------
+
+
+todo:
+
+* Add expander thing to hide/show div times

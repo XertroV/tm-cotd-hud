@@ -290,6 +290,9 @@ namespace DataManager {
 
     auto timeout = 10000;
     void ApiUpdateCotdStatus() {
+        if (!debounce.CanProceed("ApiUpdateCotdStatus", 1000)) {
+            return;
+        }
         @cotdLatest_Status = api.GetCotdStatus();
         logcall('ApiUpdateCotdStatus', Json::Write(cotdLatest_Status));
         if (IsJsonNull(cotdLatest_Status)) {

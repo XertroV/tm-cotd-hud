@@ -80,6 +80,10 @@ void Main() {
 #if DEPENDENCY_BETTERCHAT
     startnew(BcCommands::Main);
 #endif
+
+#if DEV
+    // startnew(RequestAllCOTDPastResults);
+#endif
 }
 
 
