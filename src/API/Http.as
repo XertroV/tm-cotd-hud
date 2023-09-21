@@ -43,7 +43,7 @@ Json::Value@ CallMapMonitorApiPath(const string &in path) {
     Net::HttpRequest@ req = Net::HttpRequest();
     req.Url = MM_API_ROOT + path;
     auto plugin = Meta::ExecutingPlugin();
-    req.Headers['User-Agent'] = plugin.Name + '/' + plugin.Version + '/Openplanet-Plugin/contact=@XertroV';
+    req.Headers['User-Agent'] = plugin.Name + '/' + plugin.Version + '/Openplanet-Plugin/contact=@' + plugin.Author;
     // req.Headers['Authorization'] = 'openplanet ' + token;
     req.Method = Net::HttpMethod::Get;
     req.Start();

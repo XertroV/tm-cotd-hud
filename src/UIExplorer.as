@@ -1274,7 +1274,7 @@ namespace CotdExplorer {
         bool isLast;
         for (uint i = 1; i <= nPlayers; i += chunkSize) {
             auto times = jb.j['ranges']['' + i];
-            trace('times: ' + Json::Write(times));
+            // trace('times: ' + Json::Write(times));
             for (uint j = 0; j < times.Length; j++) {
                 isLast = i == nPlayers && j + 1 == times.Length;
                 score = times[j]['score'];
