@@ -49,7 +49,10 @@ Json::Value@ CallMapMonitorApiPath(const string &in path) {
     req.Start();
     while(!req.Finished()) { yield(); }
     auto respStr = req.String();
-    // log_trace("[CallMapMonitorApiPath] Response: " + respStr);
+    if (req.ResponseCode() != 200) {
+        log_warn("Response code not 200: " + req.ResponseCode());
+    }
+    log_trace("[CallMapMonitorApiPath] Response: " + respStr);
     return Json::Parse(respStr);
 }
 

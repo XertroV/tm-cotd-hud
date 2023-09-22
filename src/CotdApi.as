@@ -93,6 +93,9 @@ class CotdApi {
         }
         // return CallCompApiPath("/api/challenges/" + challengeid + "/records/maps/" + mapid + "?" + LengthAndOffset(length, offset));
         auto resp = MapMonitor::GetChallengeRecords(challengeid, mapid, length, offset);
+        if (resp is null || resp.GetType() == Json::Type::Null) {
+            warn('null resp for get challenge recs');
+        }
         return resp;
     }
 
