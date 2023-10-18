@@ -85,6 +85,10 @@ class CotdApi {
         return this.GetCotdTimes(challengeid, mapid, 1, offset);
     }
 
+    Json::Value@ GetAllCutoffs(int challengeid, const string &in mapid) {
+        return MapMonitor::GetChallengeRecordsCutoffs(challengeid, mapid);
+    }
+
     /** see GetCutoffForDiv for example return value
       */
     Json::Value@ GetCotdTimes(int challengeid, const string &in mapid, uint length, uint offset) {

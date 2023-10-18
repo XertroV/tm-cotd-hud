@@ -249,7 +249,7 @@ namespace DataManager {
         if (!debounce.CanProceed('UpdateDivs', REFRESH_DIVS_PERIOD)) return;
         divs_lastUpdated = Time::get_Now();
         // if the div is in the past, load from disk
-        if (_ViewPriorChallenge() || uint(Time::Stamp) > GetChallengeEndDate()) {
+        if (_ViewPriorChallenge() || uint(Time::Stamp) > GetChallengeEndDate() + 300) {
             // load from disk
             while (PersistentData::mapDb is null) yield();
             while (cotd_TimesForHistogram[0] == 0) { sleep(100); }
@@ -400,26 +400,27 @@ namespace DataManager {
     /* Update divisions from API */
     void ApiUpdateCotdDivRows() {
         RenewActiveDivs();
-        for (uint i = 0; i < cotd_ActiveDivRows.Length; i++) {
-            PutDivToUpdateInQ(cotd_ActiveDivRows[i]);
-            startnew(CoroUpdateDivFromQ);
-        }
-        for (uint i = 0; i < TOP_5.Length; i++) {
-            _AddDivToQueueIfNotActive(TOP_5[i]);
-        }
-        uint pDiv = playerDivRow.div;
+        startnew(CoroUpdateAllDivs);
+        // for (uint i = 0; i < cotd_ActiveDivRows.Length; i++) {
+        //     // PutDivToUpdateInQ(cotd_ActiveDivRows[i]);
+        //     // startnew(CoroUpdateDivFromQ);
+        // }
+        // for (uint i = 0; i < TOP_5.Length; i++) {
+        //     _AddDivToQueueIfNotActive(TOP_5[i]);
+        // }
+        // uint pDiv = playerDivRow.div;
         // add divs around player. make sure to avoid re-requesting top 5
-        for (uint i = Math::Max(5, pDiv - 3); i < pDiv + 3; i++) {
-            _AddDivToQueueIfNotActive(i);
-        }
+        // for (uint i = Math::Max(5, pDiv - 3); i < pDiv + 3; i++) {
+        //     _AddDivToQueueIfNotActive(i);
+        // }
     }
 
-    void _AddDivToQueueIfNotActive(uint i) {
-        if (cotd_ActiveDivRows.Find(i) < 0) {
-            PutDivToUpdateInQ(i);
-            startnew(CoroUpdateDivFromQ);
-        }
-    }
+    // void _AddDivToQueueIfNotActive(uint i) {
+    //     if (cotd_ActiveDivRows.Find(i) < 0) {
+    //         PutDivToUpdateInQ(i);
+    //         startnew(CoroUpdateDivFromQ);
+    //     }
+    // }
 
     /* set active div rows based on player rank, settings, etc */
     void RenewActiveDivs() {
@@ -486,53 +487,63 @@ namespace DataManager {
         }
     }
 
-    uint lastUpdateDivFromQ = 0;
-    void CoroUpdateDivFromQ() {
-        auto _div = GetDivToUpdateFromQ();
-        if (_div == 0 || _div >= divRows.Length) {
-            return;
+    void CoroUpdateAllDivs() {
+        auto resp = api.GetAllCutoffs(GetChallengeId(), cotdLatest_MapId);
+        for (uint i = 0; i < Math::Min(resp.Length, divRows.Length); i++) {
+            auto item = resp[i];
+            auto @div = divRows[i];
+            div.timeMs = uint(item["score"]);
+            @div.lastJson = item;
         }
-        // don't run too many at once
-        while (lastUpdateDivFromQ + 5 > Time::Now) yield();
-        lastUpdateDivFromQ = Time::Now;
-
-        auto logpre = "CoroUpdateDivFromQ(" + _div + ") | ";
-#if DEV
-        // log_trace(logpre + "Got div.");
-#endif
-
-        auto _row = divRows[_div - 1];
-        _row.lastUpdateStart = Time::Now;
-
-        if ((_div - 1) * 64 >= GetCotdTotalPlayers()) {
-            // there are no players in this div
-            _row.timeMs = MAX_DIV_TIME;
-            _row.visible = false;
-        } else {
-            log_trace(logpre + "got div w/ " + GetCotdTotalPlayers() + " total players");
-            // we can get a time for this div
-            Json::Value@ res;
-            if (_div * 64 > GetCotdTotalPlayers()) {
-                // div is not full, get time of last player
-                @res = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, 1, GetCotdTotalPlayers() - 1);
-            } else {
-                @res = api.GetCutoffForDiv(GetChallengeId(), cotdLatest_MapId, _div);
-            }
-            // log_trace(logpre + " res: " + Json::Write(res));
-            /* note: res[0]["score"] and res[0]["time"] appear to be identical */
-            if (res is null) throw('CoroUpdateDivFromQ | res is null -- please report on openplanet discord in COTD HUD plugin thread.');
-            if (res.GetType() == Json::Type::Array) {
-                _row.timeMs = (res.Length == 0) ? MAX_DIV_TIME : res[0]["score"];
-                if (res.Length > 0)
-                    _row.lastJson = res[0];
-            }
-            ClearJsonSlowly(res);
-        }
-
-        _row.lastUpdateDone = Time::get_Now();
-        if (_row.timeMs < MAX_DIV_TIME)
-            log_trace(logpre + _row.ToString());
     }
+
+//     uint lastUpdateDivFromQ = 0;
+//     void CoroUpdateDivFromQ() {
+//         auto _div = GetDivToUpdateFromQ();
+//         if (_div == 0 || _div >= divRows.Length) {
+//             return;
+//         }
+//         // don't run too many at once
+//         while (lastUpdateDivFromQ + 5 > Time::Now) yield();
+//         lastUpdateDivFromQ = Time::Now;
+
+//         auto logpre = "CoroUpdateDivFromQ(" + _div + ") | ";
+// #if DEV
+//         // log_trace(logpre + "Got div.");
+// #endif
+
+//         auto _row = divRows[_div - 1];
+//         _row.lastUpdateStart = Time::Now;
+
+//         if ((_div - 1) * 64 >= GetCotdTotalPlayers()) {
+//             // there are no players in this div
+//             _row.timeMs = MAX_DIV_TIME;
+//             _row.visible = false;
+//         } else {
+//             log_trace(logpre + "got div w/ " + GetCotdTotalPlayers() + " total players");
+//             // we can get a time for this div
+//             Json::Value@ res;
+//             if (_div * 64 > GetCotdTotalPlayers()) {
+//                 // div is not full, get time of last player
+//                 @res = api.GetCotdTimes(GetChallengeId(), cotdLatest_MapId, 1, GetCotdTotalPlayers() - 1);
+//             } else {
+//                 @res = api.GetCutoffForDiv(GetChallengeId(), cotdLatest_MapId, _div);
+//             }
+//             // log_trace(logpre + " res: " + Json::Write(res));
+//             /* note: res[0]["score"] and res[0]["time"] appear to be identical */
+//             if (res is null) throw('CoroUpdateDivFromQ | res is null -- please report on openplanet discord in COTD HUD plugin thread.');
+//             if (res.GetType() == Json::Type::Array) {
+//                 _row.timeMs = (res.Length == 0) ? MAX_DIV_TIME : res[0]["score"];
+//                 if (res.Length > 0)
+//                     @_row.lastJson = res[0];
+//             }
+//             ClearJsonSlowly(res);
+//         }
+
+//         _row.lastUpdateDone = Time::get_Now();
+//         if (_row.timeMs < MAX_DIV_TIME)
+//             log_trace(logpre + _row.ToString());
+//     }
 
     void CoroUpdatePlayerDiv() {
         playerDivRow.lastUpdateStart = Time::get_Now();
@@ -545,7 +556,7 @@ namespace DataManager {
 
             uint pScore = cotdLatest_PlayerRank["records"][0]["score"];
             playerDivRow.timeMs = pScore;
-            playerDivRow.lastJson = cotdLatest_PlayerRank["records"][0];
+            @playerDivRow.lastJson = cotdLatest_PlayerRank["records"][0];
         } else {
             playerDivRow.timeMs = MAX_DIV_TIME;
             playerDivRow.div = 0;

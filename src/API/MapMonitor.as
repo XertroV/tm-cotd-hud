@@ -23,4 +23,7 @@ namespace MapMonitor {
     Json::Value@ GetChallengeRecords(int challengeId, const string &in mapUid, uint length, uint offset) {
         return CallMapMonitorApiPath("/cached/api/challenges/" + challengeId + "/records/maps/" + mapUid + "?" + LengthAndOffset(length, offset));
     }
+    Json::Value@ GetChallengeRecordsCutoffs(int challengeId, const string &in mapUid) {
+        return CallMapMonitorApiPath("/cached/api/challenges/" + challengeId + "/records/maps/" + mapUid + "?cutoffs");
+    }
 }

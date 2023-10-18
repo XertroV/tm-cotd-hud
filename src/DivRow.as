@@ -19,7 +19,7 @@ class DivRow {
     uint lastUpdateStart = 0;
     uint lastUpdateDone = 0;
     bool _visible = false;
-    Json::Value lastJson;
+    Json::Value@ lastJson;
     RowTy ty;
 
     DivRow(uint div = 0, uint timeMs = MAX_DIV_TIME, RowTy ty = RowTy::Cutoff) {
