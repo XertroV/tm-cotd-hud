@@ -60,11 +60,11 @@ void Main() {
     log_trace("Main: AwaitEula complete.");
 
     // note: not sure if this includes standard or just club -- do we need club?
-    NadeoServices::AddAudience("NadeoClubServices");
-    while (!NadeoServices::IsAuthenticated("NadeoClubServices")) {
+    NadeoServices::AddAudience("NadeoLiveServices");
+    while (!NadeoServices::IsAuthenticated("NadeoLiveServices")) {
         yield();
     }
-    log_trace("Main: awaited NadeoServices::IsAuthenticated('NadeoClubServices')");
+    log_trace("Main: awaited NadeoServices::IsAuthenticated('NadeoLiveServices')");
 
     // auto c = Challenge::FromRowString("");
 

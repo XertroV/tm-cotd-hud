@@ -6,11 +6,10 @@ class CotdApi {
     // CTrackManiaNetworkServerInfo@ server_info; // = cast<CTrackManiaNetworkServerInfo>(network.ServerInfo);
 
     CotdApi() {
-        NadeoServices::AddAudience("NadeoClubServices");
         NadeoServices::AddAudience("NadeoLiveServices");
         // NadeoServices::AddAudience("NadeoServices");
 
-        compUrl = NadeoServices::BaseURLCompetition();
+        compUrl = NadeoServices::BaseURLMeet();
         liveSvcUrl = NadeoServices::BaseURLLive();
 
         // @app = GetTmApp();
@@ -215,8 +214,8 @@ class CotdApi {
 
 Json::Value@ FetchClubEndpoint(const string &in route) {
     log_trace("[FetchClubEndpoint] Requesting: " + route);
-    while (!NadeoServices::IsAuthenticated("NadeoClubServices")) { yield(); }
-    auto req = NadeoServices::Get("NadeoClubServices", route);
+    while (!NadeoServices::IsAuthenticated("NadeoLiveServices")) { yield(); }
+    auto req = NadeoServices::Get("NadeoLiveServices", route);
     req.Start();
     while(!req.Finished()) { yield(); }
     while (!debounce.CanProceed("fetch.postProcess.json", 2)) yield();
