@@ -38,7 +38,7 @@ class DictOfString {
     _d[K(key)] = value;
   }
 
-  bool Exists(const string &in key) {
+  bool Exists(const string &in key) const {
     return _d.Exists(K(key));
   }
 

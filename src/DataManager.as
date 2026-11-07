@@ -299,7 +299,7 @@ namespace DataManager {
         if (IsJsonNull(cotdLatest_Status)) {
             // if null, sleep with growing timeout to avoid spamming
             sleep(timeout);
-            timeout = Math::Min(timeout * 1.75, 60000); // max 60s to avoid a too-long timeout near cotd
+            timeout = Math::Min(int(timeout * 1.75), 60000); // max 60s to avoid a too-long timeout near cotd
         }
     }
 
@@ -437,7 +437,7 @@ namespace DataManager {
                 limit = Math::Min(limit, playerDivRow.div);
             }
             cotd_ActiveDivRows = array<uint>(limit);
-            for (uint i = 0; i < limit; i++) {
+            for (int i = 0; i < limit; i++) {
                 cotd_ActiveDivRows[i] = i + 1;
             }
             uint pDiv = playerDivRow.div;
@@ -489,7 +489,7 @@ namespace DataManager {
 
     void CoroUpdateAllDivs() {
         auto resp = api.GetAllCutoffs(GetChallengeId(), cotdLatest_MapId);
-        for (uint i = 0; i < Math::Min(resp.Length, divRows.Length); i++) {
+        for (int i = 0; i < Math::Min(resp.Length, divRows.Length); i++) {
             auto item = resp[i];
             auto @div = divRows[i];
             div.timeMs = uint(item["score"]);

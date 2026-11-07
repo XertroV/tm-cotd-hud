@@ -48,7 +48,7 @@ class DictOfIntToArrayOfInt_WDefault_WriteLog {
     WriteOnSet(key, value);
   }
 
-  bool Exists(int key) {
+  bool Exists(int key) const {
     return _d.Exists(K(key));
   }
 
