@@ -1,8 +1,8 @@
-UI::Font@ bigHeadingFont = UI::LoadFont("DroidSans.ttf", 26, -1, -1, true, true);
-UI::Font@ headingFont = UI::LoadFont("DroidSans.ttf", 20, -1, -1, true, true);
-UI::Font@ subheadingFont = UI::LoadFont("DroidSans-Bold.ttf", 16, -1, -1, true, true);
-UI::Font@ subheadingBolFont = UI::LoadFont("DroidSans-Bold.ttf", 16, -1, -1, true, true);
-UI::Font@ stdBold = UI::LoadFont("DroidSans-Bold.ttf", 16, -1, -1, true, true);
+UI::Font@ bigHeadingFont = UI::LoadFont("DroidSans.ttf", 26);
+UI::Font@ headingFont = UI::LoadFont("DroidSans.ttf", 20);
+UI::Font@ subheadingFont = UI::LoadFont("DroidSans-Bold.ttf", 16);
+UI::Font@ subheadingBolFont = UI::LoadFont("DroidSans-Bold.ttf", 16);
+UI::Font@ stdBold = UI::LoadFont("DroidSans-Bold.ttf", 16);
 
 void SetCursorAtItemTopRight() {
     auto rect = UI::GetItemRect();

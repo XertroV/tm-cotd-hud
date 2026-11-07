@@ -24,7 +24,7 @@ namespace CotdExplorer {
     vec2 calendarDayBtnDims;
     vec2 calendarMonthBtnDims, challengeBtnDims;
     const vec2 mapThumbDims = vec2(256, 256);
-    vec2 screenRes = vec2(Draw::GetWidth(), Draw::GetHeight());
+    vec2 screenRes = Display::GetSize();
     int2 mousePos = int2(0, 0);
 
     dictionary@ cotdYMDMapTree;
